@@ -79,9 +79,10 @@ codemixesc/            library
   testing.py           stand-ins for tests and dry runs
 scripts/               setup_data, build_hien, quality_check, dataset_stats, build_pairs,
                        train_retriever, eval_retrieval, tune_delta, run_system, run_all,
-                       evaluate, judge, chat
+                       llm_usage, evaluate, judge, case_studies, chat
 docs/                  SPEC (from the proposal), IMPLEMENTATION (fidelity and deviations),
                        RUN_FORMAT, RETRIEVER, EVALUATION, REPRODUCE, PLAN
+report/                paper (IEEE format); tables and figures are pulled from results/
 tests/                 pytest suite (runs without models or API keys)
 data/esconv_hien/      ESConv-HiEn (built by scripts/build_hien.py)
 ```
