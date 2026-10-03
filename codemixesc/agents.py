@@ -400,7 +400,7 @@ def translate_context(log, msgs, attempts=3):
     call of the pivot). Untranslatable turns are kept as they are."""
     got = {}
     for attempt in range(attempts):
-        raw = log.ask(P.translate_in_prompt(msgs, attempt), max_tokens=4096, tag="translate_in")
+        raw = log.ask(P.translate_in_prompt(msgs, attempt), max_tokens=8192, tag="translate_in")
         got = parse_turns(raw, len(msgs))
         if len(got) == len(msgs):
             break
