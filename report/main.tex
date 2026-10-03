@@ -166,21 +166,29 @@ does it sound natural?'', so that a well-written but register-mismatched candida
 vote. The single-agent path receives the same register instruction.
 
 \subsection{Register Gate}
-After refinement the gate measures the response's $\cmi_r$ and script
-(Algorithm~\ref{alg:gate}). If $|\cmi_r-\cmi_s|>\delta$ or the script differs, the response is
-rewritten once with an explicit register instruction that states the measured mismatch. The
-rewrite is kept only if its register is closer to the seeker's, so the gate can never worsen the
-match, and it adds at most one LLM call per turn. $\delta$ is tuned on a development set.
+After refinement the gate profiles the response (Algorithm~\ref{alg:gate}). If its register is
+more than $\delta$ away from the seeker's or the script differs, the response is rewritten once
+with an explicit register instruction that states the measured mismatch (e.g.\ ``about 5\% Hindi
+words, while the user's messages have about 62\%''). The rewrite is kept only if its register is
+closer to the seeker's, so the gate can never worsen the match, and it adds at most one LLM call
+per turn; $\delta$ is tuned on the development set. With two languages $\cmi=\min(h,1-h)$ for the
+share $h$ of Hindi words, so the CMI gap cannot distinguish a mostly-Hindi reply from a
+mostly-English one (an 82\%-Hindi reply to an English seeker has a CMI gap of only 0.18). The
+gate therefore measures $d=|h_r-h_s|$, which equals $|\cmi_r-\cmi_s|$ whenever both texts lean
+towards the same language and is larger exactly when the dominant language---part of $R$---flips.
+Because an English/Hindi homograph (\emph{to}, \emph{me}, \emph{hi}) can be tagged Hindi in
+English text, a seeker is treated as code-mixing only with at least two unambiguous Hindi words
+(at least 5\% of their words); otherwise the target register is plain English ($h_s=0$).
 
 \begin{algorithm}[t]
 \caption{Register Gate}\label{alg:gate}
 \begin{algorithmic}[1]
 \Require response $y$, strategy $s$, seeker profile $R$, threshold $\delta$
-\State $r \gets \textsc{Profile}(y)$
-\If{$|\cmi_r - \cmi_s| \le \delta$ \textbf{and} $\text{script}_r = \text{script}_s$} \Return $y$ \EndIf
+\State $r \gets \textsc{Profile}(y)$; $d \gets |h_r - h_s|$
+\If{$d \le \delta$ \textbf{and} $\text{script}_r = \text{script}_s$} \Return $y$ \EndIf
 \State $y' \gets \textsc{LLM}(\text{rewrite } y \text{ in register } R \text{ keeping } s)$
-\State $r' \gets \textsc{Profile}(y')$
-\If{$r'$ is closer to $R$ than $r$ (script first, then CMI gap)} \Return $y'$ \EndIf
+\State $r' \gets \textsc{Profile}(y')$; $d' \gets |h_{r'} - h_s|$
+\If{$y'$ fixes the script, or same script status and $d' < d$} \Return $y'$ \EndIf
 \State \Return $y$
 \end{algorithmic}
 \end{algorithm}
