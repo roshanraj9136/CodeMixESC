@@ -150,6 +150,35 @@ def test_bertscore_if_model_is_cached():
     assert same == pytest.approx(100.0, abs=0.01) and other < same and empty == 0.0
 
 
+def test_bertscore_path_with_stub_model(monkeypatch, synthetic, tmp_path):
+    """The BERTScore wrapper and its use in evaluate.py, with bert_score's scorer stubbed out
+    (the multilingual model cannot be downloaded in the test environment)."""
+    bert_score = pytest.importorskip("bert_score")
+    import torch
+
+    class StubScorer:
+        def __init__(self, model_type=None, device=None, batch_size=64, **kw):
+            self.hash = f"{model_type}_stub"
+
+        def score(self, cands, refs, batch_size=64):
+            assert all(c.strip() for c in cands)  # empty hypotheses never reach the model
+            f = torch.tensor([1.0 if c == r else 0.5 for c, r in zip(cands, refs)])
+            return f, f, f
+
+    monkeypatch.setattr(bert_score, "BERTScorer", StubScorer)
+    assert M.BERTScore(device="cpu")(["a", "", "b"], ["a", "x", "c"]) == [100.0, 0.0, 50.0]
+    ev = load_script("evaluate")
+    assert ev.main(["--runs_dir", str(synthetic / "runs"), "--out_dir", str(tmp_path), "--profiler", "none",
+                    "--samples_file", str(synthetic / "samples.json"), "--subset_file", str(synthetic / "subset.json"),
+                    "--versions", "light", "--no_figures", "--n_boot", "200"]) == 0
+    m = json.loads((tmp_path / "eval" / "metrics.json").read_text(encoding="utf-8"))
+    assert m["meta"]["bertscore"]["hash"] == "bert-base-multilingual-cased_stub"
+    r = m["results"]["light"]["codemixesc"]["common"]
+    assert r["bertscore_f1"] == pytest.approx(100 * 11 * 0.5 / 12)  # 11 answered turns at 0.5, the failed one 0
+    assert m["significance"]["light"]["maesc"]["bertscore"]["n"] == 12
+    assert "BERTScore" in (tmp_path / "tables" / "main_light.md").read_text(encoding="utf-8")
+
+
 # ================================================================== register match
 def test_register_match_with_lexicon_profiler():
     prof = LexiconProfiler()
@@ -390,8 +419,7 @@ def test_evaluate_outputs(evaluated):
         assert (out / "figures" / f"{fig}.png").stat().st_size > 1000 and (out / "figures" / f"{fig}.pdf").exists()
     assert not (out / "figures" / "strategy_dist_zero_shot.png").exists()  # never predicts a strategy
     lines = (out / "eval" / "per_turn.jsonl").read_text(encoding="utf-8").splitlines()
-    assert len(lines) == sum(len(r) for v in m["results"].values() for r in
-                             [{k: 0 for k in range(x["all"]["n"])} for x in v.values()])
+    assert len(lines) == sum(x["all"]["n"] for v in m["results"].values() for x in v.values())  # every scored turn
 
 
 def test_evaluate_turn_sets(evaluated):
@@ -494,8 +522,9 @@ def test_evaluate_tables_content(evaluated):
 @pytest.mark.skipif(not shutil.which("pdflatex"), reason="pdflatex not installed")
 def test_latex_tables_compile(evaluated, tmp_path):
     out, _ = evaluated
-    cls = "IEEEtran" if subprocess.run(["kpsewhich", "IEEEtran.cls"], capture_output=True, text=True).stdout.strip() \
-        else "article"
+    ieee = shutil.which("kpsewhich") and subprocess.run(["kpsewhich", "IEEEtran.cls"], capture_output=True,
+                                                         text=True).stdout.strip()
+    cls = "IEEEtran" if ieee else "article"
     body = "\n".join(f"\\input{{{(out / 'tables' / f'{n}.tex').as_posix()}}}\n\\clearpage" for n in TABLES)
     (tmp_path / "doc.tex").write_text(f"\\documentclass{{{cls}}}\n\\usepackage{{booktabs,graphicx}}\n"
                                       f"\\begin{{document}}\n{body}\n\\end{{document}}\n", encoding="utf-8")

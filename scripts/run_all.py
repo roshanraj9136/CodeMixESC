@@ -70,7 +70,7 @@ def main():
         cmd = [sys.executable, "-X", "utf8", os.path.join(ROOT, "scripts", "evaluate.py")]
         if args.dry_run:
             cmd += ["--runs_dir", out_dir, "--out_dir", os.path.join(ROOT, "scratch", "dry_eval"),
-                    "--profiler", "lexicon", "--no_bertscore"]
+                    "--profiler", "lexicon", "--no_bertscore", "--hien_dir", os.path.join(ROOT, "scratch", "fake_hien")]
         if os.path.exists(cmd[3]):
             print("[all] evaluating", flush=True)
             subprocess.call(cmd, cwd=ROOT)

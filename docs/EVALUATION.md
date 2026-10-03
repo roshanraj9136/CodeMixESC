@@ -211,9 +211,13 @@ agreement** (mean pairwise Cohen's κ between volunteers, pooled over dimensions
 Every table comes as `.md` (bold best), `.csv` (raw numbers; CIs and p-values in separate
 columns) and `.tex`. The LaTeX tables use booktabs, mark the best value per column (per version
 block) in bold (nothing is bold when all rows tie), carry `\label{tab:<name>}` and a caption,
-and shrink to the line width only when wider. Tables with 10 or more columns use `table*` (both
-columns of an IEEE two-column page). In the paper preamble: `\usepackage{booktabs,graphicx}`;
-then `\input{results/tables/main_heavy}`. Every figure also has a vector `.pdf` twin for LaTeX.
+and shrink to the line width only when wider. A table whose estimated width would need more than
+about 20 % shrinking in one column of an IEEE two-column page is emitted as `table*` (both
+columns); change the environment by hand if the layout calls for it. The significance table
+shows Δ with † / ‡ in LaTeX (CIs in `.md` and `.csv`). In the paper preamble:
+`\usepackage{booktabs,graphicx}`; then `\input{results/tables/main_heavy}`. Figures are sized
+for the page (strategy distributions: one column, 3.5 in; robustness: at most the 7.16 in text
+width) and each has a vector `.pdf` twin for LaTeX.
 Re-running `evaluate.py` replaces all of its own tables and figures (stale ones are removed),
 never `judge.*` or `human.*`.
 
@@ -239,5 +243,17 @@ $env:CODEMIX_HIEN_DIR="scratch\fake_hien"
 (`--hien_dir scratch\fake_hien` does the same as the environment variable.) Other options:
 `--systems`, `--min_coverage`, `--n_boot`, `--seed`, `--bertscore_model`, `--no_figures`
 (`evaluate.py`); `--pairs`, `--n`, `--model`, `--thinking`, `--json_mode`, `--workers`,
-`--out_dir` (`judge.py`). Everything is deterministic: rerunning on the same runs gives the same
-numbers (bootstrap and sampling are seeded; LLM verdicts come from the cache).
+`--out_dir` (`judge.py`). Rerunning on the same runs gives the same numbers: the bootstrap and
+all sampling are seeded and LLM verdicts come from the cache (HingBERT-LID and BERTScore only up
+to floating-point differences between CPU and GPU).
+
+## 12. Reading the numbers
+
+- The Light and Heavy references are LLM rewrites of the English supporter turns (ESConv-HiEn),
+  so word-overlap metrics (BLEU, F1, ROUGE-L, Distinct) partly reward the rewriter's Hinglish
+  spellings. chrF and BERTScore are less sensitive to spelling; the register metrics, the
+  stability analysis and the judge do not use references at all.
+- The register metrics inherit the errors of HingBERT-LID (Section 4); the gold-reference row
+  shows what the dataset's own supporter turns score.
+- BERTScore is not rescaled: read differences between systems, not absolute values.
+- Bootstrap p-values are per comparison and not corrected for multiple testing.
