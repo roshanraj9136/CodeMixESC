@@ -1,5 +1,23 @@
 # CodeMixESC — build plan and shared conventions
 
+## Status
+Everything in this plan is implemented and tested; what remains is running it on the owner's
+machine (docs/REPRODUCE.md), which needs the Gemini key, Hugging Face access and a GPU.
+
+| Planned item | Where |
+|---|---|
+| Profiler, LLM client, ESConv loader, retriever (controller) | `codemixesc/{profiler,llm,esconv,retriever}.py` (hardened after an independent review) |
+| A — data: ESConv-HiEn, quality check, profiler tests | `scripts/build_hien.py`, `scripts/quality_check.py`, `scripts/dataset_stats.py`, `tests/test_profiler.py`, `tests/test_build_hien.py` |
+| B — retriever: pairs, training, retrieval evaluation | `scripts/build_pairs.py`, `scripts/train_retriever.py`, `scripts/eval_retrieval.py`, `codemixesc/retrieval_eval.py`, `docs/RETRIEVER.md` |
+| C — agents: prompts, agents, systems, runner, δ tuning, run format | `codemixesc/{prompts,agents,systems}.py`, `scripts/run_system.py`, `scripts/run_all.py`, `scripts/tune_delta.py`, `docs/RUN_FORMAT.md`, `tests/test_agents.py` |
+| D — evaluation: metrics, evaluation, judge | `codemixesc/metrics.py`, `scripts/evaluate.py`, `scripts/judge.py`, `tests/test_metrics.py`, `docs/EVALUATION.md` |
+| Report | `report/main.tex` (tables and figures are generated into `results/`) |
+
+Decisions taken during implementation that refine this plan are listed in
+docs/IMPLEMENTATION.md (e.g. the judge keeps the original prompt as in the proposal, the
+Register Gate measures the Hindi-share gap, the plain-English rule). The ownership section
+below is historical.
+
 Project: implement the proposal `d:\Downloads\CodeMixESC_Proposal_RoshanRaj_12341830 (1).pdf` in full.
 Owner: Roshan Raj (IIT Bhilai, roll 12341830). The repo will be published **publicly** at github.com/roshanraj9136.
 
@@ -78,7 +96,7 @@ Evaluation uses ESConv-HiEn, a new parallel test set built from the 100 ESConv t
   - Ablations: `cmx_noft` (multilingual mpnet without fine-tuning), `cmx_noxl` (English roberta retriever) and `cmx_nogate` (codemixesc output before the gate; derived from the same run).
 - Outputs: `results/runs/{system}/{version}.jsonl`, one JSON record per turn. The fields are listed in `docs/RUN_FORMAT.md`, written by Agent C.
 
-## Ownership (parallel subagents)
+## Ownership (parallel subagents; historical)
 - **A — data**: `scripts/build_hien.py`, `scripts/quality_check.py`, `data/esconv_hien/*`, `tests/test_profiler.py`.
 - **B — retriever**: `scripts/build_pairs.py`, `scripts/train_retriever.py`, `scripts/eval_retrieval.py`, `data/pairs/*`, `models/codemix-retriever`, `results/retrieval/*`.
 - **C — agents**: `codemixesc/prompts.py`, `codemixesc/agents.py`, `codemixesc/systems.py`, `scripts/run_system.py`, `scripts/tune_delta.py`, `docs/RUN_FORMAT.md`, `tests/test_agents.py`.
