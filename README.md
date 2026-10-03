@@ -1,5 +1,7 @@
 # CodeMixESC
 
+[![tests](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml/badge.svg)](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml)
+
 **Multi-agent emotional support conversation for code-mixed Hinglish help-seekers, with
 cross-lingual experience retrieval and register-aware response selection.**
 
