@@ -62,7 +62,17 @@ larger batches; on a Kaggle/Colab T4 full fine-tuning fits).
 .venv\Scripts\python.exe -X utf8 scripts\tune_delta.py           # results/tuning/delta.json (used by all later runs)
 ```
 
-## 6. Experiments
+## 6. Pilot (10 minutes, before the long runs)
+```powershell
+.venv\Scripts\python.exe -X utf8 scripts\run_system.py --system codemixesc --version heavy --limit 10 --out_dir scratch\pilot
+.venv\Scripts\python.exe scripts\llm_usage.py --since 1
+```
+Every step should finish with `STOP`. A step flagged "check token budget" (answers cut at the
+token limit, e.g. because thinking tokens count against it) needs a larger budget
+(`GEN_MAX_TOKENS` / `ANALYSIS_MAX_TOKENS` in `codemixesc/agents.py`) before the real runs; the pilot's
+calls are cached, so nothing is wasted. Also read a few records in `scratch\pilot\codemixesc\heavy.jsonl`.
+
+## 7. Experiments
 ```powershell
 .venv\Scripts\python.exe -X utf8 scripts\run_all.py              # all 18 runs in priority order, then evaluate.py
 ```
@@ -71,7 +81,7 @@ or individually, e.g. `scripts\run_system.py --system codemixesc --version heavy
 `cmx_noft`, `cmx_noxl` (light/heavy); multi-agent systems use the fixed 200-turn sample.
 Progress is in `logs\{system}_{version}.log`.
 
-## 7. Evaluation and judgement
+## 8. Evaluation and judgement
 ```powershell
 .venv\Scripts\python.exe -X utf8 scripts\evaluate.py             # results/tables/*.{md,csv,tex}, results/figures/*.png
 .venv\Scripts\python.exe -X utf8 scripts\judge.py                # pairwise LLM judge (both orders)
