@@ -24,10 +24,12 @@ next run; they are never written as records.
 | `pred_strategy` | str | one of the 8 ESConv strategies, or `"None"` (single/fallback paths and zero-shot) |
 | `response` | str | **final response — the text that is evaluated** |
 | `pre_gate_response` | str | response before the Register Gate (= `response` for systems without a gate); `cmx_nogate` is evaluated on this field of the `codemixesc` run |
-| `gate` | object/null | `{triggered, accepted, delta, cmi_s, cmi_before, script_before, cmi_after, script_after, calls, latency[, candidate]}` |
+| `gate` | object/null | `{triggered, accepted, delta, metric, cmi_s, cmi_target, hi_frac_target, cmi_before, hi_frac_before, script_before, distance_before, cmi_after, hi_frac_after, script_after, distance_after, calls, latency[, candidate, candidate_distance]}`; `*_after` describe the final response (equal to `*_before` when the rewrite was rejected) |
 | `n_calls` | int | logical LLM calls of the turn (cached or not) — the efficiency metric |
 | `n_real_calls` | int | API requests made in this run (0 for cache hits; retries of blocked answers count) |
 | `latency` | float | sum of the API latencies of the turn's calls, in seconds (cache hits report the latency measured when the call was made) |
+| `n_failed_calls` | int | calls that returned an empty or blocked answer after 3 tries (never cached; the step fell back to its default) |
+| `n_truncated_calls` | int | calls that stopped at the token limit (`MAX_TOKENS` / `length`) |
 | `calls_by_tag` | object | calls per step: `decide, single, fallback, emotion, cause, intention, deliberate, generate, debate, reflect, judge, refine, gate, translate_in, translate_out, fewshot` |
 
 `cmx_nogate` = `codemixesc` with `response := pre_gate_response`, `n_calls -= gate.calls`,

@@ -84,10 +84,45 @@ def test_blocked_answer_retried_before_caching(client):
     llm = L.LLM("gemma-4-26b-a4b-it")
     text, meta = llm.chat([{"role": "user", "content": "q"}])
     assert text == "finally" and meta["calls"] == 3 and len(calls) == 3
-    calls = client([gemini("", finish="SAFETY")] * 3)
+    calls = client([gemini("", finish="SAFETY")] * 3 + [gemini("later ok")])
     text, meta = llm.chat([{"role": "user", "content": "q2"}])
-    assert text == "" and meta["calls"] == 3  # gives up after 3 tries and caches the definitive answer
+    assert text == "" and meta["calls"] == 3 and meta["failed"]  # gives up after 3 tries ...
+    text, meta = llm.chat([{"role": "user", "content": "q2"}])  # ... but never caches the failure
+    assert text == "later ok" and not meta["cached"]
     assert llm.chat([{"role": "user", "content": "q2"}])[1]["cached"]
+
+
+def test_concurrent_identical_prompts_make_one_request(client):
+    import threading
+    calls = client([gemini("first"), gemini("second")])
+    llm = L.LLM("gemma-4-26b-a4b-it")
+    out = []
+    threads = [threading.Thread(target=lambda: out.append(llm("same prompt"))) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert out == ["first", "first"] and len(calls) == 1
+
+
+def test_key_normalisation_and_env_encodings(client, tmp_path, monkeypatch):
+    llm = L.LLM("gemma-4-26b-a4b-it")
+    msgs = [{"role": "user", "content": "x"}]
+    assert llm._key(None, msgs, 0, 5) == llm._key("", msgs, 0.0, 5)
+    monkeypatch.delenv("GEMINI_API_KEY")
+    monkeypatch.setattr(L, "ROOT", str(tmp_path))
+    for enc, data in (("utf-8-sig", "GEMINI_API_KEY=abc\r\n"), ("utf-16", "GEMINI_API_KEY=abc\r\n")):
+        (tmp_path / ".env").write_bytes(data.encode(enc))
+        assert L.load_key() == "abc"
+
+
+def test_pacific_time_dst():
+    from datetime import datetime, timezone
+    pdt = L._pacific_now(datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc))
+    pst = L._pacific_now(datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc))
+    assert pdt.hour == 5 and pst.hour == 4
+    assert L._pacific_now(datetime(2026, 11, 1, 8, 59, tzinfo=timezone.utc)).hour == 1  # still PDT
+    assert L._pacific_now(datetime(2026, 11, 1, 9, 0, tzinfo=timezone.utc)).hour == 1   # 01:00 PST again
 
 
 def test_openai_compatible_backend(client):
@@ -120,4 +155,10 @@ def test_limiter_enforces_rpm(tmp_path, monkeypatch):
     lim.acquire(10)  # the 4th request in the same minute has to wait for the window to slide
     assert sum(waits) >= 59 and lim.used_today() == 4
     big = L._Limiter("big", rpm=100, tpm=1000, rpd=100)
-    big.acquire(5000)  # a prompt larger than the whole TPM budget still goes out (no deadlock)
+    t = big.acquire(5000)  # a prompt larger than the whole TPM budget still goes out (no deadlock)
+    big.settle(t, 300)     # the reported token count replaces the estimate
+    assert big.db.execute("SELECT SUM(tok) FROM win WHERE model='big'").fetchone()[0] == 300
+    capped = L._Limiter("capped", rpm=100, tpm=10 ** 9, rpd=1)
+    capped.acquire(1)
+    with pytest.raises(L.DailyQuotaExceeded):
+        capped.acquire(1, wait_daily=False)

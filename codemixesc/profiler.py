@@ -15,7 +15,8 @@ import torch
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 LID_MODEL = "l3cube-pune/hing-bert-lid"
-WORD_RE = re.compile(r"https?://\S+|www\.\S+|[@#]\w+|[ऀ-ॿ]+|[A-Za-z]+(?:'[A-Za-z]+)?|\d+(?:[.,]\d+)*|[^\sA-Za-z\dऀ-ॿ]")
+_L = "A-Za-zÀ-ÖØ-öø-ÿ"  # Latin letters incl. accented ones; ' and ’ both join contractions (don’t, you're)
+WORD_RE = re.compile(rf"https?://\S+|www\.\S+|[@#]\w+|[ऀ-ॿ]+|[{_L}]+(?:['’][{_L}]+)*|\d+(?:[.,]\d+)*|[^\s{_L}\dऀ-ॿ]")
 DEVANAGARI_RE = re.compile(r"[ऀ-ॿ]")
 CHUNK_WORDS = 100  # words per model input; keeps every word well inside BERT's 512-token window
 
@@ -42,7 +43,7 @@ def _needs_model(tok):
 
 def script_of(text):
     dev = sum(1 for ch in text if "ऀ" <= ch <= "ॿ")
-    lat = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    lat = sum(1 for ch in text if ch.isalpha() and (ch.isascii() or "À" <= ch <= "ÿ"))
     if dev + lat == 0:
         return "None"
     r = dev / (dev + lat)
@@ -71,10 +72,23 @@ def cmi_from_tags(tags):
     return 1.0 - w / (n - u)
 
 
-def stats_from_tags(tags):
+def stats_from_tags(tags, words=None):
     en, hi = tags.count("EN"), tags.count("HI")
-    return {"cmi": cmi_from_tags(tags), "n_lang": en + hi, "en": en, "hi": hi,
-            "hi_frac": hi / (en + hi) if en + hi else 0.0}
+    out = {"cmi": cmi_from_tags(tags), "n_lang": en + hi, "en": en, "hi": hi,
+           "hi_frac": hi / (en + hi) if en + hi else 0.0}
+    if words is not None:  # Hindi evidence that is not an English homograph (see AMBIGUOUS)
+        out["hi_strong"] = sum(1 for w, t in zip(words, tags) if t == "HI" and w.lower() not in AMBIGUOUS)
+    return out
+
+
+# Common English words that the L3Cube-HingLID training data labels Hindi in >= 30% of their
+# occurrences (to 53%, do 43%, me 96%, he/hi ~100%, us 79%, use 88%, ...; together ~6% of the
+# words English ESConv users type). HingBERT-LID can tag them HI in English text, so they are not
+# taken as evidence that a seeker code-mixes (is_plain_english); the CMI itself still counts them.
+AMBIGUOUS = frozenset("""
+to do me he see ve re hi us use lol yea ah man haha hahaha ya hmm main key ha lay per th aa tho k sun g sake
+pre bag covid i a
+""".split())
 
 
 class Profiler:
@@ -94,13 +108,15 @@ class Profiler:
         """chunks: list of word lists (each at most CHUNK_WORDS long). Returns one label per word."""
         out = []
         for s in range(0, len(chunks), self.batch_size):
-            batch = chunks[s:s + self.batch_size]
+            batch_words = chunks[s:s + self.batch_size]
+            # the HingLID training data is lowercase without apostrophes: feed the model the same form
+            batch = [[w.lower().replace("'", "").replace("’", "") for w in ws] for ws in batch_words]
             with self._lock:
                 enc = self.tok(batch, is_split_into_words=True, truncation=True, max_length=512,
                                padding=True, return_tensors="pt")
                 logits = self.model(**{k: v.to(self.device) for k, v in enc.items()}).logits
                 lab = logits.argmax(-1).cpu().tolist()
-            for b, words in enumerate(batch):
+            for b, words in enumerate(batch_words):
                 first = {}  # label of the first sub-token of every word
                 for pos, wid in enumerate(enc.word_ids(b)):
                     if wid is not None and wid not in first:
@@ -151,10 +167,11 @@ class Profiler:
         return [cmi_from_tags([t for _, t in tg]) for tg in self.tag_many(texts)]
 
     def stats(self, text):
-        return stats_from_tags(self.tags(text))
+        tagged = self.tag_many([text])[0]
+        return stats_from_tags([t for _, t in tagged], [w for w, _ in tagged])
 
     def stats_many(self, texts):
-        return [stats_from_tags([t for _, t in tg]) for tg in self.tag_many(texts)]
+        return [stats_from_tags([t for _, t in tg], [w for w, _ in tg]) for tg in self.tag_many(texts)]
 
     def profile(self, seeker_utterances):
         """Register profile R of a help-seeker, pooled over all their utterances so far
@@ -162,8 +179,7 @@ class Profiler:
         utterance is tagged on its own, so long conversations are never truncated."""
         utts = [u for u in seeker_utterances if u and u.strip()]
         tagged = self.tag_many(utts)
-        tags = [t for tg in tagged for _, t in tg]
-        st = stats_from_tags(tags)
+        st = stats_from_tags([t for tg in tagged for _, t in tg], [w for tg in tagged for w, _ in tg])
         last = stats_from_tags([t for _, t in tagged[-1]]) if tagged else {"cmi": 0.0}
         return {
             "cmi": round(st["cmi"], 3),
@@ -171,20 +187,57 @@ class Profiler:
             "hi_frac": round(st["hi_frac"], 3),
             "dominant": "Hindi" if st["hi"] > st["en"] else "English",
             "script": script_of(" ".join(utts)),
+            "n_lang": st["n_lang"],
+            "n_hi_strong": st["hi_strong"],
         }
 
     def register_of(self, text):
         """Register of a single text (e.g. a generated response), in the same shape as R."""
         st = self.stats(text)
         return {"cmi": round(st["cmi"], 3), "hi_frac": round(st["hi_frac"], 3), "n_lang": st["n_lang"],
-                "dominant": "Hindi" if st["hi"] > st["en"] else "English", "script": script_of(text or "")}
+                "n_hi_strong": st["hi_strong"], "dominant": "Hindi" if st["hi"] > st["en"] else "English",
+                "script": script_of(text or "")}
 
 
-PLAIN_ENGLISH_CMI = 0.05  # below this an English-dominant seeker is treated as monolingual
+PLAIN_ENGLISH_CMI = 0.05   # below this an English-dominant seeker is monolingual whatever the words
+MIN_STRONG_HINDI = 2       # Hindi words (not English homographs) needed before a seeker counts as code-mixing
+MIN_STRONG_FRAC = 0.05     # ... and their minimum share of the seeker's words
 
 
 def is_plain_english(R):
-    return R["cmi"] < PLAIN_ENGLISH_CMI and R["dominant"] == "English" and R.get("script") in ("Roman", "None", None)
+    """Whether to treat the seeker as writing English. Answering an English speaker in Hinglish is
+    a worse error than answering a light code-mixer in English, so code-mixing needs evidence:
+    at least MIN_STRONG_HINDI unambiguous Hindi words making up at least MIN_STRONG_FRAC."""
+    if R["dominant"] != "English" or R.get("script") not in ("Roman", "None", None):
+        return False
+    if R["cmi"] < PLAIN_ENGLISH_CMI:
+        return True
+    if "n_hi_strong" in R:
+        return R["n_hi_strong"] < MIN_STRONG_HINDI or R["n_hi_strong"] < MIN_STRONG_FRAC * max(1, R["n_lang"])
+    return False
+
+
+def target_cmi(R):
+    """The CMI a reply should have: the seeker's, or 0 for a seeker treated as writing English."""
+    return 0.0 if is_plain_english(R) else R["cmi"]
+
+
+def target_hi_frac(R):
+    """The share of Hindi words a reply should have (0 for a seeker treated as writing English)."""
+    return 0.0 if is_plain_english(R) else R["hi_frac"]
+
+
+def register_distance(R, reg, metric="hi_frac"):
+    """Distance of a text's register `reg` from the seeker's target register.
+
+    metric="cmi" is the proposal's |CMI_r - CMI_s|. CMI is symmetric (= min(h, 1-h) for a Hindi
+    share h), so it cannot tell a mostly-Hindi reply from a mostly-English one: an 82%-Hindi reply
+    to an English seeker has a CMI gap of only 0.18. metric="hi_frac" uses |h_r - h_s|, which
+    equals the CMI gap whenever both texts lean towards the same language and is larger exactly
+    when the dominant language flips, i.e. it adds the dominant-language part of R to the check."""
+    if metric == "cmi":
+        return abs(reg["cmi"] - target_cmi(R))
+    return abs(reg["hi_frac"] - target_hi_frac(R))
 
 
 def describe_register(R):

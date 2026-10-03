@@ -85,3 +85,23 @@ def test_real_profiler_alignment_and_other_label(tmp_path):
     en = P.Profiler(device="cpu", model_name=_tiny_lid(str(tmp_path / "en"), [10.0, 0.0, 0.0]))
     R = en.profile(["I am fine", "मुझे डर"])
     assert R["dominant"] == "English" and R["script"] == "Mixed" and R["cmi"] == pytest.approx(1 - 3 / 5)
+
+
+class _FalsePositives(LexiconProfiler):
+    """Simulates HingBERT-LID tagging English homographs (hi, me, to, he, do) as Hindi."""
+
+    def _label_chunks(self, chunks):
+        return [["HI" if w.lower() in {"hi", "me", "to", "he", "do", "us"} or w.lower() in
+                 {"yaar", "bahut", "kya", "nahi", "hai", "mujhe", "karun"} else "EN" for w in ws] for ws in chunks]
+
+
+def test_plain_english_robust_to_homograph_false_positives():
+    prof = _FalsePositives()
+    R = prof.profile(["Hi, how are you?", "I want to talk to someone, my boss told me to quit"])
+    assert R["cmi"] > P.PLAIN_ENGLISH_CMI and R["n_hi_strong"] == 0
+    assert P.is_plain_english(R) and P.target_cmi(R) == 0.0
+    H = prof.profile(["yaar bahut tension hai", "mujhe kya karun pata nahi"])
+    assert not P.is_plain_english(H) and P.target_cmi(H) == H["cmi"]
+    one = prof.profile(["I am so tired yaar"])  # a single Hindi word is not enough evidence
+    assert P.is_plain_english(one)
+    assert P.tokenize("don’t you’re café") == ["don’t", "you’re", "café"]

@@ -192,7 +192,8 @@ def describe_mismatch(R, reg):
     parts = []
     if reg["script"] not in ("None", R["script"]) and R["script"] != "None":
         parts.append(f"it is written in {reg['script']} script, while the user writes in {R['script']} script")
-    hs, hr = round(100 * R["hi_frac"]), round(100 * reg["hi_frac"])
+    hs = 0 if is_plain_english(R) else round(100 * R["hi_frac"])
+    hr = round(100 * reg["hi_frac"])
     if hr < hs:
         parts.append(f"it has about {hr}% Hindi words, while the user's messages have about {hs}% (too little Hindi)")
     elif hr > hs:
@@ -231,6 +232,7 @@ Response: [response]
 FEWSHOT_EXAMPLE = """Dialogue context: {context}
 Emotion: {emotion}
 Event: {event}
+Intention: {intention}
 Strategy: {strategy}
 Response: {response}"""
 

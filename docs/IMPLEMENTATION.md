@@ -42,12 +42,23 @@ here so that the comparison stays controlled: **every deviation applies to all s
 | 9 | Judge / refiner unparseable → final response `"None"` | first tied candidate / unrefined response | keeps a real response instead of the string `"None"` |
 | 10 | A vote with a non-standard tag counts as its own strategy | mapped to the candidate it names (strategy, else ≥50% word overlap) | votes for the same candidate must be counted together |
 | 11 | AutoGen passes the speaker in a `name` field | earlier replies are prefixed `agent_j: ` | our backends have no `name` field; otherwise the agents cannot tell who said what |
-| 12 | Final text used as produced | `clean_response`: strips a leading `[strategy]` tag, `Assistant:`/`Response:` labels and one pair of wrapping quotes/brackets | the evaluation must compare responses, not formatting |
+| 12 | Retrieved posts/responses with line breaks show a literal `\n` (the case-bank file is written with `.replace("\n", "\\n")`) | identical: `Retriever.pairs()` applies the same escape for display; embeddings use the raw text, as in the base | fidelity of the deliberation and generation prompts |
+| 13 | Final text used as produced | `clean_response`: strips a leading `[strategy]` tag, `Assistant:`/`Response:` labels and one pair of wrapping quotes/brackets | the evaluation must compare responses, not formatting |
 
 ## CodeMixESC additions (`codemixesc` and ablations only)
 - Profiler: HingBERT-LID per word (any label other than EN/HI counts as language independent),
   CMI of Gambäck & Das; R pooled over all seeker utterances so far (each utterance tagged
-  separately, long texts chunked so no word is truncated).
+  separately, long texts chunked so no word is truncated). Words are fed to the model lowercased
+  and without apostrophes, the form of the L3Cube-HingLID training data. Names are labelled by
+  the model like any other word (the HingLID scheme has no name class; ESConv is anonymised, so
+  names are rare).
+- Plain-English seekers: common English words that HingLID's training data mostly labels Hindi
+  (`to` 53%, `do` 43%, `me` 96%, `he`/`hi` ~100%, `us` 79%, ...; about 6% of the words English
+  ESConv users type) can be tagged Hindi in English text. The CMI keeps them, but the decision to
+  treat a seeker as code-mixing requires at least 2 Hindi words that are not such homographs,
+  making up at least 5% of the seeker's words (`profiler.is_plain_english`). Answering an English
+  speaker in Hinglish is a worse error than answering a light code-mixer in English. For such
+  seekers every register instruction says "reply in plain English" and the gate's target is 0.
 - Register block (`### Language register`) in the emotion, cause and intention prompts (plus
   the Hinglish-expression hint for code-mixed seekers), in the generator (with the reply
   instruction), debate, reflection and refiner; the fourth criterion "language and cultural fit"
@@ -55,11 +66,30 @@ here so that the comparison stays controlled: **every deviation applies to all s
   the judge are unchanged, as in the proposal.
 - The single-agent path (early / not complex turns) uses the zero-shot prompt with the register
   instruction, so Hinglish seekers are not answered in English on those turns.
-- Register Gate on the final response of every path: one extra call if `|CMI_r − CMI_s| > δ`
-  or the script differs; the rewrite is kept only if its register is closer to the seeker's
-  (so the gate cannot make the match worse), otherwise the refined response stays.
+- Register Gate on the final response of every path: one extra call if the register distance
+  exceeds δ or the script differs; the rewrite is kept only if its register is closer to the
+  seeker's (so the gate cannot make the match worse), otherwise the refined response stays.
+  The distance is the Hindi-share gap `|h_r − h_s|` (h = Hindi words / language words). The CMI
+  is symmetric (`CMI = min(h, 1 − h)`), so the proposal's `|CMI_r − CMI_s|` cannot tell a
+  mostly-Hindi reply from a mostly-English one (an 82%-Hindi reply to an English seeker has a
+  CMI gap of 0.18 and would pass δ = 0.2). The Hindi-share gap equals the CMI gap whenever both
+  texts lean towards the same language and is larger exactly when the dominant language flips,
+  so it adds the dominant-language part of R to the check. `--gate_metric cmi` runs the literal
+  CMI criterion. The proposal's CMI gap remains the reported register metric.
 - δ is tuned on the dev conversations by `scripts/tune_delta.py` and read from
-  `results/tuning/delta.json` (0.2 until then).
+  `results/tuning/delta.json` (0.2 until then), together with the distance it was tuned for.
+- Strategy deliberation, the decision maker and the tie-breaking judge use the original prompts
+  (proposal, Fig. 1). docs/PLAN.md listed the judge among the modified prompts; the proposal is
+  followed.
+
+## Robustness of the LLM client
+- Empty or blocked answers are retried and never cached, so a later run asks again instead of
+  replaying a failure; per-turn counts are kept in `n_failed_calls`.
+- Concurrent identical prompts make one request and receive the same answer (first writer wins
+  across processes), so ablations that share stages see exactly the same upstream outputs.
+- Requests reserve an estimated token count and are settled with the count the API reports, so
+  the tokens-per-minute window is not throttled by the estimate's safety margin.
+- Daily quotas follow Pacific time with daylight saving (Gemini resets at Pacific midnight).
 
 ## Translate-pivot baseline
 One call translates the whole dialogue context into English (JSON, up to 3 attempts; turns that

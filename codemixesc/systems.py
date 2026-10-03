@@ -46,8 +46,8 @@ def dev_conv_ids():
 def fewshot_examples(dataset=None):
     """Worked examples for the few-shot CoT baseline, drawn from the conversations that the base
     main.py's get_cases() selects (dataset shuffled with seed 42, conversations 400-420), never
-    from test or dev conversations. The chain of thought uses the conversation's annotated
-    emotion_type and situation; one example per strategy in FEWSHOT_TARGETS."""
+    from test or dev conversations. The chain of thought uses the conversation's annotations
+    (emotion_type, situation, problem_type); one example per strategy in FEWSHOT_TARGETS."""
     data = dataset or load_esconv()
     order = list(range(len(data)))
     random.Random(42).shuffle(order)  # same permutation as random.seed(42); random.shuffle(samples)
@@ -63,7 +63,8 @@ def fewshot_examples(dataset=None):
                 continue
             picked[s["strategy"]] = P.FEWSHOT_EXAMPLE.format(
                 context=json2natural(s["context_msgs"][-6:]), emotion=conv["emotion_type"],
-                event=conv["situation"].strip(), strategy=s["strategy"], response=s["reference"])
+                event=conv["situation"].strip(), intention=f"to find a way to cope with {conv['problem_type'].lower()}",
+                strategy=s["strategy"], response=s["reference"])
         if len(picked) == len(FEWSHOT_TARGETS):
             break
     return "\n\n".join(picked[t] for t in FEWSHOT_TARGETS if t in picked)
@@ -173,7 +174,8 @@ class System:
         out["pre_gate_response"] = response
         out["gate"] = None
         if self.delta is not None and R_gate is not None:
-            response, out["gate"] = A.register_gate(log, self.profiler, context, R_gate, strategy, response, self.delta)
+            response, out["gate"] = A.register_gate(log, self.profiler, context, R_gate, strategy, response, self.delta,
+                                                    self.spec.get("gate_metric", "hi_frac"))
         out["response"] = A.clean_response(response)
         return out
 

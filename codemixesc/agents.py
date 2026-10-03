@@ -21,6 +21,7 @@ import re
 from collections import Counter
 
 from . import prompts as P
+from .profiler import register_distance, target_cmi, target_hi_frac
 
 GEN_MAX_TOKENS = 160  # base: 100. The 30-word limit is in the prompt; Roman Hindi needs more sub-word tokens.
 ANALYSIS_MAX_TOKENS = 400
@@ -59,7 +60,8 @@ class CallLog:
     def chat(self, messages, system=P.SYSTEM, max_tokens=ANALYSIS_MAX_TOKENS, tag="", temperature=0.0):
         text, meta = self.llm.chat(messages, system=system, temperature=temperature, max_tokens=max_tokens, tag=tag)
         self.calls.append({"tag": tag, "cached": bool(meta.get("cached")), "real": int(meta.get("calls", 0)),
-                           "latency": float(meta.get("latency") or 0.0)})
+                           "latency": float(meta.get("latency") or 0.0), "failed": bool(meta.get("failed")),
+                           "truncated": meta.get("finish") in ("MAX_TOKENS", "length")})
         return text or ""
 
     def ask(self, prompt, system=P.SYSTEM, max_tokens=ANALYSIS_MAX_TOKENS, tag=""):
@@ -68,6 +70,8 @@ class CallLog:
     def summary(self):
         return {"n_calls": len(self.calls), "n_real_calls": sum(c["real"] for c in self.calls),
                 "latency": round(sum(c["latency"] for c in self.calls), 3),
+                "n_failed_calls": sum(c["failed"] for c in self.calls),
+                "n_truncated_calls": sum(c["truncated"] for c in self.calls),
                 "calls_by_tag": dict(Counter(re.sub(r"\d+$", "", c["tag"]) for c in self.calls))}
 
 
@@ -332,17 +336,20 @@ def script_mismatch(R, reg):
     return int(reg["script"] not in ("None", R["script"]) and R["script"] != "None")
 
 
-def register_gate(log, profiler, context, R, strategy, response, delta):
-    """If |CMI_r - CMI_s| > delta or the script differs, refine once more with an explicit
+def register_gate(log, profiler, context, R, strategy, response, delta, metric="hi_frac"):
+    """Register Gate: if the response's register is more than delta away from the seeker's
+    (profiler.register_distance) or its script differs, refine once more with an explicit
     register instruction (at most one extra call). The rewrite is kept only if its register is
     closer to the seeker's, so the gate can never make the register match worse."""
     before = profiler.register_of(response)
-    gap = abs(before["cmi"] - R["cmi"])
+    dist = register_distance(R, before, metric)
     bad_script = script_mismatch(R, before)
-    info = {"triggered": False, "accepted": False, "delta": delta, "cmi_s": R["cmi"], "cmi_before": before["cmi"],
-            "script_before": before["script"], "cmi_after": before["cmi"], "script_after": before["script"],
-            "calls": 0, "latency": 0.0}
-    if gap <= delta and not bad_script:
+    info = {"triggered": False, "accepted": False, "delta": delta, "metric": metric, "cmi_s": R["cmi"],
+            "cmi_target": target_cmi(R), "hi_frac_target": target_hi_frac(R), "cmi_before": before["cmi"],
+            "hi_frac_before": before["hi_frac"], "script_before": before["script"], "distance_before": dist,
+            "cmi_after": before["cmi"], "hi_frac_after": before["hi_frac"], "script_after": before["script"],
+            "distance_after": dist, "calls": 0, "latency": 0.0}
+    if dist <= delta and not bad_script:
         return response, info
     strategy = strategy if strategy in P.STRATEGIES else None
     raw = log.ask(P.gate_prompt(context, R, response, strategy, P.describe_mismatch(R, before)),
@@ -353,12 +360,14 @@ def register_gate(log, profiler, context, R, strategy, response, delta):
     if not new:
         return response, info
     after = profiler.register_of(new)
-    info.update(candidate=new, cmi_after=after["cmi"], script_after=after["script"])
+    dist_after = register_distance(R, after, metric)
+    info["candidate"] = new
     bad_after = script_mismatch(R, after)
-    if bad_after < bad_script or (bad_after == bad_script and abs(after["cmi"] - R["cmi"]) < gap - 1e-9):
-        info["accepted"] = True
+    if bad_after < bad_script or (bad_after == bad_script and dist_after < dist - 1e-9):
+        info.update(accepted=True, cmi_after=after["cmi"], hi_frac_after=after["hi_frac"], script_after=after["script"],
+                    distance_after=dist_after)
         return new, info
-    info.update(cmi_after=before["cmi"], script_after=before["script"])
+    info["candidate_distance"] = dist_after
     return response, info
 
 

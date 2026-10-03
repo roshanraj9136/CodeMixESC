@@ -15,7 +15,7 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from codemixesc.esconv import ROOT, all_samples, dev_samples, load_dev, load_version, seeker_utterances  # noqa: E402
-from codemixesc.profiler import PLAIN_ENGLISH_CMI, script_of  # noqa: E402
+from codemixesc.profiler import is_plain_english, script_of  # noqa: E402
 
 BANDS = {"light": (0.10, 0.30), "heavy": (0.30, 0.50)}  # as in scripts/build_hien.py
 MIN_WORDS_FOR_BAND = 5
@@ -49,10 +49,11 @@ def level_stats(convs, level, prof, samples):
     else:  # English originals: every word tagged HI is a false positive of the LID model
         n_hi, n_lang = sum(s["hi"] for s in st), sum(s["n_lang"] for s in st)
         out["false_hindi_rate"] = n_hi / max(1, n_lang)
+        out["false_hindi_rate_strong"] = sum(s["hi_strong"] for s in st) / max(1, n_lang)
     # what the agents see: the pooled seeker profile R at every turn
     Rs = [prof.profile(seeker_utterances(s)) for s in samples]
     out["turn_cmi_s"] = mean(R["cmi"] for R in Rs)
-    out["turn_plain_english"] = mean(R["cmi"] < PLAIN_ENGLISH_CMI and R["dominant"] == "English" for R in Rs)
+    out["turn_plain_english"] = mean(is_plain_english(R) for R in Rs)
     out["_utt_cmi"] = [s["cmi"] for s in checked]
     return out
 
@@ -94,7 +95,9 @@ def main():
             ("Hindi words (%)", "hi_frac", "{:.1f}", 100), ("In target band (%)", "in_band", "{:.1f}", 100),
             ("LaBSE sim. to English", "labse_sim", "{:.3f}", 1), ("Regenerated (%)", "regenerated", "{:.1f}", 100),
             ("Seeker CMI$_s$ per turn", "turn_cmi_s", "{:.3f}", 1),
-            ("LID false-Hindi rate (%)", "false_hindi_rate", "{:.2f}", 100)]
+            ("Turns treated as plain English (%)", "turn_plain_english", "{:.1f}", 100),
+            ("LID false-Hindi rate (%)", "false_hindi_rate", "{:.2f}", 100),
+            ("... excl. English homographs (%)", "false_hindi_rate_strong", "{:.2f}", 100)]
     levels = list(stats)
     md = ["| | " + " | ".join(levels) + " |", "|---|" + "---|" * len(levels)]
     tex = [r"\begin{tabular}{l" + "c" * len(levels) + "}", r"\toprule",

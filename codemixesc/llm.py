@@ -58,8 +58,10 @@ def load_key(name="GEMINI_API_KEY"):
         return key
     path = os.path.join(ROOT, ".env")
     if os.path.exists(path):
-        for line in open(path, encoding="utf-8"):
-            if line.startswith(name + "="):
+        raw = open(path, "rb").read()  # PowerShell writes UTF-8 with a BOM, or UTF-16
+        text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
+        for line in text.splitlines():
+            if line.strip().startswith(name + "="):
                 return line.split("=", 1)[1].strip().strip("\"'")
     raise RuntimeError(f"{name} not found (set it in the environment or in .env)")
 
@@ -90,10 +92,14 @@ class _Cache:
             row = self.db.execute("SELECT v FROM c WHERE k=?", (k,)).fetchone()
         return None if row is None else json.loads(row[0])
 
-    def put(self, k, v):
+    def put_if_absent(self, k, v):
+        """First writer wins, across threads and processes; returns the stored value, so callers
+        that raced on the same prompt all continue with the same answer."""
         with self.lock:
-            self.db.execute("INSERT OR REPLACE INTO c VALUES (?,?)", (k, json.dumps(v, ensure_ascii=False)))
+            self.db.execute("INSERT OR IGNORE INTO c VALUES (?,?)", (k, json.dumps(v, ensure_ascii=False)))
             self.db.commit()
+            row = self.db.execute("SELECT v FROM c WHERE k=?", (k,)).fetchone()
+        return json.loads(row[0])
 
 
 class _Limiter:
@@ -111,10 +117,11 @@ class _Limiter:
         self.db.execute("CREATE TABLE IF NOT EXISTS daily (model TEXT, day TEXT, n INTEGER, PRIMARY KEY(model, day))")
         self.lock = threading.Lock()
 
-    def acquire(self, est_tokens):
+    def acquire(self, est_tokens, wait_daily=True):
+        """Blocks until a request with ~est_tokens input tokens may go out; returns a ticket for settle()."""
         est_tokens = min(est_tokens, self.tpm)  # a prompt larger than the whole budget still has to go out
         while True:
-            wait = 0.5
+            wait, over = 0.5, False
             with self.lock:
                 self.db.execute("BEGIN IMMEDIATE")
                 try:
@@ -125,25 +132,36 @@ class _Limiter:
                         "SELECT COUNT(*), COALESCE(SUM(tok),0), MIN(t) FROM win WHERE model=?", (self.model,)).fetchone()
                     row = self.db.execute("SELECT n FROM daily WHERE model=? AND day=?", (self.model, day)).fetchone()
                     today = row[0] if row else 0
+                    ticket = None
                     if today >= self.rpd:
-                        self.db.execute("COMMIT")
-                        secs = _seconds_until_pacific_midnight()
-                        print(f"[llm] own daily cap ({self.rpd}) reached for {self.model}; sleeping {secs/3600:.1f} h", flush=True)
-                        time.sleep(secs)
-                        continue
-                    if n < self.rpm and used + est_tokens <= self.tpm:
-                        self.db.execute("INSERT INTO win VALUES (?,?,?)", (self.model, now, est_tokens))
+                        over = True
+                    elif n < self.rpm and used + est_tokens <= self.tpm:
+                        ticket = self.db.execute("INSERT INTO win VALUES (?,?,?)", (self.model, now, est_tokens)).lastrowid
                         self.db.execute("INSERT INTO daily VALUES (?,?,1) ON CONFLICT(model, day) DO UPDATE SET n=n+1",
                                         (self.model, day))
-                        self.db.execute("COMMIT")
-                        return
-                    self.db.execute("COMMIT")
-                    if first:
+                    elif first:
                         wait = max(wait, 60 - (now - first) + 0.05)
+                    self.db.execute("COMMIT")
                 except Exception:
                     self.db.execute("ROLLBACK")
                     raise
+            if ticket is not None:
+                return ticket
+            if over:  # outside the lock and the transaction
+                if not wait_daily:
+                    raise DailyQuotaExceeded(f"own daily cap ({self.rpd}) reached for {self.model}")
+                secs = _seconds_until_pacific_midnight()
+                print(f"[llm] own daily cap ({self.rpd}) reached for {self.model}; sleeping {secs/3600:.1f} h", flush=True)
+                time.sleep(secs)
+                continue
             time.sleep(min(wait, 5))
+
+    def settle(self, ticket, tokens):
+        """Replaces a request's estimated input tokens by the count the API reported, so the
+        TPM window is not throttled by the estimate's safety margin."""
+        if ticket is not None and tokens:
+            with self.lock:
+                self.db.execute("UPDATE win SET tok=? WHERE rowid=?", (int(tokens), ticket))
 
     def used_today(self):
         row = self.db.execute("SELECT n FROM daily WHERE model=? AND day=?", (self.model, _pacific_day())).fetchone()
@@ -153,18 +171,32 @@ class _Limiter:
 _CACHE = None
 _LIMITERS = {}
 _GLOBAL_LOCK = threading.Lock()
+_KEY_LOCKS = [threading.Lock() for _ in range(1024)]  # one in-flight request per prompt (striped by key)
 _LOG_LOCK = threading.Lock()
 
 
+def _pacific_now(now=None):
+    """US Pacific time without tzdata (absent on many Windows installs): PDT (UTC-7) from the
+    second Sunday of March 10:00 UTC to the first Sunday of November 09:00 UTC, else PST (UTC-8).
+    Gemini daily quotas reset at Pacific midnight."""
+    now = now or datetime.now(timezone.utc)
+
+    def sunday(month, k):
+        d = datetime(now.year, month, 1, tzinfo=timezone.utc)
+        return d + timedelta(days=(6 - d.weekday()) % 7 + 7 * (k - 1))
+    dst = sunday(3, 2) + timedelta(hours=10) <= now < sunday(11, 1) + timedelta(hours=9)
+    return now - timedelta(hours=7 if dst else 8)
+
+
 def _pacific_day():
-    return (datetime.now(timezone.utc) - timedelta(hours=7)).strftime("%Y-%m-%d")
+    return _pacific_now().strftime("%Y-%m-%d")
 
 
 def _seconds_until_pacific_midnight():
-    # Gemini daily quotas reset at midnight Pacific time (PDT = UTC-7 until early November).
-    now = datetime.now(timezone.utc)
-    pac = now - timedelta(hours=7)
-    nxt = (pac + timedelta(days=1)).replace(hour=0, minute=5, second=0, microsecond=0)
+    pac = _pacific_now()
+    nxt = pac.replace(hour=0, minute=5, second=0, microsecond=0)
+    if nxt <= pac:
+        nxt += timedelta(days=1)
     return (nxt - pac).total_seconds()
 
 
@@ -208,7 +240,7 @@ class LLM:
         return out
 
     def _key(self, system, messages, temperature, max_tokens):
-        blob = json.dumps([self.model, self.thinking, system, messages, temperature, max_tokens],
+        blob = json.dumps([self.model, self.thinking, system or None, messages, float(temperature), max_tokens],
                           ensure_ascii=False, sort_keys=True)
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -219,15 +251,16 @@ class LLM:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     def _post(self, url, body, headers, label, est):
-        """POST with retries (est = estimated input tokens for the limiter). Returns (JSON, latency)."""
+        """POST with retries (est = estimated input tokens for the limiter).
+        Returns (JSON, latency, limiter ticket of the successful request)."""
         attempt = 0
         while True:
-            self.limiter.acquire(est)
+            ticket = self.limiter.acquire(est, self.wait_on_daily_quota)
             t0 = time.time()
             try:
                 req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers=headers)
                 resp = json.load(urllib.request.urlopen(req, timeout=600))
-                return resp, time.time() - t0
+                return resp, time.time() - t0, ticket
             except urllib.error.HTTPError as e:
                 msg = e.read().decode("utf-8", "replace")
                 attempt += 1
@@ -267,7 +300,7 @@ class LLM:
         body = {"contents": contents, "generationConfig": gen, "safetySettings": SAFETY_OFF}
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.api_model}:generateContent?key={self.key}"
         est = int(sum(len(c["parts"][0]["text"]) for c in contents) / 3.0) + 50
-        resp, latency = self._post(url, body, {"Content-Type": "application/json"}, "Gemini", est)
+        resp, latency, ticket = self._post(url, body, {"Content-Type": "application/json"}, "Gemini", est)
         text = ""
         cands = resp.get("candidates") or []
         finish = cands[0].get("finishReason") if cands else "NO_CANDIDATE"
@@ -275,6 +308,7 @@ class LLM:
             parts = (cands[0].get("content") or {}).get("parts") or []
             text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
         usage = resp.get("usageMetadata", {})
+        self.limiter.settle(ticket, usage.get("promptTokenCount"))
         return text, finish, latency, {"in": usage.get("promptTokenCount"), "out": usage.get("candidatesTokenCount"),
                                        "think": usage.get("thoughtsTokenCount")}
 
@@ -290,11 +324,12 @@ class LLM:
             body["response_format"] = {"type": "json_object"}
         headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.key}"}
         est = int(sum(len(m["content"]) for m in msgs) / 3.0) + 50
-        resp, latency = self._post(self.base_url.rstrip("/") + "/chat/completions", body, headers, self.backend, est)
+        resp, latency, ticket = self._post(self.base_url.rstrip("/") + "/chat/completions", body, headers, self.backend, est)
         choice = (resp.get("choices") or [{}])[0]
         text = (choice.get("message") or {}).get("content") or ""
         text = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()  # reasoning models
         usage = resp.get("usage", {})
+        self.limiter.settle(ticket, usage.get("prompt_tokens"))
         return text, choice.get("finish_reason"), latency, {"in": usage.get("prompt_tokens"),
                                                             "out": usage.get("completion_tokens"), "think": None}
 
@@ -303,9 +338,15 @@ class LLM:
         """messages: list of {"role": "user"|"assistant", "content": str}. Returns (text, meta)."""
         k = self._key(system, messages, temperature, max_tokens if not json_mode else ("json", max_tokens))
         hit = self.cache.get(k)
-        if hit is not None:
-            return hit["text"], {"cached": True, "latency": hit.get("latency", 0.0), "calls": 0,
-                                 "in": hit.get("in"), "out": hit.get("out"), "finish": hit.get("finish")}
+        if hit is None:
+            with _KEY_LOCKS[int(k[:6], 16) % len(_KEY_LOCKS)]:  # concurrent identical prompts: one request
+                hit = self.cache.get(k)
+                if hit is None:
+                    return self._fresh(k, messages, system, temperature, max_tokens, tag, json_mode)
+        return hit["text"], {"cached": True, "latency": hit.get("latency", 0.0), "calls": 0,
+                             "in": hit.get("in"), "out": hit.get("out"), "finish": hit.get("finish")}
+
+    def _fresh(self, k, messages, system, temperature, max_tokens, tag, json_mode):
         call = self._gemini if self.backend == "gemini" else self._openai
         calls = 0
         for attempt in range(3):
@@ -313,14 +354,18 @@ class LLM:
             calls += 1
             self._log({"t": time.time(), "model": self.model, "tag": tag, "latency": round(latency, 3),
                        **usage, "finish": finish})
-            # a blocked or empty candidate is often transient; only a definitive answer is cached
-            if text.strip() or finish not in _RETRY_EMPTY:
+            if text.strip() or finish not in _RETRY_EMPTY:  # a blocked/empty candidate is often transient
                 break
-            time.sleep(2 * (attempt + 1))
-        self.cache.put(k, {"text": text, "latency": latency, "finish": finish, "in": usage.get("in"),
-                           "out": usage.get("out")})
-        return text, {"cached": False, "latency": latency, "calls": calls, "in": usage.get("in"),
-                      "out": usage.get("out"), "finish": finish}
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1))
+        meta = {"cached": False, "latency": latency, "calls": calls, "in": usage.get("in"), "out": usage.get("out"),
+                "finish": finish}
+        if not text.strip():  # never cache a failure: a later run asks again instead of reusing ""
+            meta["failed"] = True
+            return text, meta
+        stored = self.cache.put_if_absent(k, {"text": text, "latency": latency, "finish": finish,
+                                              "in": usage.get("in"), "out": usage.get("out")})
+        return stored["text"], meta
 
     def __call__(self, prompt, system=None, **kw):
         return self.chat([{"role": "user", "content": prompt}], system=system, **kw)[0]
