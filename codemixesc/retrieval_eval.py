@@ -9,7 +9,8 @@ parallel English original. All metrics use k = 10, the number of cases get_strat
   conversation's problem_type, i.e. whether the retrieved experience is on topic at all.
 - Strategy JSD: Jensen-Shannon divergence (base 2, so in [0, 1]) between the strategy histograms
   of the cases retrieved for the Hinglish and for the English posts. The deliberation agents
-  pick strategies from these examples, so this is the retrieval-side share of strategy instability.
+  pick strategies from these examples, so a shift here is a retrieval-side cause of strategy
+  instability.
 Confidence intervals come from a cluster bootstrap over conversations: the turns of one
 conversation share a topic and a seeker, so resampling single turns would understate uncertainty.
 """

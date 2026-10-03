@@ -10,10 +10,11 @@ Memory. The model has ~278M parameters, ~192M of them in the XLM-R word-embeddin
 (250k tokens x 768). Full AdamW fine-tuning keeps fp32 weights, gradients and two Adam moments,
 16 bytes per parameter = ~4.4 GB before activations, so it cannot fit a 4 GB RTX 3050 Ti.
 --freeze_embeddings auto freezes the word embeddings when the GPU has < 10 GB (or there is no
-GPU): 86M trainable parameters, ~2.1 GB static. Freezing also keeps the rows of the ~95% of the
-vocabulary that never occur in the pairs aligned with the rows that do. fp16 autocast (CUDA),
-max_seq_length 128, --gradient_checkpointing and --cached (CachedMultipleNegativesRankingLoss:
-the same loss and the same in-batch negatives, computed in mini-batches) bound the activations.
+GPU): 86M trainable parameters, ~2.1 GB static. Freezing also keeps the rows of the many tokens
+that never occur in the pairs (other languages and scripts) aligned with the rows that do.
+fp16 autocast (CUDA), max_seq_length 128, --gradient_checkpointing and --cached
+(CachedMultipleNegativesRankingLoss: the same loss and the same in-batch negatives, computed in
+mini-batches) bound the activations.
 
 Batching. In-batch negatives must not contain the anchor's own translation, so batches are built
 without duplicate texts (BatchSamplers.NO_DUPLICATES). The NoDuplicatesBatchSampler of
@@ -207,8 +208,13 @@ def git_commit():
 
 
 def portable(path):
+    """Repo-relative path for the logs; the bare file name outside the repo (no user directories)."""
     path = os.path.abspath(path)
-    return os.path.relpath(path, ROOT).replace(os.sep, "/") if path.startswith(ROOT) else path
+    try:
+        rel = os.path.relpath(path, ROOT)  # case-insensitive on Windows
+    except ValueError:  # another drive
+        return os.path.basename(path)
+    return os.path.basename(path) if rel.startswith("..") else rel.replace(os.sep, "/")
 
 
 def eval_history(log_history, name="cmx"):
@@ -333,7 +339,8 @@ def main(argv=None):
           flush=True)
 
     log = {
-        "config": {**vars(args), "base_model": args.base_model, "pairs_dir": portable(args.pairs_dir),
+        "config": {**vars(args), "pairs_dir": portable(args.pairs_dir),
+                   "base_model": portable(args.base_model) if os.path.exists(args.base_model) else args.base_model,
                    "out_dir": portable(args.out_dir), "ckpt_dir": portable(args.ckpt_dir), "log": portable(args.log),
                    "tau": 1.0 / args.scale, "k": K, "eval_steps": eval_steps, "steps_per_epoch": steps_per_epoch,
                    "total_steps": total_steps, "fp16": fp16, "batch_sampler": "no_duplicates (shuffled, see docstring)",
