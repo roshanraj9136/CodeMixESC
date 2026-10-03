@@ -10,6 +10,7 @@ import pytest
 from codemixesc import agents as A
 from codemixesc import prompts as P
 from codemixesc.esconv import ROOT, all_samples, load_esconv, sampled_uids, turn_samples
+from codemixesc.profiler import is_plain_english
 from codemixesc.systems import SYSTEMS, System, fewshot_examples
 from codemixesc.testing import FakeLLM, HashRetriever, LexiconProfiler, write_fake_hien
 
@@ -271,8 +272,9 @@ def test_system_end_to_end(stand_ins, name, version):
             assert "decide" not in r["calls_by_tag"] and r["path"] == "single"
         if r["path"] in ("single", "fallback") and name != "fewshot_cot":  # few-shot CoT names a strategy
             assert r["pred_strategy"] == "None"
-        if name == "pivot":
-            assert r["calls_by_tag"]["translate_in"] >= 1 and r["calls_by_tag"].get("translate_out", 0) == 1
+        if name == "pivot":  # no back-translation for a seeker treated as writing English
+            assert r["calls_by_tag"]["translate_in"] >= 1
+            assert r["calls_by_tag"].get("translate_out", 0) == (0 if is_plain_english(r["R"]) else 1)
         if r["gate"]:
             assert r["calls_by_tag"].get("gate", 0) == r["gate"]["calls"] <= 1
         else:
@@ -293,3 +295,15 @@ def test_fewshot_examples_never_from_test_or_dev():
     for line in re.findall(r"Response: (.*)", text):
         hits = [i for i, c in enumerate(data) if any(t["content"].strip() == line.strip() for t in c["dialog"])]
         assert hits and all(i >= 100 and i not in dev for i in hits)
+
+
+def test_gate_never_pushes_hindi_onto_english_seekers():
+    prof = LexiconProfiler()
+    R = prof.profile(["Hi, I lost my job and I feel terrible."])
+    assert P.is_plain_english(R)
+    hinglish = "Main samajh sakta hoon yaar, yeh sach mein bahut mushkil hai."
+    log = A.CallLog(Recorder(answers=["Response: [Question] I understand, that sounds really hard."]))
+    out, info = A.register_gate(log, prof, "ctx", R, "Question", hinglish, 0.2)
+    assert info["cmi_target"] == 0.0 and info["triggered"] and info["accepted"]
+    assert out == "I understand, that sounds really hard."
+    assert "Reply in plain English" in log.llm.calls[0]["messages"][0]["content"]

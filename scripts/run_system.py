@@ -29,10 +29,16 @@ DEFAULT_MODEL = "gemma-4-26b-a4b-it"
 DELTA_PATH = os.path.join(ROOT, "results", "tuning", "delta.json")
 
 
-def default_delta():
+def default_gate():
+    """(delta, gate metric) from scripts/tune_delta.py; the proposal's initial 0.2 until it has run."""
     if os.path.exists(DELTA_PATH):
-        return float(json.load(open(DELTA_PATH, encoding="utf-8"))["delta"])
-    return 0.2  # proposal's initial value, used until scripts/tune_delta.py has been run
+        tuned = json.load(open(DELTA_PATH, encoding="utf-8"))
+        return float(tuned["delta"]), tuned.get("gate_metric", "hi_frac")
+    return 0.2, "hi_frac"
+
+
+def default_delta():
+    return default_gate()[0]
 
 
 def git_commit():
@@ -96,6 +102,7 @@ def main():
     ap.add_argument("--encoder", choices=["roberta", "labse", "mpnet", "mpnet-ft"])
     ap.add_argument("--no_register", action="store_true")
     ap.add_argument("--no_gate", action="store_true")
+    ap.add_argument("--gate_metric", choices=["hi_frac", "cmi"], help="Register Gate distance (default hi_frac)")
     args = ap.parse_args()
 
     if args.system not in SYSTEMS:
@@ -107,9 +114,14 @@ def main():
         spec["register"] = False
     if args.no_gate:
         spec["gate"] = False
+    if args.gate_metric and args.gate_metric != "hi_frac":
+        spec["gate_metric"] = args.gate_metric
     name = args.name or args.system
     if spec != SYSTEMS[args.system] and not args.name:
         sys.exit("a modified system needs --name so it does not overwrite the named system's results")
+    tuned_delta, tuned_metric = default_gate()
+    if spec.get("gate") and not args.gate_metric and tuned_metric != "hi_frac":
+        spec["gate_metric"] = tuned_metric  # use the distance delta was tuned for
     if spec["kind"] == "pivot" and args.version == "en":
         sys.exit("the translate-pivot baseline is defined for the Hinglish versions only")
 
@@ -135,10 +147,11 @@ def main():
         samples = samples[:args.limit]
     done = load_done(out_path)
     todo = [s for s in samples if s["uid"] not in done]
-    delta = args.delta if args.delta is not None else default_delta()
+    delta = args.delta if args.delta is not None else tuned_delta
     print(f"[run] {name} on {tag}: {len(samples)} turns, {len(done)} done, {len(todo)} to go "
           f"(model {'fake' if args.dry_run else args.model}, encoder {spec.get('encoder')}, "
-          f"register {spec.get('register', False)}, gate {spec.get('gate', False)}, delta {delta})", flush=True)
+          f"register {spec.get('register', False)}, gate {spec.get('gate', False)}, delta {delta}, "
+          f"gate metric {spec.get('gate_metric', 'hi_frac')})", flush=True)
 
     llm, retriever, profiler = build_components(spec, args.model, args.dry_run, exclude)
     system = System(args.system, llm, retriever=retriever, profiler=profiler, delta=delta, **spec)

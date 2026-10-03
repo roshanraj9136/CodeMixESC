@@ -28,30 +28,42 @@ def device():
     return os.environ.get("CODEMIX_DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
 
 
+def model_signature(path):
+    """Fingerprint of a local model directory (weight/config file names, sizes, mtimes), so that
+    a model re-trained or re-saved at the same path never reuses stale embeddings; '' for hub ids."""
+    if not os.path.isdir(path):
+        return ""
+    files = sorted(f for f in os.listdir(path) if f.endswith((".safetensors", ".bin", "config.json")))
+    info = [(f, os.path.getsize(os.path.join(path, f)), int(os.path.getmtime(os.path.join(path, f)))) for f in files]
+    return hashlib.md5(repr(info).encode()).hexdigest()[:8]
+
+
 def load_encoder(name):
+    """(model, lock) shared by every Retriever of the same model (encode() is not re-entrant)."""
     from sentence_transformers import SentenceTransformer
     path = ENCODERS.get(name, name)
+    key = (path, model_signature(path))
     with _LOCK:
-        if path not in _MODELS:
-            _MODELS[path] = SentenceTransformer(path, device=device())
-        return _MODELS[path]
+        if key not in _MODELS:
+            _MODELS[key] = (SentenceTransformer(path, device=device()), threading.Lock())
+        return _MODELS[key]
 
 
 class Retriever:
     def __init__(self, encoder="roberta", bank=None, exclude_conv=()):
         self.name = encoder
-        self.model = load_encoder(encoder)
-        self.bank = bank if bank is not None else case_bank(exclude_conv=set(exclude_conv))
-        self.lock = threading.Lock()
+        self.model, self.lock = load_encoder(encoder)
+        exclude = set(exclude_conv)
+        self.bank = [b for b in bank if b.get("conv") not in exclude] if bank is not None else case_bank(exclude_conv=exclude)
         self.emb = self._bank_embeddings()
 
     def _bank_embeddings(self):
         os.makedirs(EMB_DIR, exist_ok=True)
         sig = hashlib.md5("\n".join(b["post"] for b in self.bank).encode("utf-8")).hexdigest()[:10]
         tag = self.name if self.name in ENCODERS else hashlib.md5(self.name.encode()).hexdigest()[:8]
-        if self.name == "mpnet-ft":  # a re-trained checkpoint must not reuse stale embeddings
-            st = os.path.getmtime(os.path.join(ENCODERS["mpnet-ft"], "config.json"))
-            tag += f"-{int(st)}"
+        sig = model_signature(ENCODERS.get(self.name, self.name))
+        if sig:  # a re-trained or re-saved local model must not reuse stale embeddings
+            tag += f"-{sig}"
         path = os.path.join(EMB_DIR, f"{tag}-{sig}.npy")
         if os.path.exists(path):
             return np.load(path)
@@ -77,6 +89,10 @@ class Retriever:
         return idx[0].tolist(), sc[0].tolist()
 
     def pairs(self, query, k=10):
-        """(post, '[strategy] response') pairs exactly as get_strategy() builds them."""
+        """(post, '[strategy] response') pairs exactly as get_strategy() builds them: the base code
+        reads the case bank from a text file written with .replace("\n", "\\n"), so line breaks
+        inside a post or response appear as a literal backslash-n in the prompt."""
         idx, _ = self.topk(query, k)
-        return [(self.bank[i]["post"], f"[{self.bank[i]['strategy']}] {self.bank[i]['response']}") for i in idx], idx
+        esc = lambda t: t.replace("\n", "\\n")  # noqa: E731
+        return [(esc(self.bank[i]["post"]), f"[{self.bank[i]['strategy']}] {esc(self.bank[i]['response'])}")
+                for i in idx], idx

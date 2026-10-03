@@ -4,11 +4,11 @@ tuned on a dev set).
 CodeMixESC is run on dev turns without the gate. The gate is then applied once per turn
 with the smallest delta of the grid. Whether a rewrite is accepted does not depend on delta
 (it is kept only if its register is closer to the seeker's), so every delta of the grid can
-be scored exactly without further LLM calls: for delta d, a turn is gated iff
-|CMI_r - CMI_s| > d or the script differs.
+be scored exactly without further LLM calls: for delta d, a turn is gated iff its register
+distance (profiler.register_distance) exceeds d or the script differs.
 
 Selection rule (cheapest threshold that gets essentially the best register match without
-hurting quality): among the deltas whose pooled mean CMI gap is within --tol of the best one
+hurting quality): among the deltas whose pooled mean distance is within --tol of the best one
 and whose chrF is at least the ungated chrF minus --max_chrf_drop, take the largest.
 
     python scripts/tune_delta.py                 # light + heavy dev conversations
@@ -46,31 +46,30 @@ def run_level(level, args, llm, retriever, profiler):
         rec = system.respond(sample, level)
         log = A.CallLog(llm)
         _, info = A.register_gate(log, profiler, sample["context"], rec["R"], rec["pred_strategy"],
-                                  rec["response"], lo - 1e-9)
+                                  rec["response"], lo - 1e-9, args.gate_metric)
         cand = info.get("candidate") if info["accepted"] else None
-        bad_script = A.script_mismatch(rec["R"], {"script": info["script_before"]})
         return {"uid": sample["uid"], "reference": sample["reference"], "R": rec["R"], "pre": rec["response"],
-                "gap_pre": abs(info["cmi_before"] - info["cmi_s"]), "bad_script": bool(bad_script),
-                "gated": cand, "gap_gated": abs(info["cmi_after"] - info["cmi_s"]) if cand else None,
-                "hi_pre": profiler.register_of(rec["response"])["hi_frac"],
-                "hi_gated": profiler.register_of(cand)["hi_frac"] if cand else None}
+                "bad_script": bool(A.script_mismatch(rec["R"], {"script": info["script_before"]})), "gated": cand,
+                "dist_pre": info["distance_before"], "dist_gated": info["distance_after"] if cand else None,
+                "cmi_pre": abs(info["cmi_before"] - info["cmi_target"]),
+                "cmi_gated": abs(info["cmi_after"] - info["cmi_target"]) if cand else None}
 
     with cf.ThreadPoolExecutor(args.workers) as ex:
         return list(ex.map(job, samples))
 
 
 def score(rows, d):
-    """Outcome of delta d (None = no gate): (final responses, per-turn CMI gaps, per-turn
-    Hindi-fraction gaps, number of gate calls)."""
-    finals, gaps, hgaps, calls = [], [], [], 0
+    """Outcome of delta d (None = no gate): (final responses, per-turn gate distances, per-turn
+    CMI gaps, number of gate calls)."""
+    finals, dists, gaps, calls = [], [], [], 0
     for r in rows:
-        fire = d is not None and (r["gap_pre"] > d or r["bad_script"])
+        fire = d is not None and (r["dist_pre"] > d or r["bad_script"])
         calls += fire
         use = fire and r["gated"] is not None
         finals.append(r["gated"] if use else r["pre"])
-        gaps.append(r["gap_gated"] if use else r["gap_pre"])
-        hgaps.append(abs((r["hi_gated"] if use else r["hi_pre"]) - r["R"]["hi_frac"]))
-    return finals, gaps, hgaps, calls
+        dists.append(r["dist_gated"] if use else r["dist_pre"])
+        gaps.append(r["cmi_gated"] if use else r["cmi_pre"])
+    return finals, dists, gaps, calls
 
 
 def main():
@@ -81,6 +80,8 @@ def main():
     ap.add_argument("--tol", type=float, default=0.01)
     ap.add_argument("--max_chrf_drop", type=float, default=1.0)
     ap.add_argument("--encoder", default=SYSTEMS["codemixesc"]["encoder"])
+    ap.add_argument("--gate_metric", default="hi_frac", choices=["hi_frac", "cmi"],
+                    help="hi_frac: Hindi-share gap (CMI gap + dominant language); cmi: the proposal's CMI gap")
     ap.add_argument("--model", default="gemma-4-26b-a4b-it")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--dry_run", action="store_true")
@@ -109,20 +110,21 @@ def main():
     for d in [None] + args.grid:  # None = no gate
         entry = {"delta": d}
         for name, rr in [(lv, rows[lv]) for lv in levels] + [("all", pooled)]:
-            finals, gaps, hgaps, calls = score(rr, d)
-            entry[name] = {"n": len(rr), "cmi_gap": sum(gaps) / len(gaps), "hi_frac_gap": sum(hgaps) / len(hgaps),
+            finals, dists, gaps, calls = score(rr, d)
+            entry[name] = {"n": len(rr), "distance": sum(dists) / len(dists), "cmi_gap": sum(gaps) / len(gaps),
                            "gate_rate": calls / len(rr), "chrf": chrf(finals, [r["reference"] for r in rr])}
         table.append(entry)
     base = table[0]["all"]
-    best_gap = min(e["all"]["cmi_gap"] for e in table[1:])
-    ok = [e for e in table[1:] if e["all"]["cmi_gap"] <= best_gap + args.tol
+    best = min(e["all"]["distance"] for e in table[1:])
+    ok = [e for e in table[1:] if e["all"]["distance"] <= best + args.tol
           and e["all"]["chrf"] >= base["chrf"] - args.max_chrf_drop]
-    chosen = max(ok, key=lambda e: e["delta"]) if ok else min(table[1:], key=lambda e: e["all"]["cmi_gap"])
+    chosen = max(ok, key=lambda e: e["delta"]) if ok else min(table[1:], key=lambda e: e["all"]["distance"])
 
     out_dir = args.out or os.path.join(ROOT, "scratch" if args.dry_run else "results", "tuning")
     os.makedirs(out_dir, exist_ok=True)
-    result = {"delta": chosen["delta"], "rule": f"largest delta with pooled CMI gap <= best + {args.tol} and chrF >= "
-                                               f"ungated - {args.max_chrf_drop}",
+    result = {"delta": chosen["delta"], "gate_metric": args.gate_metric,
+              "rule": f"largest delta with pooled gate distance ({args.gate_metric}) <= best + {args.tol} "
+                      f"and chrF >= ungated - {args.max_chrf_drop}",
               "levels": levels, "encoder": args.encoder, "model": "fake" if args.dry_run else args.model,
               "table": table}
     json.dump(result, open(os.path.join(out_dir, "delta.json"), "w", encoding="utf-8"), indent=1)
@@ -130,10 +132,11 @@ def main():
         for lv in levels:
             for r in rows[lv]:
                 f.write(json.dumps(dict(r, level=lv), ensure_ascii=False) + "\n")
-    lines = ["| δ | " + " | ".join(f"{n} CMI gap | {n} gate rate | {n} chrF" for n in levels + ["all"]) + " |",
-             "|---|" + "---|---|---|" * (len(levels) + 1)]
+    lines = ["| δ | " + " | ".join(f"{n} distance | {n} CMI gap | {n} gate rate | {n} chrF" for n in levels + ["all"])
+             + " |", "|---|" + "---|---|---|---|" * (len(levels) + 1)]
     for e in table:
-        cells = [f"{e[n]['cmi_gap']:.3f} | {100 * e[n]['gate_rate']:.0f}% | {e[n]['chrf']:.1f}" for n in levels + ["all"]]
+        cells = [f"{e[n]['distance']:.3f} | {e[n]['cmi_gap']:.3f} | {100 * e[n]['gate_rate']:.0f}% | {e[n]['chrf']:.1f}"
+                 for n in levels + ["all"]]
         mark = " **(chosen)**" if e is chosen else ""
         lines.append(f"| {'no gate' if e['delta'] is None else e['delta']}{mark} | " + " | ".join(cells) + " |")
     open(os.path.join(out_dir, "delta.md"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
