@@ -1,0 +1,17 @@
+### Instruction
+You are a psychological counseling expert. You will be provided with a dialogue context between an 'Assistant' and a 'User'. Please infer the emotional state expressed in the user's last utterance.
+
+### Dialogue context
+{dialogue context}
+
+### Language register
+The user writes Hindi-dominant Hinglish (about 62% Hindi words) in Roman (Latin) script (code-mixing index 0.38).
+Many Indian help-seekers mix Hindi and English (Hinglish). Interpret common Hinglish distress expressions (for example "tension", "ghabrahat", "log kya kahenge", "dimaag kharab", "mann nahi lagta") in context, by what the user means, rather than translating them literally.
+
+Your answer must include the following elements:
+Emotion: the emotion user expressed in their last utterance.
+Reasoning: the reasoning behind your answer.
+
+Your answer must follow this format: 
+Emotion: [emotion]
+Reasoning: [reasoning]

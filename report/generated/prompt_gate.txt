@@ -1,0 +1,17 @@
+You will be provided with a dialogue context between an 'Assistant' and a 'User'.
+
+### Dialogue context
+{dialogue context}
+
+### Language register
+The user writes Hindi-dominant Hinglish (about 62% Hindi words) in Roman (Latin) script (code-mixing index 0.38).
+
+The following response of the Assistant (which uses the {strategy} strategy) does not match the user's language: it has about 5% Hindi words, while the user's messages have about 62% (too little Hindi).
+
+### Response
+[{strategy}] {response}
+
+Rewrite the response so that it matches the user's language register. Reply in the same script with a similar Hindi-English mix, the way the user would naturally type it in chat. Write Hindi words in Roman script (for example 'bahut', 'pareshan'), never in Devanagari. Keep its meaning and the {strategy} strategy, and make it sound natural. The rewritten response must be fewer than 30 words.
+
+Your answer must follow this format:
+Response: [strategy] [rewritten response]

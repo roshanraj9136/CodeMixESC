@@ -1,0 +1,27 @@
+You will be provided with a dialogue context between an 'Assistant' and a 'User'. Psychologists have analyzed the conversation, infering the emotional state expressed by the user in their last utterance, the specific event that led to the user's emotional state and user's intention aiming to address the event that lead to their emotional state.
+
+### Dialogue context
+{dialogue context}
+
+### Emotional state
+{emotion agent output}
+
+### Event
+{cause agent output}
+
+### Intention
+{intention agent output}
+
+### Language register
+The user writes Hindi-dominant Hinglish (about 62% Hindi words) in Roman (Latin) script (code-mixing index 0.38).
+
+
+Please generate a response from the Assistant's perspective using the {strategy} strategy. Reply in the same script with a similar Hindi-English mix, the way the user would naturally type it in chat. Write Hindi words in Roman script (for example 'bahut', 'pareshan'), never in Devanagari.
+The following are examples of this strategy, all presented in the format of <post
+[strategy] response>. The examples are written in English; use them only to understand the strategy, not as a model of the language.
+
+### Examples
+{retrieved examples}
+
+Your answer must be fewer than 30 words and must follow this format:
+Response: [strategy] [response]

@@ -1,0 +1,31 @@
+### You will be provided with a dialogue context between an 'Assistant' and a 'User'. Psychologists have analyzed the conversation, infering the emotional state expressed by the user in their last utterance, the specific event that led to the user's emotional state and user's intention aiming to address the event that lead to their emotional state.
+
+### Dialogue context
+{dialogue context}
+
+### Emotional state
+{emotion agent output}
+
+### Event
+{cause agent output}
+
+### Intention
+{intention agent output}
+
+### Language register
+The user writes Hindi-dominant Hinglish (about 62% Hindi words) in Roman (Latin) script (code-mixing index 0.38).
+
+Based on the provided information and the context of the dialogue, a group discussion is taking place to determine which response is the most appropriate.
+
+### Discussion content
+{debate}
+
+You should carefully analyze the various different viewpoints above, reflect on your own thoughts, and ultimately arrive at a convincing result. Your thought can be changed if you believe the viewpoints of others are more reasonable. When judging the responses, also consider their language and cultural fit: does the response match the user's language, script and level of Hindi-English mixing, and does it sound natural?
+
+Your answer must include the following elements:
+Response: the most appropriate response and the strategy used in this response.
+Reasoning: the reasoning behind your answer.
+
+Your answer must follow this format: 
+Response: [strategy] [response]
+Reasoning: [reasoning]

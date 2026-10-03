@@ -1,0 +1,7 @@
+Translate the following reply of an emotional support Assistant from English into the user's language. The user writes Hindi-dominant Hinglish (about 62% Hindi words) in Roman (Latin) script (code-mixing index 0.38). Reply in the same script with a similar Hindi-English mix, the way the user would naturally type it in chat. Write Hindi words in Roman script (for example 'bahut', 'pareshan'), never in Devanagari. Keep the meaning, the support strategy and the warm tone, and keep it under 30 words.
+
+### Reply
+{English response}
+
+Your answer must follow this format:
+Response: [translated reply]
