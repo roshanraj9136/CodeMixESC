@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+cache/
+external/
+scratch/
+data/raw/
+models/*/checkpoint-*
+*.log
+data/esconv/ESConv.json
