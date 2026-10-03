@@ -20,7 +20,7 @@ next run; they are never written as records.
 | `post` | str | last utterance of the context (the retrieval query, as in the base code) |
 | `path` | str | `single` (early turn, or the decision maker said the dialogue is not complex), `fallback` (no valid strategy after deliberation, zero-shot answer), `multi` (full pipeline) |
 | `complex` | bool/null | decision maker's verdict; `null` for early turns (not asked) |
-| `R` | object/null | seeker register profile `{cmi, cmi_last, hi_frac, dominant, script}` (systems with a profiler) |
+| `R` | object/null | seeker register profile `{cmi, cmi_last, hi_frac, dominant, script, n_lang, n_hi_strong}` (systems with a profiler) |
 | `pred_strategy` | str | one of the 8 ESConv strategies, or `"None"` (single/fallback paths and zero-shot) |
 | `response` | str | **final response — the text that is evaluated** |
 | `pre_gate_response` | str | response before the Register Gate (= `response` for systems without a gate); `cmx_nogate` is evaluated on this field of the `codemixesc` run |
