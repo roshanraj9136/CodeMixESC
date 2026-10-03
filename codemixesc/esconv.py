@@ -25,12 +25,44 @@ def split(dataset):
     return dataset[:100], dataset[100:]
 
 
+def hien_dir():
+    """ESConv-HiEn directory; CODEMIX_HIEN_DIR overrides it (tests and dry runs)."""
+    return os.environ.get("CODEMIX_HIEN_DIR") or HIEN_DIR
+
+
 def load_version(version):
     """version: 'en', 'light' or 'heavy'. Returns the 100 test conversations."""
     if version == "en":
         return split(load_esconv())[0]
-    with open(os.path.join(HIEN_DIR, f"test_{version}.json"), encoding="utf-8") as f:
+    with open(os.path.join(hien_dir(), f"test_{version}.json"), encoding="utf-8") as f:
         return json.load(f)
+
+
+def dev_ids():
+    with open(os.path.join(hien_dir(), "dev_conv_ids.json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_dev(version):
+    """The development conversations ('en' = the English originals), each with its ESConv index."""
+    if version == "en":
+        data = load_esconv()
+        return [dict(data[i], esconv_index=i) for i in dev_ids()]
+    with open(os.path.join(hien_dir(), f"dev_{version}.json"), encoding="utf-8") as f:
+        return json.load(f)
+
+
+def dev_samples(version):
+    """Turn samples of the dev split; conv_id is the ESConv index, so dev uids never collide
+    with test uids (test conversations are 0-99, dev conversations are >= 100)."""
+    out = []
+    for conv in load_dev(version):
+        out.extend(turn_samples(conv, conv["esconv_index"]))
+    return out
+
+
+def seeker_utterances(sample):
+    return [m["content"] for m in sample["context_msgs"] if m["role"] == "user"]
 
 
 def json2natural(history):
