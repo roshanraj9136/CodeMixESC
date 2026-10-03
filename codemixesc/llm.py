@@ -1,4 +1,8 @@
-"""Thin, cached, rate-limited client for the Gemini API (hosted Gemma / Gemini models).
+"""Thin, cached, rate-limited LLM client.
+
+The default backend is the Gemini API (hosted open-weight Gemma models and Gemini
+Flash-Lite). Models written as "ollama:<name>", "groq:<name>" or "openai:<name>" go to an
+OpenAI-compatible endpoint instead (local Ollama, Groq, or any server set in OPENAI_BASE_URL).
 
 Every call is cached on disk (SQLite), so re-running an experiment or an ablation that
 shares a prefix of the pipeline costs nothing. Every real call is also logged to a JSONL
@@ -7,6 +11,7 @@ file so the number of LLM calls and the latency per turn can be reported.
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import threading
 import time
@@ -28,6 +33,17 @@ LIMITS = {
     "gemini-3.5-flash-lite": dict(rpm=14, tpm=240000, rpd=400),
     "gemini-3.1-flash-lite": dict(rpm=14, tpm=240000, rpd=400),
 }
+UNLIMITED = dict(rpm=100000, tpm=10 ** 9, rpd=10 ** 9)
+
+# OpenAI-compatible backends: prefix -> (base URL, environment variable holding the key)
+BACKENDS = {
+    "ollama": (os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"), None),
+    "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
+    "openai": (os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"), "OPENAI_API_KEY"),
+}
+# finish reasons after which an empty answer is worth one more try (blocked / no candidate)
+_RETRY_EMPTY = {"SAFETY", "OTHER", "NO_CANDIDATE", "RECITATION", "PROHIBITED_CONTENT", "BLOCKLIST",
+                "SPII", "MALFORMED_FUNCTION_CALL", "content_filter", None}
 
 SAFETY_OFF = [
     {"category": c, "threshold": "BLOCK_NONE"}
@@ -36,16 +52,24 @@ SAFETY_OFF = [
 ]
 
 
-def load_key():
-    key = os.environ.get("GEMINI_API_KEY")
+def load_key(name="GEMINI_API_KEY"):
+    key = os.environ.get(name)
     if key:
         return key
-    for path in (os.path.join(ROOT, ".env"),):
-        if os.path.exists(path):
-            for line in open(path, encoding="utf-8"):
-                if line.startswith("GEMINI_API_KEY="):
-                    return line.split("=", 1)[1].strip().strip("\"'")
-    raise RuntimeError("GEMINI_API_KEY not found (set it in the environment or in .env)")
+    path = os.path.join(ROOT, ".env")
+    if os.path.exists(path):
+        for line in open(path, encoding="utf-8"):
+            if line.startswith(name + "="):
+                return line.split("=", 1)[1].strip().strip("\"'")
+    raise RuntimeError(f"{name} not found (set it in the environment or in .env)")
+
+
+def split_model(model):
+    """'ollama:qwen2.5:7b' -> ('ollama', 'qwen2.5:7b'); a bare name -> ('gemini', name)."""
+    for prefix in BACKENDS:
+        if model.startswith(prefix + ":"):
+            return prefix, model[len(prefix) + 1:]
+    return "gemini", model
 
 
 class DailyQuotaExceeded(Exception):
@@ -88,6 +112,7 @@ class _Limiter:
         self.lock = threading.Lock()
 
     def acquire(self, est_tokens):
+        est_tokens = min(est_tokens, self.tpm)  # a prompt larger than the whole budget still has to go out
         while True:
             wait = 0.5
             with self.lock:
@@ -113,7 +138,7 @@ class _Limiter:
                         self.db.execute("COMMIT")
                         return
                     self.db.execute("COMMIT")
-                    if n >= self.rpm and first:
+                    if first:
                         wait = max(wait, 60 - (now - first) + 0.05)
                 except Exception:
                     self.db.execute("ROLLBACK")
@@ -143,18 +168,28 @@ def _seconds_until_pacific_midnight():
     return (nxt - pac).total_seconds()
 
 
+def _backoff(attempt):
+    return min(90, 5 * 2 ** min(attempt, 4))
+
+
 class LLM:
     def __init__(self, model="gemma-4-26b-a4b-it", thinking="minimal", wait_on_daily_quota=True):
         global _CACHE
         self.model = model
-        self.thinking = thinking
-        self.key = load_key()
+        self.backend, self.api_model = split_model(model)
+        self.thinking = thinking if self.backend == "gemini" else None
         self.wait_on_daily_quota = wait_on_daily_quota
+        if self.backend == "gemini":
+            self.key = load_key("GEMINI_API_KEY")
+        else:
+            self.base_url, key_env = BACKENDS[self.backend]
+            self.key = load_key(key_env) if key_env else "none"
         with _GLOBAL_LOCK:
             if _CACHE is None:
                 _CACHE = _Cache(CACHE_PATH)
             if model not in _LIMITERS:
-                lim = LIMITS.get(model, dict(rpm=10, tpm=100000, rpd=300))
+                default = UNLIMITED if self.backend == "ollama" else dict(rpm=10, tpm=100000, rpd=300)
+                lim = LIMITS.get(model, default)
                 _LIMITERS[model] = _Limiter(model, lim["rpm"], lim["tpm"], lim["rpd"])
         self.cache = _CACHE
         self.limiter = _LIMITERS[model]
@@ -179,41 +214,20 @@ class LLM:
 
     def _log(self, rec):
         with _LOG_LOCK:
+            os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
             with open(LOG_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
-    # ------------------------------------------------------------------ main API
-    def chat(self, messages, system=None, temperature=0.0, max_tokens=400, tag="", json_mode=False):
-        """messages: list of {"role": "user"|"assistant", "content": str}. Returns (text, meta)."""
-        k = self._key(system, messages, temperature, max_tokens if not json_mode else ("json", max_tokens))
-        hit = self.cache.get(k)
-        if hit is not None:
-            return hit["text"], {"cached": True, "latency": hit.get("latency", 0.0), "calls": 0}
-
-        contents = self._merge(messages)
-        if system:
-            # Gemma models on the Gemini API take no system instruction, so the system
-            # message is prepended to the first user turn (what chat templates do anyway).
-            contents[0]["parts"][0]["text"] = system + "\n\n" + contents[0]["parts"][0]["text"]
-        gen = {"temperature": temperature, "maxOutputTokens": max_tokens}
-        if self.thinking:
-            gen["thinkingConfig"] = {"thinkingLevel": self.thinking}
-        if json_mode:
-            gen["responseMimeType"] = "application/json"
-        body = {"contents": contents, "generationConfig": gen, "safetySettings": SAFETY_OFF}
-        est = int(sum(len(c["parts"][0]["text"]) for c in contents) / 3.0) + 50
-
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.key}"
+    def _post(self, url, body, headers, label, est):
+        """POST with retries (est = estimated input tokens for the limiter). Returns (JSON, latency)."""
         attempt = 0
         while True:
             self.limiter.acquire(est)
             t0 = time.time()
             try:
-                req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"),
-                                             headers={"Content-Type": "application/json"})
-                resp = json.load(urllib.request.urlopen(req, timeout=300))
-                latency = time.time() - t0
-                break
+                req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers=headers)
+                resp = json.load(urllib.request.urlopen(req, timeout=600))
+                return resp, time.time() - t0
             except urllib.error.HTTPError as e:
                 msg = e.read().decode("utf-8", "replace")
                 attempt += 1
@@ -226,19 +240,34 @@ class LLM:
                     attempt = 0
                     continue
                 if e.code in (429, 500, 502, 503, 504) and attempt < 12:
-                    time.sleep(min(90, 5 * 2 ** min(attempt, 4)))
+                    time.sleep(_backoff(attempt))
                     continue
                 if e.code == 400 and attempt < 3 and "INTERNAL" in msg:
                     time.sleep(5)
                     continue
-                raise RuntimeError(f"Gemini API error {e.code}: {msg[:500]}")
-            except Exception as e:  # network hiccups, timeouts
+                raise RuntimeError(f"{label} API error {e.code}: {msg[:500]}")
+            except Exception:  # network hiccups, timeouts
                 attempt += 1
                 if attempt < 12:
-                    time.sleep(min(90, 5 * 2 ** min(attempt, 4)))
+                    time.sleep(_backoff(attempt))
                     continue
                 raise
 
+    def _gemini(self, messages, system, temperature, max_tokens, json_mode):
+        contents = self._merge(messages)
+        if system:
+            # Gemma models on the Gemini API take no system instruction, so the system
+            # message is prepended to the first user turn (what chat templates do anyway).
+            contents[0]["parts"][0]["text"] = system + "\n\n" + contents[0]["parts"][0]["text"]
+        gen = {"temperature": temperature, "maxOutputTokens": max_tokens}
+        if self.thinking:
+            gen["thinkingConfig"] = {"thinkingLevel": self.thinking}
+        if json_mode:
+            gen["responseMimeType"] = "application/json"
+        body = {"contents": contents, "generationConfig": gen, "safetySettings": SAFETY_OFF}
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.api_model}:generateContent?key={self.key}"
+        est = int(sum(len(c["parts"][0]["text"]) for c in contents) / 3.0) + 50
+        resp, latency = self._post(url, body, {"Content-Type": "application/json"}, "Gemini", est)
         text = ""
         cands = resp.get("candidates") or []
         finish = cands[0].get("finishReason") if cands else "NO_CANDIDATE"
@@ -246,12 +275,52 @@ class LLM:
             parts = (cands[0].get("content") or {}).get("parts") or []
             text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
         usage = resp.get("usageMetadata", {})
-        rec = {"t": time.time(), "model": self.model, "tag": tag, "latency": round(latency, 3),
-               "in": usage.get("promptTokenCount"), "out": usage.get("candidatesTokenCount"),
-               "think": usage.get("thoughtsTokenCount"), "finish": finish}
-        self._log(rec)
-        self.cache.put(k, {"text": text, "latency": latency, "finish": finish})
-        return text, {"cached": False, "latency": latency, "calls": 1}
+        return text, finish, latency, {"in": usage.get("promptTokenCount"), "out": usage.get("candidatesTokenCount"),
+                                       "think": usage.get("thoughtsTokenCount")}
+
+    def _openai(self, messages, system, temperature, max_tokens, json_mode):
+        msgs = [{"role": "system", "content": system}] if system else []
+        for m in messages:  # same merging as for Gemini, so prompts are identical across backends
+            if msgs and msgs[-1]["role"] == m["role"]:
+                msgs[-1] = {"role": m["role"], "content": msgs[-1]["content"] + "\n\n" + m["content"]}
+            else:
+                msgs.append({"role": m["role"], "content": m["content"]})
+        body = {"model": self.api_model, "messages": msgs, "temperature": temperature, "max_tokens": max_tokens}
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {self.key}"}
+        est = int(sum(len(m["content"]) for m in msgs) / 3.0) + 50
+        resp, latency = self._post(self.base_url.rstrip("/") + "/chat/completions", body, headers, self.backend, est)
+        choice = (resp.get("choices") or [{}])[0]
+        text = (choice.get("message") or {}).get("content") or ""
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()  # reasoning models
+        usage = resp.get("usage", {})
+        return text, choice.get("finish_reason"), latency, {"in": usage.get("prompt_tokens"),
+                                                            "out": usage.get("completion_tokens"), "think": None}
+
+    # ------------------------------------------------------------------ main API
+    def chat(self, messages, system=None, temperature=0.0, max_tokens=400, tag="", json_mode=False):
+        """messages: list of {"role": "user"|"assistant", "content": str}. Returns (text, meta)."""
+        k = self._key(system, messages, temperature, max_tokens if not json_mode else ("json", max_tokens))
+        hit = self.cache.get(k)
+        if hit is not None:
+            return hit["text"], {"cached": True, "latency": hit.get("latency", 0.0), "calls": 0,
+                                 "in": hit.get("in"), "out": hit.get("out"), "finish": hit.get("finish")}
+        call = self._gemini if self.backend == "gemini" else self._openai
+        calls = 0
+        for attempt in range(3):
+            text, finish, latency, usage = call(messages, system, temperature, max_tokens, json_mode)
+            calls += 1
+            self._log({"t": time.time(), "model": self.model, "tag": tag, "latency": round(latency, 3),
+                       **usage, "finish": finish})
+            # a blocked or empty candidate is often transient; only a definitive answer is cached
+            if text.strip() or finish not in _RETRY_EMPTY:
+                break
+            time.sleep(2 * (attempt + 1))
+        self.cache.put(k, {"text": text, "latency": latency, "finish": finish, "in": usage.get("in"),
+                           "out": usage.get("out")})
+        return text, {"cached": False, "latency": latency, "calls": calls, "in": usage.get("in"),
+                      "out": usage.get("out"), "finish": finish}
 
     def __call__(self, prompt, system=None, **kw):
         return self.chat([{"role": "user", "content": prompt}], system=system, **kw)[0]
