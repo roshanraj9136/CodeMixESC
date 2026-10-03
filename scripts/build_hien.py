@@ -124,7 +124,8 @@ class Builder:
         b = self.labse.encode(hi, batch_size=64, normalize_embeddings=True, convert_to_numpy=True)
         return (a * b).sum(1).astype(float).tolist() if len(en) else []
 
-    def rewrite(self, conv, level):
+    def rewrite(self, conv, level, extra=""):
+        """extra: reviewer feedback appended to the prompt (quality_check.py); empty = original prompt."""
         dialog = conv["dialog"]
         items = []
         for i, t in enumerate(dialog):
@@ -137,7 +138,7 @@ class Builder:
                                        conv_json=json.dumps(items, ensure_ascii=False, indent=0))
         for attempt in range(4):
             suffix = "" if attempt == 0 else f"\n\n(Attempt {attempt + 1}: return exactly {len(items)} turns, ids 0..{len(items) - 1}.)"
-            out = self.llm(prompt + suffix, max_tokens=16000, json_mode=True, temperature=0.4, tag=f"hien-rewrite-{level}")
+            out = self.llm(prompt + extra + suffix, max_tokens=16000, json_mode=True, temperature=0.4, tag=f"hien-rewrite-{level}")
             try:
                 turns = parse_turns(out)
                 if sorted(turns) == list(range(len(items))) and all(turns.values()):
@@ -146,9 +147,9 @@ class Builder:
                 pass
         raise RuntimeError("rewrite failed")
 
-    def build_conv(self, conv, level, max_rounds=3):
+    def build_conv(self, conv, level, max_rounds=3, extra=""):
         en = [t["content"].strip() for t in conv["dialog"]]
-        hi = self.rewrite(conv, level)
+        hi = self.rewrite(conv, level, extra)
         regen = [0] * len(hi)
         for rnd in range(max_rounds + 1):
             stats = [self.prof.stats(h) for h in hi]
