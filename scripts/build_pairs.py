@@ -95,8 +95,9 @@ def _is_latin_letter(ch):
 
 def is_roman(text):
     """Roman script only: at least one letter, and every letter is Latin (no Devanagari, Urdu,
-    Gurmukhi, ...). Digits, punctuation and emoji are not letters and are allowed."""
-    letters = [ch for ch in (text or "") if ch.isalpha()]
+    Gurmukhi, ...). Digits, punctuation, emoji and modifier letters (e.g. U+02BC as an
+    apostrophe) are not checked."""
+    letters = [ch for ch in (text or "") if ch.isalpha() and unicodedata.category(ch) != "Lm"]
     return bool(letters) and all(_is_latin_letter(ch) for ch in letters)
 
 
@@ -277,6 +278,8 @@ def download_phinc(dest=None, record=PHINC_RECORD, timeout=60):
         links = f.get("links") or {}
         url = links.get("content") or links.get("download") or links.get("self") \
             or f"https://zenodo.org/records/{record}/files/{urllib.request.quote(key)}?download=1"
+        if re.search(r"/api/records/[^/]+/files/[^/]+$", url):  # the file's metadata, not its bytes
+            url += "/content"
         out = os.path.join(dest, os.path.basename(key))
         print(f"[phinc] downloading {key} ...", flush=True)
         try:
@@ -471,6 +474,7 @@ class Rewriter:
         self.workers, self.max_calls, self.profiler = workers, max_calls, profiler
         self.lock = threading.Lock()
         self.calls = {"real": 0, "cached": 0, "from_progress": 0, "errors": 0, "skipped_budget": 0}
+        self.in_flight = 0  # calls that may still turn out to be real ones (for --max_calls)
 
     def _ask(self, prompt, tag):
         """The answer to one prompt, or None when the call budget is used up or the call failed
@@ -482,18 +486,21 @@ class Rewriter:
                 self.calls["from_progress"] += 1
             return hit
         with self.lock:
-            if self.max_calls and self.calls["real"] >= self.max_calls:
+            if self.max_calls and self.calls["real"] + self.in_flight >= self.max_calls:
                 self.calls["skipped_budget"] += 1
                 return None
+            self.in_flight += 1
         try:
             text, meta = self.llm.chat([{"role": "user", "content": prompt}], temperature=self.temperature,
                                        max_tokens=self.max_tokens, json_mode=True, tag=tag)
         except Exception as e:  # noqa: BLE001 - the client already retried; leave the batch for a rerun
             print(f"[pairs] {tag}: LLM error {e.__class__.__name__}: {str(e)[:200]}", flush=True)
             with self.lock:
+                self.in_flight -= 1
                 self.calls["errors"] += 1
             return None
         with self.lock:
+            self.in_flight -= 1
             self.calls["cached" if meta.get("cached") else "real"] += 1
         self.progress.put(key, text, {"tag": tag, "t": round(time.time(), 1)})
         return text
@@ -628,8 +635,10 @@ def write_synthetic_phinc(path, data, n=400, seed=42):
         elif noise == 3:
             hi = f"{hi}   &quot;sach&quot;  www.example.com/{i}"
         rows.append((hi, en))
-    rows += [("ok", "ok"), ("haan yaar", "yes friend"), ("मैं ठीक हूँ और तुम", "I am fine and you"),
-             ("I am fine and you", "I am fine and you"), (rows[0][0], rows[0][1]), ("", "empty Hinglish side")]
+    rows += [("ok", "ok"), ("haan yaar", "yes friend"),                        # < 3 words
+             ("मैं ठीक हूँ और तुम", "I am fine and you"),                         # not Roman
+             ("I am fine and you", "I am fine and you"),                        # not code-mixed
+             (rows[0][0], rows[0][1]), ("", "empty Hinglish side")]              # duplicate, empty
     with open(path, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Sentence", "English_Translation"])
@@ -641,7 +650,7 @@ def write_synthetic_phinc(path, data, n=400, seed=42):
 def _val_size(n, total, name, max_share=0.2):
     """The requested validation size, capped at 20% of the source (only matters for tiny inputs)."""
     cap = int(max_share * total)
-    if n > cap:
+    if n > cap and total:
         print(f"[pairs] warning: {name} has only {total} pairs; validation holdout reduced from {n} to {cap}", flush=True)
         return cap
     return n
@@ -670,9 +679,13 @@ def holdout_conversations(pairs, n, seed):
 
 
 def _portable(path):
-    """Repo-relative path for the logs (no local user directories in published stats)."""
+    """Repo-relative path for the logs; the bare file name outside the repo (no user directories)."""
     path = os.path.abspath(path)
-    return os.path.relpath(path, ROOT).replace(os.sep, "/") if path.startswith(ROOT) else os.path.basename(path)
+    try:
+        rel = os.path.relpath(path, ROOT)  # case-insensitive on Windows
+    except ValueError:  # another drive
+        return os.path.basename(path)
+    return os.path.basename(path) if rel.startswith("..") else rel.replace(os.sep, "/")
 
 
 def write_jsonl(path, rows):
@@ -758,8 +771,10 @@ def main(argv=None):
                       workers=args.workers, max_calls=args.max_calls, profiler=profiler)
         rewrites, report = rw.run(sample, args.batch_size)
         if report["pending_batches"]:
-            print(f"[pairs] stopped after {report['calls']['real']} real LLM calls (--max_calls); "
-                  f"{report['pending_batches']} batches still to do. Re-run the same command to continue.", flush=True)
+            c = report["calls"]
+            print(f"[pairs] {report['pending_batches']} batches still to do ({c['real']} real calls made, "
+                  f"{c['skipped_budget']} skipped by --max_calls, {c['errors']} API errors). Nothing was written; "
+                  "re-run the same command to continue (finished batches are kept).", flush=True)
             return 3
         steps["valid rewrite (first attempt)"] = report["valid_first_attempt"]
         steps["valid rewrite (after one retry)"] = len(rewrites)
@@ -778,7 +793,8 @@ def main(argv=None):
     n_before = len(esconv)
     esconv = [p for p in esconv if text_key(p["hi"]) not in seen]
     stats["cross_source_duplicates_removed"] = n_before - len(esconv)
-    n_val_ph, n_val_es = _val_size(args.n_val_phinc, len(phinc), "PHINC"), _val_size(args.n_val_esconv, len(esconv), "ESConv")
+    n_val_ph = _val_size(args.n_val_phinc, len(phinc), "PHINC")
+    n_val_es = _val_size(args.n_val_esconv, len(esconv), "ESConv")
     stats["val_sizes_requested"] = {"phinc": args.n_val_phinc, "esconv": args.n_val_esconv}
     ph_train, ph_val = holdout_random(phinc, n_val_ph, args.seed)
     es_train, es_val, val_convs = holdout_conversations(esconv, n_val_es, args.seed) if esconv else ([], [], [])

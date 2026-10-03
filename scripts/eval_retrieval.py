@@ -15,9 +15,9 @@ run on, in every available version (en, light, heavy). For each encoder and vers
 95% CIs: cluster bootstrap over conversations; differences to RoBERTa are paired (same
 resamples). --split dev evaluates ESConv-HiEn dev with the dev conversations removed from the bank.
 
-Outputs: results/retrieval/retrieval_{split}.json, results/tables/retrieval_{split}.md and the
-booktabs tabulars (no float, ready for \\input): retrieval_{split}.tex (P@10 and Overlap@10),
-retrieval_{split}_full.tex (+ strategy JSD) and, for test, retrieval_test_s200.tex.
+Outputs: results/retrieval/retrieval_{split}.json, results/tables/retrieval_{split}.md and complete
+booktabs floats that a paper \\input's directly (label tab:<file stem>): retrieval_{split}.tex
+(P@10 and Overlap@10), retrieval_{split}_full.tex (+ strategy JSD) and retrieval_test_s200.tex.
 Usage: python scripts/eval_retrieval.py --split test [--encoders roberta,mpnet,mpnet-ft]
        python scripts/eval_retrieval.py --stub      (hashing encoder, no downloads; tests)
 """
@@ -25,6 +25,7 @@ import argparse
 import gc
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -54,6 +55,7 @@ SELF = [("overlap_self@10", v, 100, 1, True, "Overlap@10", "self") for v in ("li
 VSROB = [("overlap_roberta_en@10", v, 100, 1, True, "Overlap@10", "vs. RoBERTa-EN") for v in VERSIONS]
 JSD = [("jsd_strategy", v, 100, 2, False, "Strategy JSD", "") for v in ("light", "heavy")]
 MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF + VSROB, P10 + SELF + VSROB + JSD
+WIDE_TABLE = 100  # estimated width (characters + column gaps) above which a table spans both columns
 
 
 def make_retriever(name, bank, stub=False):
@@ -160,7 +162,10 @@ def _get(part, enc, version, sname, metric):
 
 
 def _significant(report, enc, metric, version, sname):
-    """The paired-bootstrap 95% CI of the difference to RoBERTa excludes 0."""
+    """The paired-bootstrap 95% CI of the difference to RoBERTa excludes 0 (not marked in the
+    reference column, where RoBERTa scores 100 by definition)."""
+    if metric == "overlap_roberta_en@10" and version == "en":
+        return False
     d = _get(report["delta_vs_roberta"], enc, version, sname, metric)
     return bool(d and d.get("value") is not None and (d["lo"] > 0 or d["hi"] < 0))
 
@@ -257,43 +262,74 @@ def markdown(report, encoders):
     return "\n".join(lines)
 
 
-def latex(report, encoders, sname, columns):
-    """A booktabs tabular (no float: the paper supplies table/caption/label) with a suggested
-    caption in a leading comment."""
+def _visible_len(tex):
+    """Rough printed length of a LaTeX snippet (a command or symbol counts as one character), as in
+    scripts/evaluate.py."""
+    return len(re.sub(r"[${}^]", "", re.sub(r"\\[A-Za-z]+", "x", tex)))
+
+
+def _tex_width(columns, header_rows, body):
+    """Estimated printed width in characters: widest cell per column plus a gap, widened where a
+    spanning group label needs more room than its columns provide."""
+    widths = [max(_visible_len(r[i]) for r in body) + 2 for i in range(len(columns) + 1)]
+    extra = 0
+    for labels in header_rows:
+        col = 1
+        for label, span in _runs(labels):
+            if label:
+                extra += max(0, _visible_len(label) + 2 - sum(widths[col:col + span]))
+            col += span
+    return sum(widths) + extra
+
+
+def latex(report, encoders, sname, columns, name):
+    """A complete booktabs float in the project's convention (see scripts/evaluate.py): table, or
+    table* when the estimated width would shrink it below ~80% of a column."""
     split, n = report["split"], report["subsets"][sname]
     turns = max(n.values()) if n else 0
     arrow = {"Strategy JSD": " $\\downarrow$"}
+    labels = {level: [(c[level].replace("vs. ", "vs.\\ ") + (arrow.get(c[level], " $\\uparrow$") if level == 5 else ""))
+                      if c[level] else "" for c in columns] for level in (5, 6)}
     header = []
     for level in (5, 6):
         cells, rules, col = [], [], 2
-        for label, c in _runs([cl[level] for cl in columns]):
-            text = label.replace("vs. ", "vs.\\ ") + (arrow.get(label, " $\\uparrow$") if level == 5 else "")
-            cells.append(f"\\multicolumn{{{c}}}{{c}}{{{text}}}" if label else " & ".join([""] * c))
+        for label, c in _runs(labels[level]):
+            cells.append(f"\\multicolumn{{{c}}}{{c}}{{{label}}}" if label else " & ".join([""] * c))
             if label:
                 rules.append(f"\\cmidrule(lr){{{col}-{col + c - 1}}}")
             col += c
-        if level == 5 or rules:
+        if rules:
             header += [" & " + " & ".join(cells) + " \\\\", "".join(rules)]
-    header.append("Encoder & " + " & ".join(VNAME[c[1]] for c in columns) + " \\\\")
-    body = [" & ".join(r) + " \\\\" for r in _rows(report, encoders, sname, columns, True)]
+    bottom = ["Encoder"] + [VNAME[c[1]] for c in columns]
+    header.append(" & ".join(bottom) + " \\\\")
+    rows = _rows(report, encoders, sname, columns, True)
+    body = [" & ".join(r) + " \\\\" for r in rows]
     body.insert(len(body) - 1, "\\midrule")
+    width = _tex_width(columns, [labels[5], labels[6]], [bottom] + rows)
+    env = "table*" if width > WIDE_TABLE else "table"
     what = {"all": f"all {split} turns", "s200": "the 200-turn subset of the multi-agent systems"}.get(sname, sname)
     hw_pct = _max_half_width(report, encoders, sname, columns, False)
     hw_jsd = _max_half_width(report, encoders, sname, columns, True)
-    caption = (f"Retrieval robustness on ESConv-HiEn ({what}, {turns} queries per version, k={report['k']}). "
-               "P@10: problem-type precision of the retrieved cases (%). Overlap@10 self: share of the top-10 cases "
-               "of the English original that the same encoder also retrieves for the Hinglish post; vs. RoBERTa-EN: "
-               "share of the cases the base paper's retriever finds for the English original."
-               + (" Strategy JSD (x10^-2): Jensen-Shannon divergence (base 2) between the strategy distributions of "
-                  "the cases retrieved for the Hinglish and the English posts." if hw_jsd is not None else "")
-               + (f" 95% cluster-bootstrap half-widths <= {hw_pct:.1f} points" if hw_pct is not None else "")
-               + (f" ({hw_jsd:.2f} for JSD)" if hw_jsd is not None else "") + ". Bold: best encoder; dagger: "
-               "differs from RoBERTa-L (paired bootstrap, 95%). " + LEGEND + ".")
+    caption = (f"Retrieval robustness on ESConv-HiEn ({what}; {turns} queries per version; $k={report['k']}$; case "
+               f"bank of {report['bank_size']:,} posts" + (", dev conversations excluded" if split == "dev" else "")
+               + "). P@10: problem-type precision of the retrieved cases. Overlap@10 self: share of the top-10 cases "
+               "of the English original that the same encoder also retrieves for the Hinglish post; vs.\\ "
+               "RoBERTa-EN: share of the cases the base paper's retriever finds for the English original."
+               + (" Strategy JSD ($\\times 10^{-2}$): Jensen--Shannon divergence (base 2) between the strategy "
+                  "distributions of the cases retrieved for the Hinglish and the English posts."
+                  if any(c[0] == "jsd_strategy" for c in columns) else "")
+               + " Values in \\% are means over the queries"
+               + (f"; the 95\\% cluster-bootstrap intervals (conversations resampled) have half-widths of at most "
+                  f"{hw_pct:.1f} points" if hw_pct is not None else "")
+               + (f" ({hw_jsd:.2f} for JSD)" if hw_jsd is not None else "")
+               + ". Bold: best encoder per column; $^\\dagger$: differs from RoBERTa-L (paired bootstrap, 95\\%). "
+               + LEGEND + ".")
     return "\n".join([
-        f"% generated by scripts/eval_retrieval.py ({report['created']}); needs \\usepackage{{booktabs}}",
-        f"% suggested caption: {caption}",
+        "% Generated by scripts/eval_retrieval.py -- do not edit by hand. Needs \\usepackage{booktabs,graphicx}.",
+        f"\\begin{{{env}}}[t]", "\\centering", f"\\caption{{{caption}}}", f"\\label{{tab:{name}}}",
+        "\\resizebox{\\ifdim\\width>\\linewidth\\linewidth\\else\\width\\fi}{!}{%",
         "\\begin{tabular}{l" + "c" * len(columns) + "}", "\\toprule", *header, "\\midrule", *body,
-        "\\bottomrule", "\\end{tabular}", ""])
+        "\\bottomrule", "\\end{tabular}}", f"\\end{{{env}}}", ""])
 
 
 # ============================================================================ main
@@ -381,10 +417,11 @@ def main(argv=None):
     write_text(out_json, json.dumps(report, indent=1))
     tables = os.path.join(results_dir, "tables")
     write_text(os.path.join(tables, f"retrieval_{args.split}.md"), markdown(report, used))
-    write_text(os.path.join(tables, f"retrieval_{args.split}.tex"), latex(report, used, "all", MAIN_COLUMNS))
-    write_text(os.path.join(tables, f"retrieval_{args.split}_full.tex"), latex(report, used, "all", FULL_COLUMNS))
-    if "s200" in subsets:
-        write_text(os.path.join(tables, f"retrieval_{args.split}_s200.tex"), latex(report, used, "s200", MAIN_COLUMNS))
+    for stem, sname, columns in ((f"retrieval_{args.split}", "all", MAIN_COLUMNS),
+                                 (f"retrieval_{args.split}_full", "all", FULL_COLUMNS),
+                                 (f"retrieval_{args.split}_s200", "s200", MAIN_COLUMNS)):
+        if sname in subsets:
+            write_text(os.path.join(tables, f"{stem}.tex"), latex(report, used, sname, columns, stem))
     print(markdown(report, used))
     print(f"[retrieval] wrote {out_json} and tables in {tables}", flush=True)
     return 0
