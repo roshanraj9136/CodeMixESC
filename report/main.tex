@@ -249,11 +249,14 @@ Distinct-1/2 \cite{li2016diversity}, BLEU-1/2/3 \cite{papineni2002bleu}, unigram
 \cite{lin2004rouge}, chrF \cite{popovic2015chrf} and multilingual BERTScore
 \cite{zhang2020bertscore}. Register: mean CMI gap $|\cmi_r-\cmi_s|$ and script consistency.
 Strategy stability: Jensen--Shannon divergence \cite{lin1991divergence} between the strategy
-distributions on the English and Hinglish versions of the same turns. Pairwise LLM judgement
-(win/tie/lose, both presentation orders) on Fluency, Identification, Comforting, Suggestion,
-Overall and Language Naturalness, complemented by bilingual volunteers where available.
-Efficiency: LLM calls and latency per turn. Differences are tested with paired bootstrap
-resampling.
+distributions on the English and Hinglish versions of the same turns, with a permutation test
+that swaps each turn's English and Hinglish labels (the plug-in divergence is biased upwards on
+finite samples). Pairwise LLM judgement (win/tie/lose, both presentation orders, a win only if
+both orders agree) on Fluency, Identification, Comforting, Suggestion, Overall and Language
+Naturalness, complemented by bilingual volunteers on a blind sheet where available.
+Efficiency: LLM calls and latency per turn. All systems of a table are compared on the same
+turns, those every system answered; differences are tested with a paired bootstrap that
+resamples whole conversations, since turns of one conversation are not independent.
 
 \section{Results}\label{sec:results}
 \subsection{Retrieval robustness}
