@@ -11,6 +11,7 @@
     (cmx_nogate is codemixesc's pre-gate response; it needs no run of its own)
 """
 import random
+import re
 
 from . import agents as A
 from . import prompts as P
@@ -117,7 +118,8 @@ class System:
                                       context=sample["context"])
         raw = log.ask(prompt, max_tokens=A.ANALYSIS_MAX_TOKENS, tag="fewshot")
         strategy = A.parse_strategies(raw)
-        resp = A.clean_response(A.parse_single(raw))
+        # a rambling or cut-off chain of thought without a Response line has no answer
+        resp = A.clean_response(A.parse_single(raw)) if re.search(r"Response\s*:", A.plain(raw)) else "None"
         return {"path": "single", "complex": None, "pred_strategy": strategy[0] if strategy else "None", "raw": raw,
                 "pre_gate_response": resp, "response": resp, "gate": None}
 

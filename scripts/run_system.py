@@ -70,14 +70,33 @@ def build_components(spec, model, dry_run, exclude_conv=()):
 
 
 def load_done(path):
+    """Records already written, newest per uid. A line cut off by a crash is skipped (the turn
+    is simply run again)."""
     done = {}
     if os.path.exists(path):
         for line in open(path, encoding="utf-8"):
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 rec = json.loads(line)
-                done[rec["uid"]] = rec
+            except json.JSONDecodeError:
+                continue
+            done[rec["uid"]] = rec
     return done
+
+
+def write_sorted(path, done):
+    """Rewrites the records in turn order, atomically (resumed and parallel runs append out of
+    order; a crash during the rewrite must not lose the file)."""
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        for uid in sorted(done, key=uid_key):
+            f.write(json.dumps(done[uid], ensure_ascii=False) + "\n")
+    os.replace(tmp, path)
+
+
+CONFIG_KEYS = ("base_system", "spec", "model", "delta", "split", "version")
 
 
 def uid_key(uid):
@@ -122,6 +141,8 @@ def main():
     tuned_delta, tuned_metric = default_gate()
     if spec.get("gate") and not args.gate_metric and tuned_metric != "hi_frac":
         spec["gate_metric"] = tuned_metric  # use the distance delta was tuned for
+    if args.delta is not None and args.delta != tuned_delta and not args.name:
+        sys.exit("a delta other than the tuned one makes a different system: give it a --name")
     if spec["kind"] == "pivot" and args.version == "en":
         sys.exit("the translate-pivot baseline is defined for the Hinglish versions only")
 
@@ -134,6 +155,7 @@ def main():
     os.makedirs(os.path.join(out_dir, name), exist_ok=True)
     out_path = os.path.join(out_dir, name, f"{tag}.jsonl")
     err_path = os.path.join(out_dir, name, f"{tag}.errors.jsonl")
+    meta_path = os.path.join(out_dir, name, f"{tag}.meta.json")
 
     if args.split == "dev":
         samples, exclude = dev_samples(args.version), set(dev_ids())  # a dev query must not retrieve its own conversation
@@ -145,31 +167,43 @@ def main():
             samples = [s for s in samples if s["uid"] in keep]
     if args.limit:
         samples = samples[:args.limit]
-    done = load_done(out_path)
-    todo = [s for s in samples if s["uid"] not in done]
     delta = args.delta if args.delta is not None else tuned_delta
-    print(f"[run] {name} on {tag}: {len(samples)} turns, {len(done)} done, {len(todo)} to go "
-          f"(model {'fake' if args.dry_run else args.model}, encoder {spec.get('encoder')}, "
-          f"register {spec.get('register', False)}, gate {spec.get('gate', False)}, delta {delta}, "
-          f"gate metric {spec.get('gate_metric', 'hi_frac')})", flush=True)
+    meta = {"system": name, "base_system": args.system, "spec": spec, "version": args.version, "split": args.split,
+            "model": "fake" if args.dry_run else args.model, "delta": delta if spec.get("gate") else None,
+            "n_turns": len(samples), "limit": args.limit or None, "git_commit": git_commit(),
+            "started": datetime.now(timezone.utc).isoformat()}
+
+    done = load_done(out_path)
+    if done and os.path.exists(meta_path):  # resuming: the earlier records must come from the same system
+        prev = json.load(open(meta_path, encoding="utf-8"))
+        diff = [k for k in CONFIG_KEYS if k in prev and prev[k] != meta[k]]
+        if diff:
+            sys.exit(f"{out_path} holds records of a different configuration ({', '.join(diff)} changed); "
+                     "use --name for the new variant, or delete the old run")
+    write_sorted(out_path, done)  # also drops a line cut off by a crash before appending
+    # turns whose LLM calls failed (empty or blocked answers are never cached) are run again
+    todo = [s for s in samples if s["uid"] not in done or done[s["uid"]].get("n_failed_calls")]
+    retry = sum(1 for s in samples if s["uid"] in done and done[s["uid"]].get("n_failed_calls"))
+    print(f"[run] {name} on {tag}: {len(samples)} turns, {len(done)} done ({retry} with failed calls, retried), "
+          f"{len(todo)} to go (model {meta['model']}, encoder {spec.get('encoder')}, register "
+          f"{spec.get('register', False)}, gate {spec.get('gate', False)}, delta {meta['delta']}, "
+          f"gate metric {spec.get('gate_metric', 'hi_frac') if spec.get('gate') else None})", flush=True)
 
     llm, retriever, profiler = build_components(spec, args.model, args.dry_run, exclude)
     system = System(args.system, llm, retriever=retriever, profiler=profiler, delta=delta, **spec)
-
-    meta = {"system": name, "base_system": args.system, "spec": spec, "version": args.version, "split": args.split,
-            "model": "fake" if args.dry_run else args.model, "delta": delta, "n_turns": len(samples),
-            "git_commit": git_commit(), "started": datetime.now(timezone.utc).isoformat()}
     lock = threading.Lock()
-    t0, n_ok, n_err, calls = time.time(), 0, 0, 0
-    with open(out_path, "a", encoding="utf-8") as out:
-        def job(sample):
-            try:
-                return sample, system.respond(sample, args.version), None
-            except Exception as e:  # keep going; the turn is retried on the next run
-                return sample, None, e
+    t0, n_ok, n_err, calls, interrupted = time.time(), 0, 0, 0, False
 
-        with cf.ThreadPoolExecutor(max(1, args.workers)) as ex:
-            futures = [ex.submit(job, s) for s in todo]
+    def job(sample):
+        try:
+            return sample, system.respond(sample, args.version), None
+        except Exception as e:  # keep going; the turn is retried on the next run
+            return sample, None, e
+
+    ex = cf.ThreadPoolExecutor(max(1, args.workers))
+    futures = [ex.submit(job, s) for s in todo]
+    with open(out_path, "a", encoding="utf-8") as out:
+        try:
             for fut in cf.as_completed(futures):
                 sample, rec, e = fut.result()
                 if e is not None:
@@ -190,19 +224,25 @@ def main():
                         eta = el / n_ok * (len(todo) - n_ok - n_err)
                         print(f"[run] {n_ok}/{len(todo)} done, {n_err} failed, {calls / n_ok:.1f} calls/turn, "
                               f"{el / 60:.1f} min elapsed, ETA {eta / 60:.1f} min", flush=True)
+        except KeyboardInterrupt:  # stop queued turns from making API calls; keep what is done
+            interrupted = True
+            print("[run] interrupted: cancelling the remaining turns", flush=True)
+            ex.shutdown(wait=False, cancel_futures=True)
+    if not interrupted:
+        ex.shutdown(wait=True)
 
-    # rewrite in turn order (resumed and parallel runs append out of order)
     done = load_done(out_path)
-    with open(out_path, "w", encoding="utf-8") as out:
-        for uid in sorted(done, key=uid_key):
-            out.write(json.dumps(done[uid], ensure_ascii=False) + "\n")
-    missing = len(samples) - len([s for s in samples if s["uid"] in done])
+    write_sorted(out_path, done)
+    missing = sum(1 for s in samples if s["uid"] not in done)
+    failed_calls = sum(1 for s in samples if s["uid"] in done and done[s["uid"]].get("n_failed_calls"))
     meta.update(finished=datetime.now(timezone.utc).isoformat(), n_done=len(done), n_missing=missing,
-                errors_this_run=n_err)
-    json.dump(meta, open(os.path.join(out_dir, name, f"{tag}.meta.json"), "w", encoding="utf-8"), indent=1)
-    print(f"[run] wrote {out_path}: {len(done)} records, {missing} missing", flush=True)
-    if missing:
-        sys.exit(1)
+                n_with_failed_calls=failed_calls, errors_this_run=n_err, interrupted=interrupted)
+    json.dump(meta, open(meta_path, "w", encoding="utf-8"), indent=1)
+    print(f"[run] wrote {out_path}: {len(done)} records, {missing} missing, {failed_calls} with failed LLM calls "
+          f"(re-run to retry them)", flush=True)
+    if interrupted:
+        os._exit(130)  # do not wait for the API calls still in flight
+    sys.exit(1 if missing else (2 if failed_calls else 0))
 
 
 if __name__ == "__main__":

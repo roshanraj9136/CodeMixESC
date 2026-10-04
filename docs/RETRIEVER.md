@@ -155,12 +155,18 @@ RoBERTa use paired resamples. In the tables, † means the CI of the difference 
 conversations. The bank embeddings always come from the full-bank cache file, the same one the
 pipeline uses, and are subset by row.
 
-**Tables.** All are booktabs `tabular`s with no float, so they can go straight into a paper's
-table environment; the suggested caption is the second comment line.
-- `retrieval_test.tex`: P@10 and Overlap@10 (8 columns, fits `\resizebox{\columnwidth}`).
-- `retrieval_test_full.tex`: adds strategy JSD (10 columns, for a `table*`).
-- `retrieval_test_s200.tex`: the 200-turn subset.
+**Tables.** These are complete floats in the project convention, ready for `\input`. Each has a
+caption with the query count, k and the largest CI half-width, and the label `tab:<file stem>`.
+They need `booktabs` and `graphicx`. The `--split dev` run writes the same files named
+`retrieval_dev*`.
+- `retrieval_test.tex`: P@10 and Overlap@10 (self), the two SPEC metrics. It is a one-column
+  `table`.
+- `retrieval_test_full.tex`: adds Overlap@10 vs RoBERTa-EN and strategy JSD. It is a `table*`.
+- `retrieval_test_s200.tex`: the 200-turn subset, in the same layout as the main table.
 - The `.md` file has every number with its CI, plus the paired differences.
+
+A table becomes `table*` when its estimated width (calibrated in IEEEtran at about 4.5pt per
+character) would shrink it below 80% of a column.
 
 ## 4. Commands (Windows, from the repository root)
 The first run downloads the encoders from the Hugging Face Hub. `CODEMIX_DEVICE=cpu|cuda` selects

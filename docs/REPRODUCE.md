@@ -62,7 +62,14 @@ larger batches; on a Kaggle/Colab T4 full fine-tuning fits).
 .venv\Scripts\python.exe -X utf8 scripts\tune_delta.py           # results/tuning/delta.json (used by all later runs)
 ```
 
-## 6. Pilot (10 minutes, before the long runs)
+## 6. Calibration check and pilot (before the long runs)
+`dataset_stats.py` (step 2) reports, per version, the share of turns whose seeker is treated as
+writing plain English and HingBERT-LID's false-Hindi rate on the English originals. Expect
+close to 100% plain English on `en` and a small share on Light/Heavy (only the first, short
+turns). If many Light turns are treated as English, or English seekers as code-mixing, adjust
+`MIN_STRONG_FRAC` / `AMBIGUOUS` in `codemixesc/profiler.py` before running the systems.
+
+Pilot (10 minutes):
 ```powershell
 .venv\Scripts\python.exe -X utf8 scripts\run_system.py --system codemixesc --version heavy --limit 10 --out_dir scratch\pilot
 .venv\Scripts\python.exe scripts\llm_usage.py --since 1

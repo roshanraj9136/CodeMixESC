@@ -32,7 +32,10 @@ def finished(out_dir, system, version):
     if not os.path.exists(path):
         return False
     meta = json.load(open(path, encoding="utf-8"))
-    return meta.get("n_missing") == 0 and meta.get("n_done", 0) >= meta.get("n_turns", 1)
+    # a --limit smoke run, an interrupted run, or one with failed LLM calls is not finished
+    return (meta.get("n_missing") == 0 and meta.get("n_done", 0) >= meta.get("n_turns", 1)
+            and not meta.get("limit") and meta.get("split", "test") == "test"
+            and not meta.get("n_with_failed_calls") and not meta.get("interrupted"))
 
 
 def main():

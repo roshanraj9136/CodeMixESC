@@ -59,14 +59,18 @@ class Retriever:
 
     def _bank_embeddings(self):
         os.makedirs(EMB_DIR, exist_ok=True)
-        sig = hashlib.md5("\n".join(b["post"] for b in self.bank).encode("utf-8")).hexdigest()[:10]
+        # the file name identifies both the bank (its posts) and the model (name + weight files),
+        # so e.g. the dev bank (dev conversations excluded) never reuses the test bank's file
+        bank_sig = hashlib.md5("\n".join(b["post"] for b in self.bank).encode("utf-8")).hexdigest()[:10]
         tag = self.name if self.name in ENCODERS else hashlib.md5(self.name.encode()).hexdigest()[:8]
-        sig = model_signature(ENCODERS.get(self.name, self.name))
-        if sig:  # a re-trained or re-saved local model must not reuse stale embeddings
-            tag += f"-{sig}"
-        path = os.path.join(EMB_DIR, f"{tag}-{sig}.npy")
+        model_sig = model_signature(ENCODERS.get(self.name, self.name))
+        if model_sig:  # a re-trained or re-saved local model must not reuse stale embeddings
+            tag += f"-{model_sig}"
+        path = os.path.join(EMB_DIR, f"{tag}-{bank_sig}.npy")
         if os.path.exists(path):
-            return np.load(path)
+            emb = np.load(path)
+            if emb.shape[0] == len(self.bank):
+                return emb
         emb = self.encode([b["post"] for b in self.bank], batch_size=128)
         tmp = path + f".{os.getpid()}.tmp.npy"
         np.save(tmp, emb)

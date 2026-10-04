@@ -20,3 +20,5 @@ report/*.log
 report/*.out
 report/*.synctex.gz
 report/main.pdf
+# derived from ESConv / PHINC text (academic-use data, not redistributed); stats.json is fine
+data/pairs/*.jsonl

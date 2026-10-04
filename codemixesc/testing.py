@@ -123,9 +123,14 @@ class FakeLLM:
     the format the step asks for (sometimes with markdown, as real models do), choosing among
     the options found in the prompt, so all control-flow branches get exercised."""
 
-    def __init__(self, model="fake"):
+    def __init__(self, model="fake", fail_tags=None):
+        import os
         self.model = model
         self.n_calls = 0
+        # steps whose calls fail like a blocked/empty answer (tests of the retry logic); also
+        # settable for a subprocess through CODEMIX_FAKE_FAIL="decide,single"
+        env = os.environ.get("CODEMIX_FAKE_FAIL", "")
+        self.fail_tags = set(fail_tags if fail_tags is not None else [t for t in env.split(",") if t])
 
     def __call__(self, prompt, system=None, **kw):
         return self.chat([{"role": "user", "content": prompt}], system=system, **kw)[0]
@@ -135,6 +140,8 @@ class FakeLLM:
         prompt = messages[0]["content"]
         h = int(hashlib.md5((str(system) + json.dumps(messages)).encode("utf-8")).hexdigest(), 16)
         kind = re.sub(r"\d+$", "", tag)
+        if kind in self.fail_tags:
+            return "", {"cached": False, "latency": 0.01, "calls": 3, "failed": True, "finish": "SAFETY"}
         agent = int(re.search(r"(\d+)$", tag).group(1)) if re.search(r"\d+$", tag) else 0
         mixed = "Hindi-English mix" in prompt and "plain English" not in prompt
         say = self._hinglish if mixed else self._english

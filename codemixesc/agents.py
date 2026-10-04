@@ -84,7 +84,8 @@ def strip_think(text):
 def plain(text):
     """Removes reasoning blocks and markdown decoration before regex parsing."""
     text = strip_think(text)
-    text = text.replace("**", "").replace("__", "")
+    text = text.replace("**", "").replace("__", "").replace("`", "")
+    text = re.sub(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])", r"\1", text)  # *emphasis*
     text = re.sub(r"^[ \t]*#+[ \t]*", "", text, flags=re.M)
     return text.strip()
 
@@ -104,7 +105,7 @@ def parse_strategies(text):
     """Strategies named on 'Strategy:' lines, canonical, in first-mention order
     (base: clean_strategy(re.findall(r'Strategy:\\s*\\[?([a-zA-Z ]+)\\]?', ...)))."""
     found = []
-    for m in re.finditer(r"Strategy\s*:\s*\[?\s*(" + _STRAT + ")", plain(text)):
+    for m in re.finditer(r"Strategy\s*:\s*[\[(\"'“]?\s*(" + _STRAT + ")", plain(text)):
         c = canonical_strategy(m.group(1))
         if c and c not in found:
             found.append(c)
@@ -181,18 +182,34 @@ _PLACEHOLDERS = {"", "none", "response", "[response]", "[strategy] [response]", 
                  "[rewritten response]", "translated reply", "[translated reply]"}
 
 
+# "original response", "[Original/refined response]", "The original response is appropriate ..."
+_META_RE = re.compile(r"^\W*(the\s+)?(original|origianl|refined)(\s*(/|or)\s*(original|origianl|refined))?\s+"
+                      r"(response|version)\b", re.I)
+
+
 def usable(response):
-    """False for empty answers and for echoes of the answer template."""
-    return bool(response) and response.strip().lower() not in _PLACEHOLDERS
+    """False for empty answers and for echoes of the answer template or of the instructions."""
+    t = (response or "").strip()
+    return bool(t) and t.lower() not in _PLACEHOLDERS and not _META_RE.match(t)
+
+
+_TRAILING_NOTE = re.compile(r"\s*[(\[](?:translation|translated|english|in english|meaning|\d+\s+words?)\b"
+                            r"[^)\]]*[)\]]\s*$", re.I)
 
 
 def clean_response(text):
-    """Final clean-up applied to the output of every system alike."""
+    """Final clean-up applied to the output of every system alike: labels, a leading strategy
+    tag, wrapping quotes/brackets and a trailing '(Translation: ...)' / '(25 words)' note.
+    Idempotent (repeated until nothing changes)."""
     t = re.sub(r"\s+", " ", (text or "")).strip()
-    t = re.sub(r"^(Assistant|Response)\s*:\s*", "", t, flags=re.I)
-    t = _split_tag(t)[1]
-    t = _unwrap(t)
-    return t or "None"
+    while True:
+        prev = t
+        t = re.sub(r"^(Assistant|Response)\s*:\s*", "", t, flags=re.I)
+        t = _split_tag(t)[1]
+        t = _TRAILING_NOTE.sub("", t)
+        t = _unwrap(t)
+        if t == prev:
+            return t or "None"
 
 
 def _overlap(a, b):
@@ -344,13 +361,14 @@ def register_gate(log, profiler, context, R, strategy, response, delta, metric="
     before = profiler.register_of(response)
     dist = register_distance(R, before, metric)
     bad_script = script_mismatch(R, before)
+    unusable = not usable(response)
     info = {"triggered": False, "accepted": False, "delta": delta, "metric": metric, "cmi_s": R["cmi"],
             "cmi_target": target_cmi(R), "hi_frac_target": target_hi_frac(R), "cmi_before": before["cmi"],
             "hi_frac_before": before["hi_frac"], "script_before": before["script"], "distance_before": dist,
             "cmi_after": before["cmi"], "hi_frac_after": before["hi_frac"], "script_after": before["script"],
             "distance_after": dist, "calls": 0, "latency": 0.0}
-    if dist <= delta and not bad_script:
-        return response, info
+    if (dist <= delta and not bad_script) or unusable:  # a failed answer stays failed: the gate
+        return response, info                             # must not answer turns the pipeline could not
     strategy = strategy if strategy in P.STRATEGIES else None
     raw = log.ask(P.gate_prompt(context, R, response, strategy, P.describe_mismatch(R, before)),
                   max_tokens=GEN_MAX_TOKENS, tag="gate")

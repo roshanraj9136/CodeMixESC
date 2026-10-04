@@ -41,7 +41,7 @@ here so that the comparison stays controlled: **every deviation applies to all s
 | 8 | Vote fails entirely → judge over `["None"]` | judge over all candidates | the base judge then has nothing to choose from |
 | 9 | Judge / refiner unparseable → final response `"None"` | first tied candidate / unrefined response | keeps a real response instead of the string `"None"` |
 | 10 | A vote with a non-standard tag counts as its own strategy | mapped to the candidate it names (strategy, else ≥50% word overlap) | votes for the same candidate must be counted together |
-| 11 | AutoGen passes the speaker in a `name` field | earlier replies are prefixed `agent_j: ` | our backends have no `name` field; otherwise the agents cannot tell who said what |
+| 11 | AutoGen passes the speaker in a `name` field; the base setup (LiteLLM → Ollama) most likely dropped it, so each earlier reply reached the agent as a separate, unlabelled user turn | earlier replies are prefixed `agent_j: ` | our client merges consecutive user turns into one message (the Gemini API wants alternating roles), so the prefix keeps the turn boundaries that separate messages gave the base agents; it applies to every system |
 | 12 | Retrieved posts/responses with line breaks show a literal `\n` (the case-bank file is written with `.replace("\n", "\\n")`) | identical: `Retriever.pairs()` applies the same escape for display; embeddings use the raw text, as in the base | fidelity of the deliberation and generation prompts |
 | 13 | Final text used as produced | `clean_response`: strips a leading `[strategy]` tag, `Assistant:`/`Response:` labels and one pair of wrapping quotes/brackets | the evaluation must compare responses, not formatting |
 

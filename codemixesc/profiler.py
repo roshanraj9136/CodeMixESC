@@ -227,6 +227,15 @@ def target_hi_frac(R):
     return 0.0 if is_plain_english(R) else R["hi_frac"]
 
 
+def hindi_share(R, reg):
+    """Hindi share of a text's register `reg` as the gate counts it. For a seeker treated as writing
+    English the target is 0 and, as in is_plain_english, English homographs tagged Hindi are not
+    counted ("Do you want to talk to me?" is not 36% Hindi)."""
+    if is_plain_english(R) and reg.get("n_lang") and "n_hi_strong" in reg:
+        return reg["n_hi_strong"] / reg["n_lang"]
+    return reg["hi_frac"]
+
+
 def register_distance(R, reg, metric="hi_frac"):
     """Distance of a text's register `reg` from the seeker's target register.
 
@@ -235,9 +244,10 @@ def register_distance(R, reg, metric="hi_frac"):
     to an English seeker has a CMI gap of only 0.18. metric="hi_frac" uses |h_r - h_s|, which
     equals the CMI gap whenever both texts lean towards the same language and is larger exactly
     when the dominant language flips, i.e. it adds the dominant-language part of R to the check."""
+    h = hindi_share(R, reg)
     if metric == "cmi":
-        return abs(reg["cmi"] - target_cmi(R))
-    return abs(reg["hi_frac"] - target_hi_frac(R))
+        return min(h, 1.0 - h) if is_plain_english(R) else abs(reg["cmi"] - R["cmi"])
+    return abs(h - target_hi_frac(R))
 
 
 def describe_register(R):

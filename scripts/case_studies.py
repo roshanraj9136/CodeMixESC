@@ -17,7 +17,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, all_samples, json2natural, seeker_utterances  # noqa: E402
+from codemixesc.esconv import ROOT, STRATEGIES, all_samples, json2natural, seeker_utterances  # noqa: E402
 
 LATEX_ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_",
              "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}"}
@@ -62,7 +62,7 @@ def main():
             gap = {k: abs(prof.stats(r["response"])["cmi"] - R["cmi"]) for k, r in (("cmx", c), ("maesc", m))}
             ma_hi = prof.stats(m["response"])["hi_frac"]
             delta = (c.get("gate") or {}).get("delta", 0.2)
-            gold = set(s["strategy"].split(" and "))
+            gold = {st for st in STRATEGIES if st in s["strategy"]}
             cat = []
             if R["cmi"] >= 0.1 and ma_hi < 0.05 and gap["cmx"] <= delta:
                 cat.append("rescue")
