@@ -176,9 +176,9 @@ def read_sheets(paths):
                 if not nat or not mean:
                     continue
                 key = f"{row['level'].strip()}:{int(row['conv_id'])}"
-                acc.setdefault(key, []).append((float(nat), float(mean)))
-    return {k: {"naturalness": sum(a for a, _ in v) / len(v), "meaning": sum(b for _, b in v) / len(v),
-                "n_raters": len(v)} for k, v in acc.items()}
+                acc.setdefault(key, []).append((float(nat), float(mean), (row.get("comments") or "").strip()))
+    return {k: {"naturalness": sum(x[0] for x in v) / len(v), "meaning": sum(x[1] for x in v) / len(v),
+                "n_raters": len(v), "comment": " | ".join(x[2] for x in v if x[2])} for k, v in acc.items()}
 
 
 def weighted_kappa(a, b, k=5):
@@ -217,7 +217,8 @@ def cmd_report(args):
             if min(r["naturalness"], r["meaning"]) < THRESHOLD:
                 flagged[k] = {"naturalness": r["naturalness"], "meaning": r["meaning"],
                               "source": "human" if k in H else "llm",
-                              "comment": L.get(k, {}).get("comment", ""), "problem_turns": L.get(k, {}).get("problem_turns", [])}
+                              "comment": (H.get(k, {}).get("comment") or L.get(k, {}).get("comment", "")),
+                              "problem_turns": L.get(k, {}).get("problem_turns", [])}
         row["flagged"] = sum(1 for k in flagged if k.startswith(level + ":"))
         rows.append(row)
     save_json(flagged, os.path.join(qc_dir(), "flagged.json"))

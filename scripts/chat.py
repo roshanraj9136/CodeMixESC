@@ -26,11 +26,14 @@ def main():
     ap.add_argument("--dry_run", action="store_true")
     args = ap.parse_args()
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from run_system import build_components, default_delta
-    spec = SYSTEMS[args.system]
+    from run_system import build_components, default_gate
+    spec = dict(SYSTEMS[args.system])
+    tuned_delta, tuned_metric = default_gate()
+    if spec.get("gate"):
+        spec["gate_metric"] = tuned_metric
     llm, retriever, profiler = build_components(spec, args.model, args.dry_run)
     system = System(args.system, llm, retriever=retriever, profiler=profiler,
-                    delta=args.delta if args.delta is not None else default_delta())
+                    delta=args.delta if args.delta is not None else tuned_delta, **spec)
     history = []
     print(f"[{args.system}] Type your message (empty line or Ctrl-C to quit).")
     while True:

@@ -40,7 +40,8 @@ def level_stats(convs, level, prof, samples):
            "scripts": dict(Counter(script_of(x) for x in texts))}
     if level in BANDS:
         lo, hi = BANDS[level]
-        out["in_band"] = mean(lo - 1e-9 <= s["cmi"] <= hi + 1e-9 for s in checked)
+        x = (lambda s: s["hi_frac"]) if level == "light" else (lambda s: s["cmi"])  # as build_hien.band_distance
+        out["in_band"] = mean(lo - 1e-9 <= x(s) <= hi + 1e-9 for s in checked)
         out["band_checked"] = len(checked)
         sims = [t["labse_sim"] for t in utts if "labse_sim" in t]
         out["labse_sim"] = mean(sims)

@@ -382,7 +382,7 @@ def _rounded(value, fmt):
         return None
 
 
-WIDE_TABLE = 100  # estimated width (characters + column gaps) above which a table spans both columns
+WIDE_TABLE = 70  # estimated characters; wider tables would shrink below ~80% of a column (measured in IEEEtran)
 
 
 def visible_len(tex):

@@ -46,9 +46,9 @@ def run_level(level, args, llm, retriever, profiler):
         rec = system.respond(sample, level)
         log = A.CallLog(llm)
         _, info = A.register_gate(log, profiler, sample["context"], rec["R"], rec["pred_strategy"],
-                                  rec["response"], lo - 1e-9, args.gate_metric)
+                                  rec["pre_gate_response"], lo - 1e-9, args.gate_metric)
         cand = info.get("candidate") if info["accepted"] else None
-        return {"uid": sample["uid"], "reference": sample["reference"], "R": rec["R"], "pre": rec["response"],
+        return {"uid": sample["uid"], "reference": sample["reference"], "R": rec["R"], "pre": rec["pre_gate_response"],
                 "bad_script": bool(A.script_mismatch(rec["R"], {"script": info["script_before"]})), "gated": cand,
                 "dist_pre": info["distance_before"], "dist_gated": info["distance_after"] if cand else None,
                 "cmi_pre": abs(info["cmi_before"] - info["cmi_target"]),
@@ -118,7 +118,8 @@ def main():
     best = min(e["all"]["distance"] for e in table[1:])
     ok = [e for e in table[1:] if e["all"]["distance"] <= best + args.tol
           and e["all"]["chrf"] >= base["chrf"] - args.max_chrf_drop]
-    chosen = max(ok, key=lambda e: e["delta"]) if ok else min(table[1:], key=lambda e: e["all"]["distance"])
+    # if every delta costs chrF, take the least harmful one (ties: the larger delta, fewer calls)
+    chosen = max(ok, key=lambda e: e["delta"]) if ok else max(table[1:], key=lambda e: (e["all"]["chrf"], e["delta"]))
 
     out_dir = args.out or os.path.join(ROOT, "scratch" if args.dry_run else "results", "tuning")
     os.makedirs(out_dir, exist_ok=True)

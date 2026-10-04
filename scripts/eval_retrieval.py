@@ -17,7 +17,8 @@ resamples). --split dev evaluates ESConv-HiEn dev with the dev conversations rem
 
 Outputs: results/retrieval/retrieval_{split}.json, results/tables/retrieval_{split}.md and complete
 booktabs floats that a paper \\input's directly (label tab:<file stem>): retrieval_{split}.tex
-(P@10 and Overlap@10), retrieval_{split}_full.tex (+ strategy JSD) and retrieval_test_s200.tex.
+(P@10 and Overlap@10 self, one column), retrieval_{split}_full.tex (+ Overlap@10 vs RoBERTa-EN and
+strategy JSD, table*) and retrieval_test_s200.tex (the 200-turn subset).
 Usage: python scripts/eval_retrieval.py --split test [--encoders roberta,mpnet,mpnet-ft]
        python scripts/eval_retrieval.py --stub      (hashing encoder, no downloads; tests)
 """
@@ -54,8 +55,11 @@ P10 = [("p@10", v, 100, 1, True, "P@10", "") for v in VERSIONS]
 SELF = [("overlap_self@10", v, 100, 1, True, "Overlap@10", "self") for v in ("light", "heavy")]
 VSROB = [("overlap_roberta_en@10", v, 100, 1, True, "Overlap@10", "vs. RoBERTa-EN") for v in VERSIONS]
 JSD = [("jsd_strategy", v, 100, 2, False, "Strategy JSD", "") for v in ("light", "heavy")]
-MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF + VSROB, P10 + SELF + VSROB + JSD
-WIDE_TABLE = 100  # estimated width (characters + column gaps) above which a table spans both columns
+MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF, P10 + SELF + VSROB + JSD  # main: the two SPEC metrics
+# Estimated width (characters + column gaps) above which a table spans both columns (table*). Measured
+# in IEEEtran: ~4.5pt per estimated character and a 252pt column, so a table estimated wider than
+# ~70 characters would have to shrink below 80% of the column.
+WIDE_TABLE = 70
 
 
 def make_retriever(name, bank, stub=False):
@@ -282,18 +286,42 @@ def _tex_width(columns, header_rows, body):
     return sum(widths) + extra
 
 
+def _header_labels(columns):
+    """Group and subgroup label per column; a group with one subgroup becomes 'group (subgroup)'."""
+    groups, subs = [c[5] for c in columns], [c[6] for c in columns]
+    col = 0
+    for _, span in _runs(list(groups)):
+        sub_runs = _runs(subs[col:col + span])
+        if len(sub_runs) == 1 and sub_runs[0][0]:
+            for i in range(col, col + span):
+                groups[i], subs[i] = f"{groups[i]} ({subs[i]})", ""
+        col += span
+    return groups, subs
+
+
+CAPTION_PARTS = {
+    "p@10": "P@10: problem-type precision of the retrieved cases.",
+    "overlap_self@10": "Overlap@10 (self): share of the top-10 cases of the English original that the same "
+                       "encoder also retrieves for the Hinglish post.",
+    "overlap_roberta_en@10": "Overlap@10 vs.\\ RoBERTa-EN: share of the cases the base paper's retriever finds "
+                             "for the English original.",
+    "jsd_strategy": "Strategy JSD ($\\times 10^{-2}$): Jensen--Shannon divergence (base 2) between the strategy "
+                    "distributions of the cases retrieved for the Hinglish and the English posts.",
+}
+
+
 def latex(report, encoders, sname, columns, name):
     """A complete booktabs float in the project's convention (see scripts/evaluate.py): table, or
     table* when the estimated width would shrink it below ~80% of a column."""
     split, n = report["split"], report["subsets"][sname]
     turns = max(n.values()) if n else 0
-    arrow = {"Strategy JSD": " $\\downarrow$"}
-    labels = {level: [(c[level].replace("vs. ", "vs.\\ ") + (arrow.get(c[level], " $\\uparrow$") if level == 5 else ""))
-                      if c[level] else "" for c in columns] for level in (5, 6)}
+    groups, subs = _header_labels(columns)
+    labels = [[(g.replace("vs. ", "vs.\\ ") + (" $\\downarrow$" if g.startswith("Strategy JSD") else " $\\uparrow$"))
+               if g else "" for g in groups], [x.replace("vs. ", "vs.\\ ") for x in subs]]
     header = []
-    for level in (5, 6):
+    for row in labels:
         cells, rules, col = [], [], 2
-        for label, c in _runs(labels[level]):
+        for label, c in _runs(row):
             cells.append(f"\\multicolumn{{{c}}}{{c}}{{{label}}}" if label else " & ".join([""] * c))
             if label:
                 rules.append(f"\\cmidrule(lr){{{col}-{col + c - 1}}}")
@@ -305,19 +333,14 @@ def latex(report, encoders, sname, columns, name):
     rows = _rows(report, encoders, sname, columns, True)
     body = [" & ".join(r) + " \\\\" for r in rows]
     body.insert(len(body) - 1, "\\midrule")
-    width = _tex_width(columns, [labels[5], labels[6]], [bottom] + rows)
-    env = "table*" if width > WIDE_TABLE else "table"
+    env = "table*" if _tex_width(columns, labels, [bottom] + rows) > WIDE_TABLE else "table"
     what = {"all": f"all {split} turns", "s200": "the 200-turn subset of the multi-agent systems"}.get(sname, sname)
     hw_pct = _max_half_width(report, encoders, sname, columns, False)
     hw_jsd = _max_half_width(report, encoders, sname, columns, True)
+    metrics = list(dict.fromkeys(c[0] for c in columns))
     caption = (f"Retrieval robustness on ESConv-HiEn ({what}; {turns} queries per version; $k={report['k']}$; case "
                f"bank of {report['bank_size']:,} posts" + (", dev conversations excluded" if split == "dev" else "")
-               + "). P@10: problem-type precision of the retrieved cases. Overlap@10 self: share of the top-10 cases "
-               "of the English original that the same encoder also retrieves for the Hinglish post; vs.\\ "
-               "RoBERTa-EN: share of the cases the base paper's retriever finds for the English original."
-               + (" Strategy JSD ($\\times 10^{-2}$): Jensen--Shannon divergence (base 2) between the strategy "
-                  "distributions of the cases retrieved for the Hinglish and the English posts."
-                  if any(c[0] == "jsd_strategy" for c in columns) else "")
+               + "). " + " ".join(CAPTION_PARTS[m] for m in metrics if m in CAPTION_PARTS)
                + " Values in \\% are means over the queries"
                + (f"; the 95\\% cluster-bootstrap intervals (conversations resampled) have half-widths of at most "
                   f"{hw_pct:.1f} points" if hw_pct is not None else "")

@@ -12,7 +12,7 @@ Part 3 holds the baselines (few-shot CoT, translate-pivot).
 """
 import json
 
-from .profiler import describe_register, is_plain_english
+from .profiler import describe_register, hindi_share, is_plain_english
 
 # ============================================================== Part 1: MultiAgentESC (verbatim)
 STRATEGY_DEFINITIONS = {
@@ -193,7 +193,7 @@ def describe_mismatch(R, reg):
     if reg["script"] not in ("None", R["script"]) and R["script"] != "None":
         parts.append(f"it is written in {reg['script']} script, while the user writes in {R['script']} script")
     hs = 0 if is_plain_english(R) else round(100 * R["hi_frac"])
-    hr = round(100 * reg["hi_frac"])
+    hr = round(100 * hindi_share(R, reg))
     if hr < hs:
         parts.append(f"it has about {hr}% Hindi words, while the user's messages have about {hs}% (too little Hindi)")
     elif hr > hs:
