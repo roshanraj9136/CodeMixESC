@@ -37,7 +37,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from codemixesc import metrics as M  # noqa: E402
-from codemixesc.esconv import ROOT, all_samples, sampled_uids, seeker_utterances  # noqa: E402
+from codemixesc.esconv import ROOT, SAMPLE_N, all_samples, sampled_uids, seeker_utterances  # noqa: E402
 
 SYSTEMS = ["zero_shot", "fewshot_cot", "maesc", "pivot", "codemixesc", "cmx_nogate", "cmx_noft", "cmx_noxl"]
 MAIN_SYSTEMS = ["zero_shot", "fewshot_cot", "maesc", "pivot", "codemixesc"]
@@ -882,7 +882,7 @@ def parse_args(argv=None):
     ap.add_argument("--bertscore_batch", type=int, default=64)
     ap.add_argument("--n_boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--subset_size", type=int, default=200)
+    ap.add_argument("--subset_size", type=int, default=SAMPLE_N, help="default $CODEMIX_SAMPLE_N or 200")
     ap.add_argument("--min_coverage", type=float, default=0.9,
                     help="runs covering less of the subset are scored but kept out of the common turns and tables")
     ap.add_argument("--hien_dir", help="ESConv-HiEn directory (default: $CODEMIX_HIEN_DIR or data/esconv_hien)")
