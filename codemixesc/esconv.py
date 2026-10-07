@@ -12,6 +12,10 @@ import random
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ESCONV_PATH = os.path.join(ROOT, "data", "esconv", "ESConv.json")
 HIEN_DIR = os.path.join(ROOT, "data", "esconv_hien")
+# Size of the fixed turn sample of the multi-agent systems (the proposal: 200). The sample is
+# prefix-consistent: sampled_uids(100) is a subset of sampled_uids(200), so a run on a smaller
+# sample can later be extended without discarding any finished turn.
+SAMPLE_N = int(os.environ.get("CODEMIX_SAMPLE_N", "200"))
 STRATEGIES = ["Question", "Restatement or Paraphrasing", "Reflection of feelings", "Self-disclosure",
               "Affirmation and Reassurance", "Providing Suggestions", "Information", "Others"]
 
@@ -115,9 +119,10 @@ def all_samples(version):
     return out
 
 
-def sampled_uids(n=200, seed=42):
-    """The fixed random subset of supporter turns used for the multi-agent systems.
-    Identical uids exist in every version because the versions are parallel."""
+def sampled_uids(n=None, seed=42):
+    """The fixed random subset of supporter turns used for the multi-agent systems (n defaults to
+    SAMPLE_N). Identical uids exist in every version because the versions are parallel."""
+    n = n or SAMPLE_N
     uids = [s["uid"] for s in all_samples("en")]
     rnd = random.Random(seed)
     return sorted(rnd.sample(uids, n), key=lambda u: tuple(int(x) for x in u.split("-")))

@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from codemixesc.esconv import ROOT, all_samples, dev_ids, dev_samples, sampled_uids  # noqa: E402
 from codemixesc.systems import SYSTEMS, System, needs  # noqa: E402
 
-DEFAULT_MODEL = "gemma-4-26b-a4b-it"
+DEFAULT_MODEL = "gemma-4-31b-it"  # the strongest open-weight model on the free tier
 DELTA_PATH = os.path.join(ROOT, "results", "tuning", "delta.json")
 
 
@@ -109,7 +109,9 @@ def main():
     ap.add_argument("--version", required=True, choices=["en", "light", "heavy"])
     ap.add_argument("--split", default="test", choices=["test", "dev"])
     ap.add_argument("--subset", choices=["sampled", "all"], help="default: all for single-call systems, "
-                                                                     "the fixed 200-turn sample for multi-agent ones")
+                                                                     "the fixed turn sample (CODEMIX_SAMPLE_N, 200) for multi-agent ones; "
+                                                                     "CODEMIX_BASELINE_SUBSET=sampled changes the default "
+                                                                     "of single-call systems")
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--delta", type=float, help="Register Gate threshold (default: results/tuning/delta.json or 0.2)")
     ap.add_argument("--workers", type=int, default=4)
@@ -161,9 +163,10 @@ def main():
         samples, exclude = dev_samples(args.version), set(dev_ids())  # a dev query must not retrieve its own conversation
     else:
         samples, exclude = all_samples(args.version), ()
-        subset = args.subset or ("all" if spec["kind"] in ("zero_shot", "fewshot_cot") else "sampled")
+        single = os.environ.get("CODEMIX_BASELINE_SUBSET", "all")
+        subset = args.subset or (single if spec["kind"] in ("zero_shot", "fewshot_cot") else "sampled")
         if subset == "sampled":
-            keep = set(sampled_uids(200))
+            keep = set(sampled_uids())
             samples = [s for s in samples if s["uid"] in keep]
     if args.limit:
         samples = samples[:args.limit]

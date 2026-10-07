@@ -45,7 +45,12 @@ import time
 import warnings
 
 import numpy as np
-import torch
+
+# CODEMIX_DEVICE=cpu on a machine with a GPU: hide the GPU before torch loads, otherwise the HF
+# Trainer still moves the model to cuda:0 while the evaluator feeds CPU tensors.
+if os.environ.get("CODEMIX_DEVICE") == "cpu":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # "" would unset the variable on Windows
+import torch  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from codemixesc.esconv import ROOT  # noqa: E402
