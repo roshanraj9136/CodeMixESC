@@ -24,8 +24,39 @@ three-stage multi-agent pipeline and adds four components, without fine-tuning t
 3. **Register-aware generation and selection** — the generator answers in the seeker's script
    and Hindi–English mix; debate, voting and the refiner add a *language and cultural fit*
    criterion.
-4. **Register Gate** — if |CMI_response − CMI_seeker| > δ or the script differs, one more
-   refinement with an explicit register instruction (at most one extra LLM call per turn).
+4. **Register Gate** — if the reply's Hindi share is more than δ away from the seeker's (or the
+   script differs), one more refinement with an explicit register instruction (at most one
+   extra LLM call per turn; the rewrite is kept only if it is closer to the seeker's register).
+
+![CodeMixESC architecture](report/figures/architecture_slide.png)
+
+## Status and first results
+
+| Part | Status |
+|---|---|
+| Pipeline (profiler, cross-lingual retriever, register-aware agents, Register Gate, baselines) | done, 110 unit tests, CI |
+| ESConv-HiEn development set (12 conversations × Light/Heavy) | done: Light 85% of utterances in the target CMI band (mean CMI 0.17), Heavy 83% (mean CMI 0.37) |
+| Cross-lingual retriever (MNRL, 16,951 Hinglish–English pairs, best checkpoint by dev retrieval) | done |
+| ESConv-HiEn test set (100 conversations × Light/Heavy) | Light 98/100, Heavy 70/100 (generation limited by the free-tier daily quota) |
+| Experiments (agents: `gemma-4-31b-it`, multi-agent systems on a fixed 100-turn sample) | running |
+
+**Retrieval robustness on the development set** (151 turns per version, k = 10, 95%
+cluster-bootstrap CI; full table in [`results/tables/retrieval_dev.md`](results/tables/retrieval_dev.md)).
+*Overlap@10* = share of the cases retrieved for a Hinglish post that are also retrieved for its
+English original by the same encoder; *P@10* = share of retrieved cases with the query's problem
+type.
+
+| Encoder | Overlap@10 Light | Overlap@10 Heavy | P@10 Light | P@10 Heavy |
+|---|---|---|---|---|
+| all-roberta-large-v1 (MultiAgentESC) | 56.0 ± 7.2 | 22.1 ± 7.3 | **30.7** ± 8.6 | **29.6** ± 7.6 |
+| LaBSE | 59.7 ± 6.7 | 32.4 ± 6.8 | 25.6 ± 5.7 | 24.9 ± 5.4 |
+| multilingual mpnet | 69.9 ± 7.6 | 29.6 ± 7.6 | 29.1 ± 7.7 | 26.7 ± 6.9 |
+| **multilingual mpnet, fine-tuned (ours)** | **72.9** ± 5.0 | **54.0** ± 4.4 | 26.7 ± 6.6 | 28.5 ± 6.6 |
+
+Heavy code-mixing breaks the English retriever (only 22% of its cases survive); the fine-tuned
+encoder keeps 54% (+31.9 points, CI [+26.0, +37.4]) and makes the strategies of the retrieved
+cases the most stable across languages, at the cost of a small, partly significant drop in
+problem-type precision. Response-level results will be added here as the runs finish.
 
 ```mermaid
 flowchart LR

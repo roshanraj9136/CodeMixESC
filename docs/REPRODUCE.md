@@ -104,9 +104,9 @@ See [EVALUATION.md](EVALUATION.md) for metric definitions.
 | Quality check | gemma-4-31b-it | ~250 | hours |
 | Retriever pairs | gemini-3.1-flash-lite | ~220 (400/day cap) | < 1 day |
 | Retriever training | — (GPU) | — | ~1-2 h on a 4 GB GPU, less on a T4 |
-| δ tuning | gemma-4-26b-a4b-it | ~1,800 | hours |
-| 12 multi-agent runs | gemma-4-26b-a4b-it | ~26,000 (≈11 per turn) | ~3 days (input-token limit) |
-| 6 single-call runs | gemma-4-26b-a4b-it | ~7,300 | ~5 h |
+| δ tuning | gemma-4-31b-it | ~1,800 | hours |
+| 12 multi-agent runs | gemma-4-31b-it | ~26,000 (≈11 per turn) | ~3 days (input-token limit) |
+| 6 single-call runs | gemma-4-31b-it | ~7,300 | ~5 h |
 | LLM judge | gemma-4-31b-it | ~800 | hours |
 
 Ablations reuse the cached Stage-1 calls of `codemixesc` (identical prompts), so they cost less

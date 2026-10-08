@@ -1,0 +1,154 @@
+{
+ "config": {
+  "phinc": "data/raw/phinc/English-Hindi code-mixed parallel corpus.csv",
+  "no_download": false,
+  "no_phinc": false,
+  "out_dir": "data/pairs",
+  "n_esconv": 5000,
+  "batch_size": 25,
+  "n_val_phinc": 500,
+  "n_val_esconv": 200,
+  "min_words": 3,
+  "min_seeker_words": 4,
+  "seed": 42,
+  "model": "gemini-3.1-flash-lite",
+  "temperature": 0.7,
+  "workers": 4,
+  "max_calls": 0,
+  "check_cmi": false,
+  "dry_run": false
+ },
+ "created": "2026-10-08 02:21:23",
+ "phinc": {
+  "source": {
+   "file": "English-Hindi code-mixed parallel corpus.csv",
+   "member": "English-Hindi code-mixed parallel corpus.csv",
+   "sha256": "325ba383cd6d73e0c3128885e2a79133e612ec03d18c8b55506d0b4b12ec68ed",
+   "encoding": "utf-8-sig",
+   "delimiter": ",",
+   "columns": [
+    "Sentence",
+    "English_Translation"
+   ],
+   "column_choice": "by name",
+   "rows": 13738
+  },
+  "steps": {
+   "rows read": 13738,
+   "both sides non-empty": 13738,
+   "cleaned, >= 3 words on both sides": 13245,
+   "Roman script on both sides": 13217,
+   "Hinglish differs from English (code-mixed)": 12761,
+   "deduplicated (normalised Hinglish side)": 12656
+  }
+ },
+ "esconv": {
+  "steps": {
+   "seeker utterances of training conversations (test and dev excluded)": 18176,
+   ">= 4 words": 16069,
+   "deduplicated": 15787,
+   "sampled": 5000,
+   "valid rewrite (first attempt)": 4940,
+   "valid rewrite (after one retry)": 5000,
+   "cleaned, >= 3 words on both sides": 5000,
+   "Roman script on both sides": 5000,
+   "Hinglish differs from English (code-mixed)": 5000,
+   "deduplicated (normalised Hinglish side)": 4997
+  },
+  "rewriting": {
+   "batches": 200,
+   "retry_batches": 3,
+   "valid_first_attempt": 4940,
+   "failed_first_attempt": 60,
+   "failure_reasons_first_attempt": {
+    "identical": 59,
+    "not Roman script": 1
+   },
+   "valid_after_retry": 60,
+   "failed_after_retry": 0,
+   "failure_reasons_after_retry": {},
+   "pending_batches": 0,
+   "calls": {
+    "real": 203,
+    "cached": 0,
+    "from_progress": 0,
+    "errors": 0,
+    "skipped_budget": 0
+   }
+  },
+  "model": "gemini-3.1-flash-lite",
+  "levels": {
+   "light": 2499,
+   "heavy": 2498
+  }
+ },
+ "cross_source_duplicates_removed": 0,
+ "val_sizes_requested": {
+  "phinc": 500,
+  "esconv": 200
+ },
+ "leakage_checks": {
+  "pairs_from_test_conversations": 0,
+  "pairs_from_dev_conversations": 0,
+  "hinglish_in_train_and_val": 0
+ },
+ "train": {
+  "total": 16951,
+  "phinc": 12156,
+  "esconv": 4795
+ },
+ "val": {
+  "total": 702,
+  "phinc": 500,
+  "esconv": 202,
+  "esconv_val_conversations": [
+   104,
+   167,
+   183,
+   211,
+   254,
+   308,
+   318,
+   348,
+   355,
+   372,
+   474,
+   483,
+   492,
+   493,
+   546,
+   549,
+   554,
+   628,
+   631,
+   697,
+   705,
+   709,
+   735,
+   744,
+   767,
+   777,
+   826,
+   836,
+   837,
+   838,
+   867,
+   886,
+   904,
+   929,
+   955,
+   962,
+   996,
+   1028,
+   1032,
+   1040,
+   1064,
+   1070,
+   1093,
+   1145,
+   1167,
+   1198,
+   1262
+  ]
+ }
+}

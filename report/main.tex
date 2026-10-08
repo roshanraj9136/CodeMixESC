@@ -200,7 +200,8 @@ English text, a seeker is treated as code-mixing only with at least two unambigu
 
 \subsection{Implementation}
 All agents are open-weight LLMs used only through prompting, as in the base paper: Gemma
-(\texttt{gemma-4-26b-a4b-it}) through the Gemini API free tier at temperature~0, with an
+(\texttt{gemma-4-31b-it}, the strongest open-weight model available on the free tier) through
+the Gemini API at temperature~0, with an
 OpenAI-compatible backend (e.g.\ Ollama) as an alternative. The AutoGen pipeline is re-implemented
 on a cached, rate-limited client with an exact replica of AutoGen's round-robin group chat; all
 base prompts are kept verbatim. Output parsing is hardened identically for all systems (e.g.\

@@ -22,3 +22,9 @@ report/*.synctex.gz
 report/main.pdf
 # derived from ESConv / PHINC text (academic-use data, not redistributed); stats.json is fine
 data/pairs/*.jsonl
+# local trial builds and unfinished dataset builds (the finished test_{light,heavy}.json are committed)
+data/esconv_hien/*trial*
+data/esconv_hien/*.partial.json
+report/figures/*.aux
+report/figures/*.log
+report/figures/arch_preview*

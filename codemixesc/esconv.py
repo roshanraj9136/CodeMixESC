@@ -38,7 +38,15 @@ def load_version(version):
     """version: 'en', 'light' or 'heavy'. Returns the 100 test conversations."""
     if version == "en":
         return split(load_esconv())[0]
-    with open(os.path.join(hien_dir(), f"test_{version}.json"), encoding="utf-8") as f:
+    path = os.path.join(hien_dir(), f"test_{version}.json")
+    if not os.path.exists(path) and os.environ.get("CODEMIX_ALLOW_PARTIAL"):
+        # build_hien.py writes test_{version}.partial.json while some conversations are still
+        # missing (their entries hold an "error" instead of a dialog); runs on it cover the
+        # finished conversations, and re-running after the build completes adds the rest
+        partial = path.replace(".json", ".partial.json")
+        if os.path.exists(partial):
+            path = partial
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -115,7 +123,8 @@ def turn_samples(conv, conv_id):
 def all_samples(version):
     out = []
     for i, conv in enumerate(load_version(version)):
-        out.extend(turn_samples(conv, i))
+        if "dialog" in conv:  # a conversation a partial build has not finished yet
+            out.extend(turn_samples(conv, i))
     return out
 
 
