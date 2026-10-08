@@ -30,7 +30,7 @@ RL_PATH = os.path.join(ROOT, "cache", "ratelimit.sqlite")
 LIMITS = {
     "gemma-4-26b-a4b-it": dict(rpm=28, tpm=15000, rpd=14300),
     "gemma-4-31b-it": dict(rpm=28, tpm=15000, rpd=14300),
-    "gemini-3.5-flash-lite": dict(rpm=14, tpm=240000, rpd=480),  # Jarvis falls back to 3.1
+    "gemini-3.5-flash-lite": dict(rpm=14, tpm=240000, rpd=490),  # the other app on the key falls back to 3.1
     "gemini-3.1-flash-lite": dict(rpm=14, tpm=240000, rpd=400),
 }
 UNLIMITED = dict(rpm=100000, tpm=10 ** 9, rpd=10 ** 9)
