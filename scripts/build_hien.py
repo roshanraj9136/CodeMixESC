@@ -75,12 +75,17 @@ Return JSON of the form {{"turns": [{{"id": <id>, "text": "..."}}, ...]}} contai
 
 
 def parse_turns(text):
+    """{"turns": [{"id", "text"}, ...]}, or the bare list the model sometimes returns instead."""
     text = text.strip()
-    m = re.search(r"\{.*\}", text, re.S)
-    if not m:
-        raise ValueError("no JSON object")
-    obj = json.loads(m.group(0))
-    return {int(t["id"]): t["text"].strip() for t in obj["turns"]}
+    try:
+        obj = json.loads(text)
+    except json.JSONDecodeError:
+        m = re.search(r"\{.*\}|\[.*\]", text, re.S)
+        if not m:
+            raise ValueError("no JSON object")
+        obj = json.loads(m.group(0))
+    turns = obj if isinstance(obj, list) else obj["turns"]
+    return {int(t["id"]): t["text"].strip() for t in turns}
 
 
 def band_distance(stat, level):
