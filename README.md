@@ -1,6 +1,8 @@
 # CodeMixESC
 
 [![tests](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml/badge.svg)](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml)
+[![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://codemixesc.streamlit.app)
+[![Retriever on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-codemix--retriever-orange)](https://huggingface.co/roshan9136/codemix-retriever)
 
 **Multi-agent emotional support conversation for code-mixed Hinglish help-seekers, with
 cross-lingual experience retrieval and register-aware response selection.**
@@ -29,6 +31,19 @@ three-stage multi-agent pipeline and adds four components, without fine-tuning t
    extra LLM call per turn; the rewrite is kept only if it is closer to the seeker's register).
 
 ![CodeMixESC architecture](report/figures/architecture_slide.png)
+
+## Live demo
+
+**[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**: talk to CodeMixESC as a help-seeker in English
+or Hinglish. Next to the chat, a panel shows what the agents understood: your Hindi–English mix (measured word by
+word), the emotion, cause and intention, the support strategy they voted for, and the Register Gate's language
+check. *Behind the scenes* lists the retrieved cases, the candidate replies and the vote. The agents run on
+`gemma-4-26b-a4b-it` through the Gemini API free tier, so a reply takes about 20–60 s.
+
+Run it locally: `pip install -r demo/requirements.txt`, put `GEMINI_API_KEY=...` in `.env`, then
+`streamlit run demo/streamlit_app.py`. The fine-tuned retriever is downloaded from
+[huggingface.co/roshan9136/codemix-retriever](https://huggingface.co/roshan9136/codemix-retriever) and ESConv
+from the base paper's repository.
 
 ## Status and first results
 
