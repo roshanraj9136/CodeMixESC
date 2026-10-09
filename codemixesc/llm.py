@@ -272,6 +272,10 @@ class LLM:
                     time.sleep(secs)
                     attempt = 0
                     continue
+                if e.code in (500, 502, 503, 504):
+                    # the server did not process the prompt: release its input-token reservation, or
+                    # an overloaded endpoint (gemma-4-31b-it often answers 503) halves our TPM budget
+                    self.limiter.settle(ticket, 1)
                 if e.code in (429, 500, 502, 503, 504) and attempt < 12:
                     time.sleep(_backoff(attempt))
                     continue
