@@ -67,9 +67,19 @@ vs Translate-Pivot better on every metric (p < 0.01); Register Gate CMI gap 0.12
 | **CodeMixESC** | **8.14** | **12.69** | **19.32** | **0.101** | 6.51 |
 
 <!-- RESULTS:START -->
-*The full grid (English, Light, Heavy; zero-shot, few-shot CoT, MultiAgentESC, Translate-Pivot, CodeMixESC and
-ablations; pairwise LLM judge) runs on `gemma-4-26b-a4b-it` agents and a fixed 50-turn sample per version;
-tables are written to [`results/tables/`](results/tables) as the runs finish.*
+**Reply quality and register match** (agents `gemma-4-26b-a4b-it`, the same 50 sampled turns for every system; [all tables](results/tables)). ROUGE-L against the human supporter reply; CMI gap = distance between the reply's and the user's code-mixing (lower is better).
+
+| System | ROUGE-L EN | ROUGE-L Light | ROUGE-L Heavy | CMI gap Light | CMI gap Heavy |
+|---|---|---|---|---|---|
+| Zero-shot | 10.22 | 11.58 | 7.50 | 0.118 | 0.314 |
+| Few-shot CoT | 10.90 | 11.98 | 5.50 | 0.158 | 0.402 |
+| MultiAgentESC | 10.44 | 10.45 | 5.66 | 0.141 | 0.357 |
+| Translate-Pivot | – | 5.75 | 8.62 | 0.136 | 0.208 |
+| **CodeMixESC** | 11.04 | 10.60 | 9.24 | 0.137 | 0.120 |
+
+Paired bootstrap over conversations: Heavy vs MultiAgentESC: ROUGE-L +3.58 [+1.83, +5.27], p < 0.01; Light vs MultiAgentESC: ROUGE-L +0.15 [-1.75, +2.09], p=0.93; Heavy vs Translate-Pivot: ROUGE-L +0.62 [-1.09, +2.40], p=0.47; Light vs Translate-Pivot: ROUGE-L +4.85 [+3.03, +6.79], p < 0.01.
+
+Pairwise LLM judge (`gemma-4-31b-it`, both orders): CodeMixESC vs MultiAgentESC on Light: overall win/tie/lose 74.0; CodeMixESC vs Translate-Pivot on Light: overall win/tie/lose 44.0; CodeMixESC vs MultiAgentESC on Heavy: overall win/tie/lose 86.0; CodeMixESC vs Translate-Pivot on Heavy: overall win/tie/lose 56.0.
 <!-- RESULTS:END -->
 
 ## Live demo
