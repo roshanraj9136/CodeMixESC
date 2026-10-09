@@ -29,7 +29,7 @@ BANK_EMB_FILE = "esconv_bank_embeddings.npy"  # precomputed case-bank vectors in
 ESCONV_URL = "https://raw.githubusercontent.com/MindIntLab-HFUT/MultiAgentESC/main/dataset/ESConv.json"
 GITHUB = "https://github.com/roshanraj9136/CodeMixESC"
 ARCH_IMG = "https://raw.githubusercontent.com/roshanraj9136/CodeMixESC/master/report/figures/architecture_slide.png"
-DELTA = 0.2
+DELTA = 0.15  # tuned on the development set (results/tuning/delta.json)
 MAX_TURNS_PER_DAY = 400
 
 st.set_page_config(page_title="CodeMixESC · Hinglish emotional support", page_icon=":material/favorite:",
