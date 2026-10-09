@@ -53,7 +53,7 @@ from the base paper's repository.
 | ESConv-HiEn development set (12 conversations × Light/Heavy) | done: Light 85% of utterances in the target CMI band (mean CMI 0.17), Heavy 83% (mean CMI 0.37) |
 | Cross-lingual retriever (MNRL, 16,951 Hinglish–English pairs, best checkpoint by dev retrieval) | done |
 | ESConv-HiEn test set (100 conversations × Light/Heavy) | Light 98/100, Heavy 70/100 (generation limited by the free-tier daily quota) |
-| Experiments (agents: `gemma-4-31b-it`, multi-agent systems on a fixed 100-turn sample) | running |
+| Experiments (agents `gemma-4-26b-a4b-it`, judge `gemma-4-31b-it`; multi-agent systems on a fixed 100-turn sample; δ = 0.15 tuned on dev) | running |
 
 **Retrieval robustness on the development set** (151 turns per version, k = 10, 95%
 cluster-bootstrap CI; full table in [`results/tables/retrieval_dev.md`](results/tables/retrieval_dev.md)).

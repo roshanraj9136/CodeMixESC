@@ -241,8 +241,19 @@ English$\rightarrow$Hinglish translation of the response into the seeker's regis
 Ablations on ESConv-HiEn remove the retriever fine-tuning (multilingual encoder as is), the whole
 cross-lingual retriever (English encoder) and the Register Gate.
 
-\noindent\textbf{Retriever training.} \pending{Training configuration and selected checkpoint from
-\texttt{results/retrieval/train\_log.json}.}
+\noindent\textbf{Retriever training.} paraphrase-multilingual-mpnet-base-v2 (278M parameters) is
+fine-tuned for one epoch on the 16,951 training pairs (12,156 PHINC, 4,795 ESConv rewrites) with the
+Multiple Negatives Ranking loss (scale 20, i.e.\ $\tau=0.05$), batch size 32 drawn without in-batch
+duplicates, AdamW with learning rate $2\times10^{-5}$, 10\% warm-up and fp16. The word-embedding
+matrix (192M parameters) is frozen so that training fits a 4~GB laptop GPU (peak 2.1~GB). The
+checkpoint is selected every quarter epoch by the mean of dev Overlap@10 and P@10 on the twelve
+development conversations, whose case-bank entries are excluded; the best is step 264 of 530.
+Validation pair accuracy@1 rises from 0.51 to 0.88.
+
+\noindent\textbf{Agents and threshold.} All agents of all systems run on \texttt{gemma-4-26b-a4b-it}
+at temperature 0; the pairwise judge uses the larger \texttt{gemma-4-31b-it}. The Register Gate
+threshold, tuned on the development set over $\delta\in\{0.05,\dots,0.35\}$, is $\delta=0.15$: the
+largest value whose pooled register distance is within 0.01 of the best and whose chrF does not drop.
 
 \noindent\textbf{Metrics.} Retrieval: Overlap@10 between the cases retrieved for a Hinglish query
 and for its parallel English original, and problem-type Precision@10. Response quality:

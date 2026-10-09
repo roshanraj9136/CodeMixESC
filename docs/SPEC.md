@@ -85,6 +85,6 @@ Multi-agent systems run on the fixed 200-turn subset `sampled_uids(200, seed=42)
 - **Efficiency**: LLM calls and latency per turn.
 
 ## LLMs (free tier only; see docs/PLAN.md)
-Agents and baselines: `gemma-4-31b-it` (temperature 0). Test/dev rewriting:
+Agents and baselines: `gemma-4-26b-a4b-it` (temperature 0). Test/dev rewriting:
 `gemini-3.5-flash-lite`. Retriever-pair rewriting: `gemini-3.1-flash-lite` (a different generator
 than the test set, on purpose). Dataset quality check and LLM judge: `gemma-4-31b-it`.

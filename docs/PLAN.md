@@ -74,7 +74,7 @@ Evaluation uses ESConv-HiEn, a new parallel test set built from the 100 ESConv t
 
 | Use | Model | Limit (ours) |
 |---|---|---|
-| All agents and baselines (open-weight, temp 0, thinking "minimal") | `gemma-4-31b-it` (the strongest open-weight model on the free tier) | 28 RPM, 15K input TPM, 14.3K requests/day |
+| All agents and baselines (open-weight, temp 0, thinking "minimal") | `gemma-4-26b-a4b-it` (gemma-4-31b-it was ~10x slower on the free tier; its Light runs are kept in results/runs_31b) | 28 RPM, 15K input TPM, 14.3K requests/day |
 | ESConv-HiEn test + dev rewriting | `gemini-3.5-flash-lite` | 400/day (the owner's Jarvis app shares this key) |
 | Retriever training-pair rewriting (a different generator than the test set, on purpose) | `gemini-3.1-flash-lite` | 400/day |
 | Dataset quality check and pairwise LLM judge | `gemma-4-31b-it` | slow (20–60 s per call), 14.3K/day |
