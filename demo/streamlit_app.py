@@ -184,10 +184,11 @@ def respond_live(dialog, early_rule, live):
     while worker.is_alive():
         live.markdown(timeline_md(events, t0))
         worker.join(0.4)
-    live.markdown(timeline_md(events, t0, done=True))
+    steps = timeline_md(events, t0, done=True)
+    live.markdown(steps)
     if "err" in out:
         raise out["err"]
-    return out["rec"]
+    return out["rec"], steps
 
 
 def esc(t):
@@ -367,11 +368,14 @@ with chat_col:
         for i, msg in enumerate(st.session_state.dialog):
             avatar = ":material/favorite:" if msg["role"] == "assistant" else ":material/person:"
             with st.chat_message(msg["role"], avatar=avatar):
+                rec = msg.get("rec")
+                if msg.get("steps") and rec:
+                    with st.expander(f"Answered in {msg['secs']:.0f} s · {rec['n_calls']} LLM calls · see every step",
+                                     icon=":material/check_circle:", type="compact"):
+                        st.markdown(msg["steps"])
                 st.markdown(esc(msg["content"]))
-                if msg["role"] == "assistant":
-                    rec = msg.get("rec")
-                    if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
-                        st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
+                if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
+                    st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
     picked = None
     if not st.session_state.dialog:
         choice = st.pills("Try an example", list(SUGGESTIONS), label_visibility="collapsed")
@@ -409,6 +413,7 @@ if prompt:
         with st.chat_message("user", avatar=":material/person:"):
             st.markdown(esc(prompt))
         with st.chat_message("assistant", avatar=":material/favorite:"):
+            steps, t0 = None, time.time()
             if counter["n"] >= MAX_TURNS_PER_DAY:
                 rec, reply = None, "The demo reached today's free-tier limit; please try again tomorrow."
             else:
@@ -420,7 +425,7 @@ if prompt:
                                expanded=True) as status:
                     t0 = time.time()
                     try:
-                        rec = respond_live(st.session_state.dialog, early_rule, st.empty())
+                        rec, steps = respond_live(st.session_state.dialog, early_rule, st.empty())
                         reply = rec["response"]
                         status.update(label=f"Answered in {time.time() - t0:.0f} s · {rec['n_calls']} LLM calls "
                                             "· see every step", state="complete", expanded=False)
@@ -430,5 +435,6 @@ if prompt:
             st.markdown(esc(reply))
             if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
                 st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
-    st.session_state.dialog.append({"role": "assistant", "content": reply, "rec": rec})
-    draw_panel(rec)
+    st.session_state.dialog.append({"role": "assistant", "content": reply, "rec": rec, "steps": steps,
+                                    "secs": time.time() - t0})
+    st.rerun()  # redraw the page from the stored turn: no stale elements, examples hidden
