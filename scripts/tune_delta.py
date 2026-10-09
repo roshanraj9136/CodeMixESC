@@ -82,7 +82,7 @@ def main():
     ap.add_argument("--encoder", default=SYSTEMS["codemixesc"]["encoder"])
     ap.add_argument("--gate_metric", default="hi_frac", choices=["hi_frac", "cmi"],
                     help="hi_frac: Hindi-share gap (CMI gap + dominant language); cmi: the proposal's CMI gap")
-    ap.add_argument("--model", default="gemma-4-31b-it")
+    ap.add_argument("--model", default="gemma-4-26b-a4b-it")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--dry_run", action="store_true")
     ap.add_argument("--out", default=None)

@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from codemixesc.esconv import ROOT, all_samples, dev_ids, dev_samples, sampled_uids  # noqa: E402
 from codemixesc.systems import SYSTEMS, System, needs  # noqa: E402
 
-DEFAULT_MODEL = "gemma-4-31b-it"  # the strongest open-weight model on the free tier
+DEFAULT_MODEL = "gemma-4-26b-a4b-it"  # ~10x faster than gemma-4-31b-it on the free tier; the judge uses 31b
 DELTA_PATH = os.path.join(ROOT, "results", "tuning", "delta.json")
 
 

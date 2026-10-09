@@ -20,7 +20,7 @@ from codemixesc.systems import SYSTEMS, System  # noqa: E402
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--system", default="codemixesc", choices=[s for s in SYSTEMS if s != "pivot"] + ["pivot"])
-    ap.add_argument("--model", default="gemma-4-31b-it")
+    ap.add_argument("--model", default="gemma-4-26b-a4b-it")
     ap.add_argument("--delta", type=float, default=None)
     ap.add_argument("--debug", action="store_true")
     ap.add_argument("--dry_run", action="store_true")
