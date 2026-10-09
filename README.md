@@ -4,63 +4,43 @@
 [![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://codemixesc.streamlit.app)
 [![Retriever on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-codemix--retriever-orange)](https://huggingface.co/roshan9136/codemix-retriever)
 
-**Multi-agent emotional support conversation for code-mixed Hinglish help-seekers, with
-cross-lingual experience retrieval and register-aware response selection.**
+**Multi-agent emotional support for code-mixed Hinglish help-seekers, with cross-lingual experience
+retrieval and register-aware response selection.**
+Roshan Raj (12341830), IIT Bhilai — NLP course project (DSL504).
 
-Roshan Raj, IIT Bhilai — course project. Base paper: *MultiAgentESC: A LLM-based Multi-Agent
-Collaboration Framework for Emotional Support Conversation* (Xu et al., EMNLP 2025),
-[code](https://github.com/MindIntLab-HFUT/MultiAgentESC).
+Many people in India describe distress in Roman-script Hinglish (*"yaar result aaya, bahut tension ho rahi
+hai, ghar pe kaise bataun"*). [MultiAgentESC](https://github.com/MindIntLab-HFUT/MultiAgentESC) (Xu et al.,
+EMNLP 2025), a strong LLM multi-agent emotional-support system, retrieves past cases with an English-only
+encoder, picks replies without looking at the user's language mix, and was evaluated on English only.
+CodeMixESC keeps its three-stage pipeline and adds four components, **without fine-tuning the LLM agents**:
 
-Many help-seekers in India describe distress in Roman-script Hindi–English
-("yaar result aaya, bahut tension ho rahi hai, ghar pe kaise bataun"). MultiAgentESC retrieves
-its "experience" with an English-only encoder, selects and refines responses without regard to
-the user's language register, and was evaluated on English only. CodeMixESC keeps its
-three-stage multi-agent pipeline and adds four components, without fine-tuning the LLM agents:
+1. **Code-Mix Profiler**: HingBERT-LID word tags + the Code-Mixing Index (CMI) give the user's register R.
+2. **Cross-lingual retriever**: multilingual mpnet fine-tuned contrastively (MNRL) on 16,951 Hinglish–English
+   pairs, so Hinglish queries find the right cases in the English case bank.
+3. **Register-aware generation and selection**: replies in the user's mix; debate, voting and the refiner add a
+   *language and cultural fit* criterion.
+4. **Register Gate**: if the reply's Hindi share is more than δ away from the user's, one re-write (≤ 1 extra
+   LLM call; kept only if closer).
 
-1. **Code-Mix Profiler** — HingBERT-LID word tags and the Code-Mixing Index give the seeker's
-   register profile R = (CMI, dominant language, script), shown to every later agent.
-2. **Cross-lingual experience retrieval** — `paraphrase-multilingual-mpnet-base-v2` fine-tuned
-   with a contrastive (Multiple Negatives Ranking) loss on Hinglish–English pairs (PHINC +
-   Hinglish rewrites of ESConv training utterances), so Hinglish queries retrieve the English
-   ESConv case bank without translating it.
-3. **Register-aware generation and selection** — the generator answers in the seeker's script
-   and Hindi–English mix; debate, voting and the refiner add a *language and cultural fit*
-   criterion.
-4. **Register Gate** — if the reply's Hindi share is more than δ away from the seeker's (or the
-   script differs), one more refinement with an explicit register instruction (at most one
-   extra LLM call per turn; the rewrite is kept only if it is closer to the seeker's register).
+We also build **ESConv-HiEn**, a parallel Hinglish version of the ESConv test set at two mixing levels with
+the strategy labels kept, for a controlled robustness study.
 
 ![CodeMixESC architecture](report/figures/architecture_slide.png)
 
-## Live demo
+## Results
 
-**[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**: talk to CodeMixESC as a help-seeker in English
-or Hinglish. Next to the chat, a panel shows what the agents understood: your Hindi–English mix (measured word by
-word), the emotion, cause and intention, the support strategy they voted for, and the Register Gate's language
-check. *Behind the scenes* lists the retrieved cases, the candidate replies and the vote. The agents run on
-`gemma-4-26b-a4b-it` through the Gemini API free tier, so a reply takes about 20–60 s.
+**ESConv-HiEn** (new dataset; 100 conversations, 3,140 utterances per version,
+[details](results/tables/hien_stats_test.md))
 
-Run it locally: `pip install -r demo/requirements.txt`, put `GEMINI_API_KEY=...` in `.env`, then
-`streamlit run demo/streamlit_app.py`. The fine-tuned retriever is downloaded from
-[huggingface.co/roshan9136/codemix-retriever](https://huggingface.co/roshan9136/codemix-retriever) and ESConv
-from the base paper's repository.
+| Version | Hindi words | Mean CMI | Utterances in target band | Similarity to English (LaBSE) |
+|---|---|---|---|---|
+| English original | 1.5% | 0.01 | – | – |
+| Light (target CMI 0.1–0.3) | 16% | 0.16 | 94.5% | 0.88 |
+| Heavy (target CMI 0.3–0.5) | 50% | 0.35 | 87.5% | 0.71 |
 
-## Status and first results
-
-| Part | Status |
-|---|---|
-| Pipeline (profiler, cross-lingual retriever, register-aware agents, Register Gate, baselines) | done, 110 unit tests, CI |
-| ESConv-HiEn development set (12 conversations × Light/Heavy) | done: Light 85% of utterances in the target CMI band (mean CMI 0.17), Heavy 83% (mean CMI 0.37) |
-| Cross-lingual retriever (MNRL, 16,951 Hinglish–English pairs, best checkpoint by dev retrieval) | done |
-| ESConv-HiEn test set (100 conversations × Light/Heavy, 3,140 utterances each) | done: Light 94.5% of checked utterances in the target CMI band (mean CMI 0.16, 16% Hindi words), Heavy 87.5% (mean CMI 0.35, 50% Hindi words); [statistics](results/tables/hien_stats_test.md) |
-| Dataset quality check | LLM rater on all 200 conversations running; manual 20% sample: `streamlit run scripts/qc_rater.py` |
-| Experiments (agents `gemma-4-26b-a4b-it`, judge `gemma-4-31b-it`; multi-agent systems on a fixed 100-turn sample; δ = 0.15 tuned on dev) | running: Heavy and Light main comparison first, then the pivot, baselines, English and ablations |
-
-**Retrieval robustness on the ESConv-HiEn test set** (all 1,210 turns per version, k = 10, 95%
-cluster-bootstrap CI; full table in [`results/tables/retrieval_test.md`](results/tables/retrieval_test.md),
-development set in [`retrieval_dev.md`](results/tables/retrieval_dev.md)). *Overlap@10* = share of the cases
-retrieved for a Hinglish post that are also retrieved for its English original by the same encoder; *P@10* =
-share of retrieved cases with the query's problem type.
+**Retrieval robustness** (all 1,210 test turns, k = 10, 95% conversation-level bootstrap CI,
+[full table](results/tables/retrieval_test.md)). Overlap@10 = share of the cases retrieved for a Hinglish post
+that are also retrieved for its English original; P@10 = share with the query's problem type.
 
 | Encoder | Overlap@10 Light | Overlap@10 Heavy | P@10 Light | P@10 Heavy |
 |---|---|---|---|---|
@@ -69,89 +49,61 @@ share of retrieved cases with the query's problem type.
 | multilingual mpnet | 69.9 ± 1.6 | 31.3 ± 2.3 | 31.6 ± 2.0 | 28.4 ± 1.6 |
 | **multilingual mpnet, fine-tuned (ours)** | **73.2** ± 1.3 | **53.3** ± 1.8 | 32.0 ± 2.0 | 31.5 ± 1.9 |
 
-Heavy code-mixing breaks the English retriever (only 27% of its cases survive); the fine-tuned
-encoder keeps 53% (+26.3 points, CI [+24.6, +28.2]) and makes the strategies of the retrieved cases
-the most stable across languages (strategy JSD Heavy 0.15 → 0.01), at the cost of a small, significant
-drop in problem-type precision (−2 to −4 points). Response-level results are added here as the runs finish.
+Heavy code-mixing breaks the English retriever (27% of its cases survive); ours keeps 53% (+26.3 points,
+CI [24.6, 28.2]) and keeps the retrieved strategies stable (JSD 0.15 → 0.01), at a small cost in problem-type
+precision (−2 to −4 points).
 
-```mermaid
-flowchart LR
-    S[Seeker message<br/>Roman Hinglish] --> P[Code-Mix Profiler<br/>HingBERT-LID + CMI → R]:::new
-    P --> D{Decision maker}
-    D -- early / not complex --> Z[Zero-shot agent<br/>+ R]:::mod
-    D -- complex --> A[Emotion → Cause → Intention<br/>agents + R]:::mod
-    A --> X[Cross-lingual retriever<br/>fine-tuned mSBERT, top-10]:::new
-    X --> G[Strategy deliberation<br/>3-agent group chat]
-    G --> GEN[Response per strategy<br/>conditioned on R]:::mod
-    GEN --> V[Debate → Reflect → Vote<br/>+ language fit]:::mod
-    V --> J[Judge on ties]
-    J --> RF[Refiner<br/>+ register criterion]:::mod
-    V --> RF
-    RF --> RG{Register Gate<br/>CMI gap ≤ δ, same script?}:::new
-    Z --> RG
-    RG -- yes --> OUT[Final response]
-    RG -- no: re-refine once --> OUT
-    classDef new fill:#fde3c8,stroke:#e8710a,stroke-dasharray: 4 3
-    classDef mod fill:#dbe8fb,stroke:#e8710a,stroke-dasharray: 4 3
-```
+**Reply quality, first run** (Light, 97 common turns, agents `gemma-4-31b-it`;
+[tables](results/eval_31b/tables)). Paired bootstrap: CodeMixESC vs MultiAgentESC ROUGE-L +1.27 (p < 0.05);
+vs Translate-Pivot better on every metric (p < 0.01); Register Gate CMI gap 0.125 → 0.101 (p < 0.01).
 
-## Evaluation
-- **ESConv-HiEn** (new): the 100 ESConv test conversations of the base paper rewritten turn by
-  turn into Roman-script Hinglish at two mixing levels, *Light* (CMI 0.1–0.3) and *Heavy*
-  (CMI 0.3–0.5), with strategy labels copied, CMI-verified per utterance and quality-checked.
-  English and Hinglish versions are parallel, so any change in behaviour is due to code-mixing.
-- **Systems**: zero-shot and few-shot CoT prompting, MultiAgentESC, a translate-pivot baseline,
-  CodeMixESC, and ablations without retriever fine-tuning, without the cross-lingual retriever
-  and without the Register Gate.
-- **Metrics**: retrieval Overlap@10 and problem-type Precision@10; Distinct-1/2, BLEU-1/2/3,
-  F1, ROUGE-L, chrF, multilingual BERTScore; CMI gap and script consistency; Jensen–Shannon
-  divergence of strategy distributions (English vs Hinglish); pairwise LLM/human judgements
-  (Fluency, Identification, Comforting, Suggestion, Overall, Language Naturalness); LLM calls
-  and latency per turn.
+| System | BLEU-2 | ROUGE-L | chrF | CMI gap ↓ | LLM calls / turn |
+|---|---|---|---|---|---|
+| MultiAgentESC | 7.43 | 11.42 | 19.03 | 0.107 | 6.31 |
+| Translate-Pivot | 3.37 | 6.74 | 17.25 | 0.194 | 8.03 |
+| CodeMixESC w/o Register Gate | 7.95 | 12.33 | 19.28 | 0.125 | 6.35 |
+| **CodeMixESC** | **8.14** | **12.69** | **19.32** | **0.101** | 6.51 |
 
-All LLM agents are open-weight models used through prompting (Gemma via the Gemini API free
-tier, or any OpenAI-compatible server such as Ollama); every call is cached, so re-runs and
-ablations that share stages cost nothing. Result tables are generated into `results/tables/`.
+*The full grid (English, Light, Heavy; zero-shot, few-shot CoT, MultiAgentESC, Translate-Pivot, CodeMixESC and
+ablations; pairwise LLM judge) runs on `gemma-4-26b-a4b-it` agents and a fixed 50-turn sample per version;
+tables are written to [`results/tables/`](results/tables) as the runs finish.*
 
-## Repository
-```
-codemixesc/            library
-  profiler.py          Code-Mix Profiler (HingBERT-LID, CMI, register profile)
-  retriever.py         experience retrieval over the ESConv case bank (any encoder)
-  prompts.py           base prompts (verbatim) + register-aware additions + baselines
-  agents.py            MultiAgentESC agents, AutoGen group-chat replica, Register Gate
-  systems.py           all evaluated systems
-  llm.py               cached, rate-limited LLM client (Gemini API / OpenAI-compatible)
-  esconv.py            ESConv loading, base-paper split and turn samples
-  metrics.py           evaluation metrics
-  retrieval_eval.py    retrieval metrics
-  testing.py           stand-ins for tests and dry runs
-scripts/               setup_data, build_hien, quality_check, dataset_stats, build_pairs,
-                       train_retriever, eval_retrieval, tune_delta, run_system, run_all,
-                       llm_usage, evaluate, judge, case_studies, chat
-docs/                  SPEC (from the proposal), IMPLEMENTATION (fidelity and deviations),
-                       RUN_FORMAT, RETRIEVER, EVALUATION, REPRODUCE, PLAN
-report/                paper (IEEE format); tables and figures are pulled from results/
-tests/                 pytest suite (runs without models or API keys)
-data/esconv_hien/      ESConv-HiEn (built by scripts/build_hien.py)
-```
+## Live demo
+
+**[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**: chat as a help-seeker in English or Hinglish
+and watch the eight agents work step by step. The side panel shows your measured Hindi–English mix, the
+emotion, cause and intention the agents inferred, the support strategy they voted for and the Register Gate's
+language check. Run it locally with `pip install -r demo/requirements.txt` and
+`streamlit run demo/streamlit_app.py` (needs a free `GEMINI_API_KEY` in `.env`).
 
 ## Quick start
+
 ```bash
-python -m venv .venv && . .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-python scripts/setup_data.py                        # base code + ESConv
-python -m pytest -q                                 # all tests, no API key needed
-python scripts/run_all.py --dry_run                 # whole experiment plan with stand-ins
-python scripts/chat.py --dry_run --debug            # talk to the pipeline (stand-ins)
+python scripts/setup_data.py          # base code and ESConv
+python -m pytest -q tests             # 110 tests, no API key needed
+python scripts/run_all.py --dry_run   # the whole experiment plan with stand-ins
 ```
-With a free Gemini API key in `.env` (`GEMINI_API_KEY=...`), `python scripts/chat.py --debug`
-talks to the real system. The full reproduction (dataset, retriever training, δ tuning,
-experiments, evaluation, judge) is in [docs/REPRODUCE.md](docs/REPRODUCE.md).
+
+Full reproduction (dataset, retriever training, δ tuning, runs, evaluation, judge):
+[docs/REPRODUCE.md](docs/REPRODUCE.md).
+
+## Repository
+
+| Path | Contents |
+|---|---|
+| `codemixesc/` | profiler, retriever, prompts (base prompts verbatim + register additions), agents, systems, cached rate-limited LLM client, metrics |
+| `scripts/` | dataset build and quality check, retriever pairs and training, δ tuning, runs, evaluation, LLM judge, case studies, CLI chat |
+| `demo/` | Streamlit live demo |
+| `data/esconv_hien/` | ESConv-HiEn test and development sets, quality-check sample |
+| `results/` | per-turn run records, tables, retrieval and tuning results ([guide](results/README.md)) |
+| `report/` | paper (IEEE) and figures; [`docs/presentation/`](docs/presentation) holds the slides |
+| `docs/` | [implementation notes and every deviation from the base code](docs/IMPLEMENTATION.md), [evaluation protocol](docs/EVALUATION.md), [retriever](docs/RETRIEVER.md), [run format](docs/RUN_FORMAT.md) |
+| `tests/` | pytest suite, run by CI on every push |
 
 ## Data and licences
-ESConv (Liu et al., 2021) is for academic research only; it is not redistributed here
-(`scripts/setup_data.py` fetches it). ESConv-HiEn is derived from it and shared under the same
-terms. PHINC (Srivastava & Singh, 2020) is fetched from Zenodo by `scripts/build_pairs.py`.
-The system is a research prototype for emotional support, not a crisis service and not a
-replacement for professional help.
+
+ESConv (Liu et al., 2021) is for academic research only and is not redistributed here
+(`scripts/setup_data.py` downloads it); ESConv-HiEn is derived from it and shared under the same terms. PHINC
+(Srivastava & Singh, 2020, CC BY 4.0) is downloaded by `scripts/build_pairs.py`. All LLMs are used through the
+Gemini API free tier. CodeMixESC is a research prototype, not a crisis or counselling service.
