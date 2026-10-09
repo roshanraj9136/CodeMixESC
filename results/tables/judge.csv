@@ -1,0 +1,5 @@
+version,comparison,n,fluency_win,fluency_tie,fluency_lose,fluency_p_sign,identification_win,identification_tie,identification_lose,identification_p_sign,comforting_win,comforting_tie,comforting_lose,comforting_p_sign,suggestion_win,suggestion_tie,suggestion_lose,suggestion_p_sign,overall_win,overall_tie,overall_lose,overall_p_sign,naturalness_win,naturalness_tie,naturalness_lose,naturalness_p_sign
+Light,CodeMixESC vs MultiAgentESC,50,0.0,100.0,0.0,1.0,16.0,70.0,14.0,1.0,60.0,18.0,22.0,0.004324,6.0,86.0,8.0,1.0,74.0,6.0,20.0,9.8e-05,76.0,18.0,6.0,0.0
+Light,CodeMixESC vs Translate-Pivot,50,0.0,100.0,0.0,1.0,8.0,78.0,14.0,0.548828,44.0,24.0,32.0,0.417692,4.0,88.0,8.0,0.6875,44.0,24.0,32.0,0.417692,46.0,40.0,14.0,0.005223
+Heavy,CodeMixESC vs MultiAgentESC,50,2.0,98.0,0.0,1.0,6.0,90.0,4.0,1.0,64.0,28.0,8.0,2e-06,8.0,90.0,2.0,0.375,86.0,10.0,4.0,0.0,82.0,16.0,2.0,0.0
+Heavy,CodeMixESC vs Translate-Pivot,50,4.0,96.0,0.0,0.5,14.0,74.0,12.0,1.0,42.0,30.0,28.0,0.310505,8.0,80.0,12.0,0.753906,56.0,20.0,24.0,0.016589,50.0,44.0,6.0,2.7e-05

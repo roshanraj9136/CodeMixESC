@@ -1,0 +1,24 @@
+{
+ "system": "maesc",
+ "base_system": "maesc",
+ "spec": {
+  "kind": "multi",
+  "encoder": "roberta",
+  "register": false,
+  "gate": false
+ },
+ "version": "en",
+ "split": "test",
+ "model": "gemma-4-26b-a4b-it",
+ "delta": null,
+ "n_turns": 50,
+ "limit": null,
+ "git_commit": "af30093",
+ "started": "2026-10-09T18:20:44.535450+00:00",
+ "finished": "2026-10-09T18:59:15.595221+00:00",
+ "n_done": 50,
+ "n_missing": 0,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 0,
+ "interrupted": false
+}

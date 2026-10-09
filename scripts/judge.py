@@ -519,7 +519,8 @@ def parse_args(argv=None):
     if any(len(p) != 2 for p in args.pairs):
         ap.error("--pairs takes a:b items")
     args.versions = [v for v in args.versions.split(",") if v]
-    args.out_dir = args.out_dir or os.path.join(ROOT, "scratch", "judge_dry_run" if args.dry_run else "results")
+    args.out_dir = args.out_dir or (os.path.join(ROOT, "scratch", "judge_dry_run") if args.dry_run
+                                    else os.path.join(ROOT, "results"))
     return args
 
 

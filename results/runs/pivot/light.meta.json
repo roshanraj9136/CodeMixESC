@@ -1,0 +1,22 @@
+{
+ "system": "pivot",
+ "base_system": "pivot",
+ "spec": {
+  "kind": "pivot",
+  "encoder": "roberta"
+ },
+ "version": "light",
+ "split": "test",
+ "model": "gemma-4-26b-a4b-it",
+ "delta": null,
+ "n_turns": 50,
+ "limit": null,
+ "git_commit": "af30093",
+ "started": "2026-10-09T16:59:44.503539+00:00",
+ "finished": "2026-10-09T17:17:45.681565+00:00",
+ "n_done": 50,
+ "n_missing": 0,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 0,
+ "interrupted": false
+}

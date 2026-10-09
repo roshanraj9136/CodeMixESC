@@ -30,6 +30,21 @@
   {\fbox{\parbox{0.92\columnwidth}{\centering\small\itshape Generated figure \texttt{\detokenize{#2}} not available yet.}}}}}
 \newcommand{\pending}[1]{\textcolor{gray}{[\emph{#1}]}}
 \newcommand{\cmi}{\mathrm{CMI}}
+% result texts: written by scratch/autotext.py into generated/results_text.tex; until then the
+% placeholders below are shown
+\IfFileExists{generated/results_text.tex}{\input{generated/results_text.tex}}{}
+\providecommand{\TextAbstract}{\pending{One or two sentences with the
+main results are added once the experiments in Section~\ref{sec:results} are complete.}}
+\providecommand{\TextRetrieval}{\pending{Discussion of Table~\ref{tab:retrieval_test}: English encoder vs LaBSE vs multilingual mpnet
+before and after fine-tuning, Light vs Heavy.}}
+\providecommand{\TextQuality}{\pending{Discussion of Tables~\ref{tab:main_heavy}, \ref{tab:main_light} and \ref{tab:main_en}, and of the paired bootstrap tests in Table~\ref{tab:significance}.}}
+\providecommand{\TextRegister}{\pending{Discussion of Table~\ref{tab:register}.}}
+\providecommand{\TextStability}{\pending{Discussion of Table~\ref{tab:stability} and Fig.~\ref{fig:strategies}.}}
+\providecommand{\TextAblation}{\pending{Discussion of Table~\ref{tab:ablation}.}}
+\providecommand{\TextJudge}{\pending{Discussion of Table~\ref{tab:judge} and of the human evaluation.}}
+\providecommand{\TextEfficiency}{\pending{Discussion of Table~\ref{tab:efficiency}.}}
+\providecommand{\TextCases}{\pending{Discussion of the cases.}}
+\providecommand{\TextConclusion}{\pending{Conclusion written once the results are in.}}
 
 \begin{document}
 
@@ -55,8 +70,7 @@ generation and selection, which adds a language and cultural fit criterion to de
 refinement; and a Register Gate that re-refines a response whose CMI departs from the seeker's by
 more than a tuned threshold, adding at most one LLM call per turn. We also build ESConv-HiEn, a
 parallel Roman-script Hinglish version of the ESConv test set at two mixing levels that keeps the
-strategy labels, enabling a controlled robustness study. \pending{One or two sentences with the
-main results are added once the experiments in Section~\ref{sec:results} are complete.}
+strategy labels, enabling a controlled robustness study. \TextAbstract{}
 \end{abstract}
 
 \section{Introduction}
@@ -216,9 +230,10 @@ stay consistent; strategy labels are copied from the source turns. Two mixing le
 produced: \emph{Light} (target CMI 0.1--0.3) and \emph{Heavy} (0.3--0.5). The CMI of every
 utterance of at least five words is verified with HingBERT-LID and out-of-band utterances are
 regenerated (up to three rounds), as are rewrites whose LaBSE \cite{feng2022labse} similarity to
-the original drops. A random 20\% of the conversations is rated manually for naturalness and
-meaning preservation (1--5), and an LLM rater scores all conversations; conversations below 3 are
-rewritten and checked again. A development set of twelve training conversations is built the same
+the original drops. An LLM rater (\texttt{gemma-4-31b-it}) scores every conversation for naturalness
+and meaning preservation (1--5); low-rated conversations are kept unchanged, so the reported numbers
+include them. A manual rating of a random 20\% with the same rubric is prepared
+(\texttt{scripts/qc\_rater.py}) but not yet done. A development set of twelve training conversations is built the same
 way for tuning $\delta$ and selecting the retriever checkpoint. Because the English and Hinglish
 versions are parallel, any change in system behaviour can be attributed to code-mixing.
 Table~\ref{tab:hien_stats_test} summarises the data and Table~\ref{tab:hien_quality} the quality check.
@@ -279,19 +294,18 @@ resamples whole conversations, since turns of one conversation are not independe
 \section{Results}\label{sec:results}
 \subsection{Retrieval robustness}
 \resultstable{retrieval_test}
-\pending{Discussion of Table~\ref{tab:retrieval_test}: English encoder vs LaBSE vs multilingual mpnet
-before and after fine-tuning, Light vs Heavy.}
+\TextRetrieval{}
 
 \subsection{Response quality}
 \resultstable{main_heavy}
 \resultstable{main_light}
 \resultstable{main_en}
-\pending{Discussion of Tables~\ref{tab:main_heavy}, \ref{tab:main_light} and \ref{tab:main_en}, and of the paired bootstrap tests in Table~\ref{tab:significance}.}
+\TextQuality{}
 \resultstable{significance}
 
 \subsection{Register match}
 \resultstable{register}
-\pending{Discussion of Table~\ref{tab:register}.}
+\TextRegister{}
 \begin{figure}[t]
 \centering
 \resultsfigure{robustness}
@@ -307,25 +321,25 @@ before and after fine-tuning, Light vs Heavy.}
 \caption{Strategy distribution of CodeMixESC on the English, Light and Heavy versions.}
 \label{fig:strategies}
 \end{figure}
-\pending{Discussion of Table~\ref{tab:stability} and Fig.~\ref{fig:strategies}.}
+\TextStability{}
 
 \subsection{Ablations}
 \resultstable{ablation}
-\pending{Discussion of Table~\ref{tab:ablation}.}
+\TextAblation{}
 
 \subsection{Pairwise judgement}
 \resultstable{judge}
-\pending{Discussion of Table~\ref{tab:judge} and of the human evaluation.}
+\TextJudge{}
 
 \subsection{Efficiency}
 \resultstable{efficiency}
-\pending{Discussion of Table~\ref{tab:efficiency}.}
+\TextEfficiency{}
 
 \subsection{Case studies}
 Cases are selected automatically by fixed criteria (\texttt{scripts/case\_studies.py}): register
 rescues, Register Gate interventions, strategy divergences and failures.
 \IfFileExists{../results/tables/case_studies.tex}{\input{../results/tables/case_studies.tex}}{}
-\pending{Discussion of the cases.}
+\TextCases{}
 
 \FloatBarrier
 \section{Limitations and Ethics}
@@ -333,14 +347,16 @@ The work covers single-session, text-only, Roman-script Hindi--English conversat
 ESConv strategies; other Indian languages, speech and crisis counselling are out of scope.
 ESConv-HiEn is a machine rewrite of English conversations: although CMI-verified and
 quality-checked, it is not spontaneous Hinglish, and its references inherit the LLM's mixing
-style. Automatic metrics against a single reference reward surface overlap; the pairwise
+style. Its quality is rated by an LLM only: meaning is well preserved (4.09 Light, 4.98 Heavy, of 5),
+but Light rewrites read less naturally (2.60 of 5, 49 of 100 conversations below 3; Heavy 3.75), with
+overused fillers such as \emph{yaar} and some ungrammatical mixing. Automatic metrics against a single reference reward surface overlap; the pairwise
 judgement and the register metrics complement them. The system is a research prototype for
 emotional support and does not replace professional help; it must not be deployed for crisis
 situations. ESConv is licensed for academic research only, and ESConv-HiEn is shared under the
 same terms.
 
 \section{Conclusion}
-\pending{Conclusion written once the results are in.}
+\TextConclusion{}
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}

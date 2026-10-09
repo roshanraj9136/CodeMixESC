@@ -75,7 +75,7 @@ choice for contrastive sentence-embedding training. It changes nothing at infere
 
 | Setting | Default | Why |
 |---|---|---|
-| batch / lr / warmup / epochs | 32 / 2e-5 / 10% / 3 | proposal (1–3 epochs); linear decay, AdamW, weight decay 0.01 |
+| batch / lr / warmup / epochs | 32 / 2e-5 / 10% / 3 | proposal (1–3 epochs); the released model used `--epochs 1` (530 steps, best dev checkpoint at step 264); linear decay, AdamW, weight decay 0.01 |
 | `max_seq_length` | 128 | tweets and seeker posts are short; bounds activation memory |
 | batch sampler | `NO_DUPLICATES`, fixed | a duplicate text inside a batch would be a false negative (see below) |
 | `--freeze_embeddings auto` | frozen if GPU < 10 GB (or CPU) | see the memory budget below |
