@@ -56,23 +56,23 @@ from the base paper's repository.
 | Dataset quality check | LLM rater on all 200 conversations running; manual 20% sample: `streamlit run scripts/qc_rater.py` |
 | Experiments (agents `gemma-4-26b-a4b-it`, judge `gemma-4-31b-it`; multi-agent systems on a fixed 100-turn sample; δ = 0.15 tuned on dev) | running: Heavy and Light main comparison first, then the pivot, baselines, English and ablations |
 
-**Retrieval robustness on the development set** (151 turns per version, k = 10, 95%
-cluster-bootstrap CI; full table in [`results/tables/retrieval_dev.md`](results/tables/retrieval_dev.md)).
-*Overlap@10* = share of the cases retrieved for a Hinglish post that are also retrieved for its
-English original by the same encoder; *P@10* = share of retrieved cases with the query's problem
-type.
+**Retrieval robustness on the ESConv-HiEn test set** (all 1,210 turns per version, k = 10, 95%
+cluster-bootstrap CI; full table in [`results/tables/retrieval_test.md`](results/tables/retrieval_test.md),
+development set in [`retrieval_dev.md`](results/tables/retrieval_dev.md)). *Overlap@10* = share of the cases
+retrieved for a Hinglish post that are also retrieved for its English original by the same encoder; *P@10* =
+share of retrieved cases with the query's problem type.
 
 | Encoder | Overlap@10 Light | Overlap@10 Heavy | P@10 Light | P@10 Heavy |
 |---|---|---|---|---|
-| all-roberta-large-v1 (MultiAgentESC) | 56.0 ± 7.2 | 22.1 ± 7.3 | **30.7** ± 8.6 | **29.6** ± 7.6 |
-| LaBSE | 59.7 ± 6.7 | 32.4 ± 6.8 | 25.6 ± 5.7 | 24.9 ± 5.4 |
-| multilingual mpnet | 69.9 ± 7.6 | 29.6 ± 7.6 | 29.1 ± 7.7 | 26.7 ± 6.9 |
-| **multilingual mpnet, fine-tuned (ours)** | **72.9** ± 5.0 | **54.0** ± 4.4 | 26.7 ± 6.6 | 28.5 ± 6.6 |
+| all-roberta-large-v1 (MultiAgentESC) | 56.9 ± 1.9 | 27.0 ± 2.3 | **35.8** ± 2.3 | **33.8** ± 2.4 |
+| LaBSE | 61.4 ± 2.0 | 33.2 ± 2.2 | 28.9 ± 1.5 | 28.5 ± 1.3 |
+| multilingual mpnet | 69.9 ± 1.6 | 31.3 ± 2.3 | 31.6 ± 2.0 | 28.4 ± 1.6 |
+| **multilingual mpnet, fine-tuned (ours)** | **73.2** ± 1.3 | **53.3** ± 1.8 | 32.0 ± 2.0 | 31.5 ± 1.9 |
 
-Heavy code-mixing breaks the English retriever (only 22% of its cases survive); the fine-tuned
-encoder keeps 54% (+31.9 points, CI [+26.0, +37.4]) and makes the strategies of the retrieved
-cases the most stable across languages, at the cost of a small, partly significant drop in
-problem-type precision. Response-level results will be added here as the runs finish.
+Heavy code-mixing breaks the English retriever (only 27% of its cases survive); the fine-tuned
+encoder keeps 53% (+26.3 points, CI [+24.6, +28.2]) and makes the strategies of the retrieved cases
+the most stable across languages (strategy JSD Heavy 0.15 → 0.01), at the cost of a small, significant
+drop in problem-type precision (−2 to −4 points). Response-level results are added here as the runs finish.
 
 ```mermaid
 flowchart LR
