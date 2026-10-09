@@ -4,6 +4,8 @@
 [![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://codemixesc.streamlit.app)
 [![Retriever on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-codemix--retriever-orange)](https://huggingface.co/roshan9136/codemix-retriever)
 
+### ▶ Live demo: **[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**
+
 **Multi-agent emotional support for code-mixed Hinglish help-seekers, with cross-lingual experience
 retrieval and register-aware response selection.**
 Roshan Raj (12341830), IIT Bhilai — NLP course project (DSL504).
