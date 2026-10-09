@@ -89,14 +89,104 @@ def usage_counter():
     return {"day": time.strftime("%Y-%m-%d"), "n": 0}
 
 
-def respond(dialog, early_rule):
+class ProgressLLM:
+    """Delegates to the shared LLM client and records when each agent's call starts and ends, so
+    the page can show the agents at work while the turn is computed in a worker thread."""
+
+    def __init__(self, llm, events):
+        self.llm, self.events = llm, events
+
+    def chat(self, messages, **kw):
+        tag = kw.get("tag", "")
+        self.events.append(("start", tag, time.time()))
+        try:
+            return self.llm.chat(messages, **kw)
+        finally:
+            self.events.append(("end", tag, time.time()))
+
+    def __call__(self, prompt, system=None, **kw):
+        return self.chat([{"role": "user", "content": prompt}], system=system, **kw)[0]
+
+
+# agent call tag (trailing digits removed) -> (stage label, icon), in pipeline order
+STAGES = {"decide": ("Decision maker: is the dialogue complex?", ":material/alt_route:"),
+          "single": ("One agent writes the reply", ":material/person:"),
+          "emotion": ("Emotion agent", ":material/mood:"),
+          "cause": ("Cause agent", ":material/event:"),
+          "intention": ("Intention agent", ":material/flag:"),
+          "deliberate": ("Strategy deliberation (3 agents, group chat)", ":material/groups:"),
+          "generate": ("Writing one reply per strategy", ":material/edit_note:"),
+          "debate": ("Debate between the candidate replies", ":material/forum:"),
+          "reflect": ("Reflection and vote", ":material/how_to_vote:"),
+          "judge": ("Judge breaks a tie", ":material/gavel:"),
+          "refine": ("Refiner polishes the winner", ":material/auto_fix_high:"),
+          "gate": ("Register Gate rewrites the reply in your mix", ":material/rule:")}
+
+
+def timeline_md(events, t0, done=False):
+    """Markdown lines for the stages seen so far: finished ones with their time, the running
+    one shimmering. The retrieval step (no LLM call) is shown when deliberation starts."""
+    import re
+    order, first, last, open_n = [], {}, {}, {}
+    for kind, tag, t in list(events):
+        stage = re.sub(r"\d+$", "", tag)
+        if stage not in STAGES:
+            continue
+        if stage not in first:
+            order.append(stage)
+            first[stage] = t
+        open_n[stage] = open_n.get(stage, 0) + (1 if kind == "start" else -1)
+        if kind == "end":
+            last[stage] = t
+    lines = [":green[:material/check_circle:] **Code-Mix Profiler** measured your language mix"]
+    for stage in order:
+        if stage == "deliberate":
+            lines.append(":green[:material/check_circle:] **Cross-lingual retriever** found 10 similar past cases")
+        label, icon = STAGES[stage]
+        if open_n.get(stage, 0) > 0 and not done:
+            lines.append(f"{icon} :shimmer[**{label}** …]")
+        else:
+            secs = last.get(stage, first[stage]) - first[stage]
+            lines.append(f":green[:material/check_circle:] **{label}** :gray[{secs:.0f} s]")
+    if not done and (not order or open_n.get(order[-1], 0) <= 0):
+        lines.append(f":material/hourglass_top: :shimmer[thinking… {time.time() - t0:.0f} s]")
+    return "  \n".join(lines)
+
+
+def make_sample(dialog, early_rule):
     from codemixesc.esconv import json2natural
     count = len(dialog) + 1  # dialog index after this supporter turn, as in the base main.py
-    sample = {"uid": f"demo-{len(dialog)}", "conv_id": -1, "turn": len(dialog), "strategy": "", "reference": "",
-              "context_msgs": list(dialog), "context": json2natural(dialog), "post": dialog[-1]["content"],
-              "early": early_rule and count <= 5}
-    system, _ = load_pipeline()
-    return system.respond(sample, "demo")
+    return {"uid": f"demo-{len(dialog)}", "conv_id": -1, "turn": len(dialog), "strategy": "", "reference": "",
+            "context_msgs": list(dialog), "context": json2natural(dialog), "post": dialog[-1]["content"],
+            "early": early_rule and count <= 5}
+
+
+def respond_live(dialog, early_rule, live):
+    """Runs one CodeMixESC turn in a worker thread and redraws the stage timeline in `live`
+    (an st.empty) until it finishes. Returns the turn record."""
+    import threading
+    from codemixesc.systems import SYSTEMS, System
+    base, retriever = load_pipeline()
+    events, out = [], {}
+    system = System("codemixesc", ProgressLLM(base.llm, events), retriever=retriever, profiler=base.profiler,
+                    delta=DELTA, **SYSTEMS["codemixesc"])
+
+    def work():
+        try:
+            out["rec"] = system.respond(make_sample(dialog, early_rule), "demo")
+        except Exception as e:  # reported in the page
+            out["err"] = e
+
+    t0 = time.time()
+    worker = threading.Thread(target=work, daemon=True)
+    worker.start()
+    while worker.is_alive():
+        live.markdown(timeline_md(events, t0))
+        worker.join(0.4)
+    live.markdown(timeline_md(events, t0, done=True))
+    if "err" in out:
+        raise out["err"]
+    return out["rec"]
 
 
 def esc(t):
@@ -125,7 +215,7 @@ def mix_bar(label, hindi_share):
     st.progress(h, text=f"{label}: **{100 * h:.0f}% Hindi** · {100 * (1 - h):.0f}% English")
 
 
-def insight_panel(rec, retriever):
+def insight_panel(rec, retriever, working=False):
     from codemixesc.profiler import is_plain_english
     R, g = rec.get("R") or {}, rec.get("gate") or {}
     with st.container(border=True):
@@ -140,6 +230,12 @@ def insight_panel(rec, retriever):
                 st.badge(f"{R.get('script', 'Roman')} script", icon=":material/keyboard:", color="blue")
             st.caption("Measured word by word with HingBERT-LID; CMI = how mixed the two languages are (0 = one "
                        "language, 0.5 = half-half).")
+    if working:
+        with st.container(border=True):
+            st.markdown("##### :material/psychology: The agents are at work")
+            st.markdown(":shimmer[Reading your message, recalling similar cases, debating the best reply…]")
+            st.caption("Watch each step live under your message. This panel fills in when the reply is ready.")
+        return
     a = rec.get("analysis") or {}
     if rec.get("path") != "single" and a:
         with st.container(border=True):
@@ -278,6 +374,25 @@ with chat_col:
     st.caption(":material/health_and_safety: Not a crisis or counselling service. In distress in India? "
                "Call Tele-MANAS **14416** (24×7).")
 
+with info_col:
+    st.markdown("#### What CodeMixESC understood")
+    panel = st.empty()
+
+
+def draw_panel(rec=None, R=None):
+    """The right-hand panel: the full insight for a finished turn, the language mix alone while
+    the agents work, or the how-it-works card before the first message."""
+    with panel.container():
+        if rec:
+            insight_panel(rec, load_pipeline()[1])
+        elif R:
+            insight_panel({"R": R, "path": "working"}, None, working=True)
+        else:
+            empty_panel()
+
+
+draw_panel(next((r for r in reversed(st.session_state.traces) if r), None))
+
 prompt = (prompt or picked or "").strip()
 if prompt:
     counter = usage_counter()
@@ -292,13 +407,17 @@ if prompt:
                 rec, reply = None, "The demo reached today's free-tier limit; please try again tomorrow."
             else:
                 counter["n"] += 1
-                with st.status(":shimmer[8 agents are reading, debating and voting…]", type="compact") as status:
+                system, _ = load_pipeline()
+                R = system.profiler.profile([m["content"] for m in st.session_state.dialog if m["role"] == "user"])
+                draw_panel(R=R)
+                with st.status(":shimmer[The agents are working on your reply…]", type="compact",
+                               expanded=True) as status:
                     t0 = time.time()
                     try:
-                        rec = respond(st.session_state.dialog, early_rule)
+                        rec = respond_live(st.session_state.dialog, early_rule, st.empty())
                         reply = rec["response"]
-                        status.update(label=f"Answered in {time.time() - t0:.0f} s · {rec['n_calls']} LLM calls",
-                                      state="complete")
+                        status.update(label=f"Answered in {time.time() - t0:.0f} s · {rec['n_calls']} LLM calls "
+                                            "· see every step", state="complete", expanded=False)
                     except Exception as e:  # keep the session usable
                         rec, reply = None, "Sorry, the model is busy right now. Please send your message again."
                         status.update(label=f"Model busy ({type(e).__name__})", state="error")
@@ -307,11 +426,4 @@ if prompt:
                 st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
     st.session_state.dialog.append({"role": "assistant", "content": reply})
     st.session_state.traces.append(rec)
-
-with info_col:
-    st.markdown("#### What CodeMixESC understood")
-    last = next((r for r in reversed(st.session_state.traces) if r), None)
-    if last:
-        insight_panel(last, load_pipeline()[1])
-    else:
-        empty_panel()
+    draw_panel(rec)
