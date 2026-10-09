@@ -157,7 +157,8 @@ def make_sample(dialog, early_rule):
     from codemixesc.esconv import json2natural
     count = len(dialog) + 1  # dialog index after this supporter turn, as in the base main.py
     return {"uid": f"demo-{len(dialog)}", "conv_id": -1, "turn": len(dialog), "strategy": "", "reference": "",
-            "context_msgs": list(dialog), "context": json2natural(dialog), "post": dialog[-1]["content"],
+            "context_msgs": [{"role": m["role"], "content": m["content"]} for m in dialog],
+            "context": json2natural(dialog), "post": dialog[-1]["content"],
             "early": early_rule and count <= 5}
 
 
@@ -305,7 +306,12 @@ key = api_key()
 if key:
     os.environ["GEMINI_API_KEY"] = key
 if "dialog" not in st.session_state:
-    st.session_state.dialog, st.session_state.traces = [], []
+    st.session_state.dialog = []  # {"role", "content", "rec" (assistant turns: the pipeline record)}
+# a run interrupted between the question and the reply (e.g. an app update) leaves a trailing
+# user message: it is answered again in this run
+pending = None
+if st.session_state.dialog and st.session_state.dialog[-1]["role"] == "user":
+    pending = st.session_state.dialog.pop()["content"]
 
 with st.sidebar:
     st.markdown("### CodeMixESC")
@@ -333,7 +339,7 @@ with side:
                                    "retriever and Register Gate")
             st.caption("Orange = new in CodeMixESC, dashed = modified, blue = MultiAgentESC.")
         if st.button("New chat", icon=":material/refresh:"):
-            st.session_state.dialog, st.session_state.traces = [], []
+            st.session_state.dialog = []
             st.rerun()
 
 if not key:
@@ -363,7 +369,7 @@ with chat_col:
             with st.chat_message(msg["role"], avatar=avatar):
                 st.markdown(esc(msg["content"]))
                 if msg["role"] == "assistant":
-                    rec = st.session_state.traces[i // 2]
+                    rec = msg.get("rec")
                     if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
                         st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
     picked = None
@@ -391,9 +397,9 @@ def draw_panel(rec=None, R=None):
             empty_panel()
 
 
-prompt = (prompt or picked or "").strip()
+prompt = (prompt or picked or pending or "").strip()
 if not prompt:  # with a new message the panel is drawn once R is known (no stale cards in between)
-    draw_panel(next((r for r in reversed(st.session_state.traces) if r), None))
+    draw_panel(next((m.get("rec") for m in reversed(st.session_state.dialog) if m.get("rec")), None))
 if prompt:
     counter = usage_counter()
     if counter["day"] != time.strftime("%Y-%m-%d"):
@@ -424,6 +430,5 @@ if prompt:
             st.markdown(esc(reply))
             if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
                 st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
-    st.session_state.dialog.append({"role": "assistant", "content": reply})
-    st.session_state.traces.append(rec)
+    st.session_state.dialog.append({"role": "assistant", "content": reply, "rec": rec})
     draw_panel(rec)
