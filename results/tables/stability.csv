@@ -1,0 +1,5 @@
+system,light_jsd,light_jsd_s,light_agree,heavy_jsd,heavy_jsd_s,heavy_agree
+Few-shot CoT,0.00445,0.00445,86.0,0.005337,0.005337,86.0
+MultiAgentESC,0.014478,0.023332,60.0,0.081007,0.122204,54.0
+Translate-Pivot †,0.014665,0.037548,66.0,0.016239,0.021687,66.0
+CodeMixESC,0.022047,0.028575,70.0,0.015917,0.038808,62.0

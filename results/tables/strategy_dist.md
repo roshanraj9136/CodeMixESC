@@ -1,0 +1,17 @@
+**Predicted-strategy distribution (% of the common turns).**
+
+| Version | System | Turns | Question | Restatement or Paraphrasing | Reflection of feelings | Self-disclosure | Affirmation and Reassurance | Providing Suggestions | Information | Others | None |
+|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| EN | Few-shot CoT | 50 | 28.0 | 0.0 | 22.0 | 2.0 | 24.0 | 10.0 | 2.0 | 12.0 | 0.0 |
+|  | MultiAgentESC | 50 | 12.0 | 0.0 | 8.0 | 4.0 | 30.0 | 2.0 | 2.0 | 4.0 | 38.0 |
+|  | CodeMixESC | 50 | 12.0 | 8.0 | 6.0 | 2.0 | 26.0 | 4.0 | 0.0 | 4.0 | 38.0 |
+| Light | Few-shot CoT | 50 | 30.0 | 0.0 | 22.0 | 2.0 | 24.0 | 6.0 | 2.0 | 14.0 | 0.0 |
+|  | MultiAgentESC | 50 | 16.0 | 0.0 | 8.0 | 2.0 | 24.0 | 2.0 | 6.0 | 4.0 | 38.0 |
+|  | Translate-Pivot | 50 | 12.0 | 0.0 | 16.0 | 4.0 | 24.0 | 2.0 | 2.0 | 2.0 | 38.0 |
+|  | CodeMixESC | 50 | 6.0 | 4.0 | 10.0 | 2.0 | 32.0 | 6.0 | 0.0 | 2.0 | 38.0 |
+|  | w/o Register Gate | 50 | 6.0 | 4.0 | 10.0 | 2.0 | 32.0 | 6.0 | 0.0 | 2.0 | 38.0 |
+| Heavy | Few-shot CoT | 50 | 26.0 | 0.0 | 24.0 | 2.0 | 28.0 | 6.0 | 2.0 | 12.0 | 0.0 |
+|  | MultiAgentESC | 50 | 2.0 | 6.0 | 18.0 | 2.0 | 26.0 | 4.0 | 2.0 | 6.0 | 34.0 |
+|  | Translate-Pivot | 50 | 10.0 | 0.0 | 8.0 | 2.0 | 24.0 | 6.0 | 4.0 | 4.0 | 42.0 |
+|  | CodeMixESC | 50 | 10.0 | 10.0 | 6.0 | 6.0 | 22.0 | 8.0 | 0.0 | 4.0 | 34.0 |
+|  | w/o Register Gate | 50 | 10.0 | 10.0 | 6.0 | 6.0 | 22.0 | 8.0 | 0.0 | 4.0 | 34.0 |

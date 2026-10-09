@@ -1,0 +1,21 @@
+**Runs: records, coverage of the sampled subset, missing turns (expected but absent), failed turns (error field), 'None' responses, LLM calls that returned an empty or blocked answer and calls cut at the token limit (totals), duplicate uids, unreadable lines, and records whose reference or post differs from the current test data (stale).**
+
+| System | Version | Records | Subset % | Missing | Failed | None | Empty calls | Truncated calls | Dup. | Unread. | Stale | In tables | Model | δ |
+|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|:--|:--|--:|
+| zero_shot | EN | 100 | 100.0 | 1110 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| zero_shot | Light | 50 | 100.0 | 1160 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| zero_shot | Heavy | 50 | 100.0 | 1160 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| fewshot_cot | EN | 100 | 100.0 | 1110 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| fewshot_cot | Light | 50 | 100.0 | 1160 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| fewshot_cot | Heavy | 50 | 100.0 | 1160 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| maesc | EN | 50 | 100.0 | 0 | 0 | 0 | 0 | 83 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| maesc | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 76 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| maesc | Heavy | 56 | 100.0 | 0 | 0 | 0 | 0 | 93 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| pivot | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 77 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| pivot | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 69 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | – |
+| codemixesc | EN | 50 | 100.0 | 0 | 0 | 0 | 0 | 82 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
+| codemixesc | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 95 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
+| codemixesc | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 110 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
+| cmx_noft | Heavy | 2 | 4.0 | 48 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | no | – | – |
+| cmx_nogate | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 95 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
+| cmx_nogate | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 110 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
