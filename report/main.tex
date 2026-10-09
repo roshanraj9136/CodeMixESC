@@ -222,6 +222,13 @@ rewritten and checked again. A development set of twelve training conversations 
 way for tuning $\delta$ and selecting the retriever checkpoint. Because the English and Hinglish
 versions are parallel, any change in system behaviour can be attributed to code-mixing.
 Table~\ref{tab:hien_stats_test} summarises the data and Table~\ref{tab:hien_quality} the quality check.
+Both versions keep all 3,140 utterances of the 100 conversations. In Light, 94.5\% of the checked
+utterances fall in the target band (mean CMI 0.16, 16\% Hindi words); in Heavy, 87.5\% (mean CMI 0.35,
+half of the words Hindi). The CMI fix rounds rewrote 70\% (Light) and 48\% (Heavy) of the utterances at
+least once, and the mean LaBSE similarity to the English original is 0.88 and 0.71. On the English
+originals HingBERT-LID tags only 1.3\% of the words as Hindi (0.4\% after excluding English--Hindi
+homographs such as \emph{to}, \emph{me}), and 99.6\% of the English turns are treated as plain English,
+so the profiler does not invent code-mixing.
 
 \resultstable{hien_stats_test}
 
