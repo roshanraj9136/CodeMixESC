@@ -1,0 +1,921 @@
+<!doctype html><meta charset='utf-8'><title>ESConv-HiEn heavy</title><style>body{font-family:sans-serif;margin:24px}table{border-collapse:collapse;width:100%;margin-bottom:28px}td,th{border:1px solid #ccc;padding:4px 8px;vertical-align:top;text-align:left}th{background:#eee}</style><h1>ESConv-HiEn heavy: conversations to rate</h1>
+<p>Rate each conversation for <b>naturalness</b> (does the Hinglish read like real chat?) and <b>meaning preservation</b> (same meaning, emotion and support strategy as the English), 1-5, in sheet_heavy.csv.</p>
+<h2>Conversation 3</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hi! How are you doing? </td><td>Hi! Kaise ho aap?</td><td>0.25</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>I am dong good. You?
+</td><td>Main doing good hoon. Tum batao?</td><td>0.3333</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>I am okay thanks but it is a worrying year. Have you been worrying about anything? </td><td>Main bhi fine hoon thanks, par yeh year kafi worrying chal raha hai. Tum bhi kisi matter ko lekar really worried ho kya?</td><td>0.3043</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>I have been staying home since last March due to COVID; getting very depressed.</td><td>Last March se COVID ki wajah se home par hi hoon yaar; honestly bahut depressed feel ho raha hai.</td><td>0.3158</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>Ah I hear you, I have been self isolating too. Do you have an online support network? </td><td>Ah I understand, main bhi self-isolate ho gaya hoon. Tumhara koi online support network hai kya?</td><td>0.4118</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>What do you mean by support netwrok?
+</td><td>Support network se tumhara exactly kya matlab hai?</td><td>0.375</td></tr>
+<tr><td>6</td><td>supporter</td><td>Self-disclosure</td><td>Well, friends you can talk to during this difficult time? I have a lot of friends on facebook and similar that I can talk to. </td><td>Well, aise friends jisse tum is difficult time mein talk kar sako? Mere paas Facebook aur similar platforms par kafi friends hain jisse main talk kar sakta hoon.</td><td>0.3571</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>I have few friends and can talk to but not sure how would they help.
+</td><td>Mere paas very few friends hain jisse main talk kar sakta hoon par I&#x27;m not sure ki woh kaise help karenge.</td><td>0.381</td></tr>
+<tr><td>8</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Sometimes it does just make it easier to know that other people are in the same situation as you :) </td><td>Sometimes bas yeh know karke hi easy ho jata hai ki other people bhi tumhari hi situation mein hain :)</td><td>0.3158</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>You mean share experiences among the friends?
+</td><td>Tumhara matlab friends ke beech experiences share karein?</td><td>0.5</td></tr>
+<tr><td>10</td><td>supporter</td><td>Providing Suggestions</td><td>Yes .. or at least share coping mechanisms perhaps? </td><td>Yes.. ya phir at least coping mechanisms share kar lein?</td><td>0.4</td></tr>
+<tr><td>11</td><td>supporter</td><td>Providing Suggestions</td><td>Do you have any hobbies that you can occupy yourself with right now? </td><td>Tumhare paas koi aisi hobbies hain jismein tum khud ko right now occupy karke busy rakh sako?</td><td>0.2941</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Yes, I pay musical instruments but do to COVID could not play with the band</td><td>Yes, main musical instruments play karta hoon par COVID ki wajah se band ke sath jam nahi play kar paya.</td><td>0.3</td></tr>
+<tr><td>13</td><td>supporter</td><td>Question</td><td>Could you perhaps set up Zoom meetings where you could play together online? </td><td>Kya tum Zoom meetings set up kar sakte ho jahan tum sab online ek sath play kar sako?</td><td>0.3333</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>Any idea how would it work? Would there be any delay between the sounds from different instruments?
+</td><td>Koi idea hai ki ye kaise work karega? Kya different instruments ke sounds mein koi delay hoga kya?</td><td>0.3333</td></tr>
+<tr><td>15</td><td>supporter</td><td>Affirmation and Reassurance</td><td>No I don&#x27;t think so :) I think that it is totally live so you could play just as you would if you were together in person. </td><td>No I don&#x27;t think so :) Mujhe lagta hai ki ye totally live hota hai toh tum perfectly waise hi play kar sakoge jaise tum real life mein together hote ho.</td><td>0.4</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>Thanks for the idea. I will give it a try.</td><td>Idea ke liye thanks. Main ise try karke dekhta hoon.</td><td>0.3</td></tr>
+<tr><td>17</td><td>supporter</td><td>Others</td><td>I hope it goes well for you. It has been such an awful year, hasn&#x27;t it? </td><td>I hope ki ye tumhare liye great rahe. Itna awful year raha hai na yeh?</td><td>0.3333</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>Yes, it was.. worst I ever seen..</td><td>Yes, yeh toh... absolutely worst tha jo maine ever dekha hai..</td><td>0.3636</td></tr>
+<tr><td>19</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I wish you all the very best for 2021. I hope that you get to get together with your band again and rock! </td><td>Main 2021 ke liye tumhe all the very best wish karta hoon. I hope ki tum apne band ke sath phir se mil sako aur rock karo!</td><td>0.3077</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>I hope so. As they started the vaccination everything should come back to normal in few months.. </td><td>I hope so. Jaise ki vaccination start ho gayi hai toh kuch months mein sab kuch normal ho jana chahiye..</td><td>0.35</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>Thanks for your time and support.
+</td><td>Apne time aur support ke liye thanks.</td><td>0.4286</td></tr>
+<tr><td>22</td><td>supporter</td><td>Others</td><td>Yes, all we need to do is be patient! Have a great New Year and thanks for talking. </td><td>Yes, humein bas patient rehne ki zaroorat hai! Have a great New Year and thanks for talking.</td><td>0.3529</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>Bye
+</td><td>Bye</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 4</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hello, what is life like for you at the moment? </td><td>Hello, life abhi tumhare liye kaisi chal rahi hai, honestly?</td><td>0.3</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Infinitely complicated.
+</td><td>Infinitely complicated yaar.</td><td>0.3333</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>Too many decisions. I don&#x27;t know what to do.
+</td><td>Bahut saare decisions hain. I don&#x27;t know kya karna chahiye.</td><td>0.4</td></tr>
+<tr><td>3</td><td>supporter</td><td>Others</td><td>I am sorry to hear that but I am happy to listen and help you if I can</td><td>I am so sorry to hear that par I am happy to listen and help you agar main kuch kar saku toh</td><td>0.3182</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>what sort of things are you trying to decide? </td><td>Tum kis sort ki cheezein decide karne ki try kar rahi ho?</td><td>0.25</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>I don&#x27;t even know where to start.
+
+</td><td>I don&#x27;t even know ki kahan se start karu main.</td><td>0.5</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>I&#x27;m trying to decide if I can build trust with him again.
+</td><td>Main yeh decide karne ki try kar rahi hu ki I can build trust with him again or not.</td><td>0.4211</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>He lied about everything.
+</td><td>He lied about everything.</td><td>0.25</td></tr>
+<tr><td>8</td><td>supporter</td><td>Providing Suggestions</td><td>Well, let&#x27;s try to take it one problem at a time so&#x27;s not to get overwhelmed. What is your biggest problem at the moment? </td><td>Well, let&#x27;s try to take it one problem at a time taaki tum overwhelmed na ho jao. What is your biggest problem currently?</td><td>0.2174</td></tr>
+<tr><td>9</td><td>supporter</td><td>Reflection of feelings</td><td>Ah, am I to take it that a relationship has recently ended? </td><td>Ah, kya main yeh assume karu ki koi relationship recently end hua hai?</td><td>0.3077</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>When we met, before we got involved, he said he was divorced. I ended up finding out that he was still legally married. He assured me that they were just a pen&#x27;s stroke away from being divorced.
+
+
+</td><td>Jab hum meet kiye the, involve hone se pehle, he said ki woh divorced hai. Mujhe baad mein pata chala ki he is legally still married. Usne mujhe assure kiya tha ki unka divorce hone mein bas thoda time baaki hai.</td><td>0.2683</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>That was in March.
+</td><td>That was March ki baat.</td><td>0.4</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>I found out three weeks ago that they&#x27;re actually still living together.
+</td><td>Mujhe three weeks pehle pata chala ki they are actually still living together.</td><td>0.3846</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>ANd, no. We haven&#x27;t broken up yet.
+</td><td>And, no. Humne abhi tak break up nahi kiya hai.</td><td>0.4</td></tr>
+<tr><td>14</td><td>supporter</td><td>Self-disclosure</td><td>Ah I totally hear you .. the old &#x27;we&#x27;re getting divorced&#x27; line. I&#x27;ve been in that one! You are well out of this. </td><td>Ah I totally hear you.. wohi purani &#x27;we&#x27;re getting divorced&#x27; line. Main bhi us phase se guzar chuki hu! You are well out of this.</td><td>0.4</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>I&#x27;m debating. I don&#x27;t know what to do.
+</td><td>Main debate kar rahi hu. I don&#x27;t know kya karu.</td><td>0.4</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>I feel like a schmuck.
+</td><td>Mujhe khud par gussa aa raha hai, I feel like a schmuck.</td><td>0.4167</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>He has such pretty words.
+</td><td>He has such pretty words aur baat karne ka tareeka.</td><td>0.4</td></tr>
+<tr><td>18</td><td>supporter</td><td>Self-disclosure</td><td>From personal experience I think that if they say they&#x27;re going to get divorced and then drag their feet it is never going to happen. </td><td>Apne personal experience se I think ki agar woh kehte hain ki divorce hone wala hai aur phir drag their feet, toh woh kabhi nahi hone wala.</td><td>0.2963</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>And he invests so much time and effort into us.
+</td><td>And woh humare upar kitna saara time aur effort invest karta hai.</td><td>0.3333</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>I agree with you.
+</td><td>Main aapki baat se totally agree karti hu.</td><td>0.25</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>My mind agrees.
+</td><td>Mera mind agree karta hai.</td><td>0.4</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>My stupid emotions are clouding things.
+</td><td>Meri yeh stupid emotions sab kuch cloud kar rahe hain.</td><td>0.3</td></tr>
+<tr><td>23</td><td>supporter</td><td>Others</td><td>Well, if you were to give him an ultimatum what do you think he would say? </td><td>Well, agar tum usko koi ultimatum do toh what do you think woh kya kahega?</td><td>0.4</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>I did.
+</td><td>Maine diya tha.</td><td>0.0</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>LOL
+</td><td>LOL</td><td>0.0</td></tr>
+<tr><td>26</td><td>supporter</td><td>Question</td><td>And he&#x27;s still married? </td><td>And woh abhi bhi married hai?</td><td>0.3333</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>And he brought his kids to my house so they could meet my kids. He had a conversation with them about why he and their mother had been living the way they had. (in seperate floors of the house)
+</td><td>And he brought his kids to my mere ghar taaki woh mere kids se mil sakein. Usne unse baat ki thi about how he and their mother were living (ghar ke separate floors par).</td><td>0.4706</td></tr>
+<tr><td>28</td><td>seeker</td><td></td><td>That was two weeks ago.
+</td><td>That was two weeks ago ki baat hai.</td><td>0.375</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>So, yes, he is.
+</td><td>Toh, yes, woh hai.</td><td>0.25</td></tr>
+<tr><td>30</td><td>seeker</td><td></td><td>Too soon to tell.
+</td><td>Too soon to tell.</td><td>0.0</td></tr>
+<tr><td>31</td><td>supporter</td><td>Reflection of feelings</td><td>I can tell that you feel that you are being cheated here. I can&#x27;t tell you what to do but don&#x27;t you think you deserve better? </td><td>Main samajh sakti hu ki tumhe feel ho raha hai ke you are being cheated. Main tumhe bata nahi sakti kya karna chahiye par don&#x27;t you think you deserve better?</td><td>0.3667</td></tr>
+<tr><td>32</td><td>seeker</td><td></td><td>I guess that&#x27;s what I&#x27;m trying to figure out. Should I give him time to prove himself now that he&#x27;s backed into a corner.
+</td><td>I guess wahi main figure out karne ki try kar rahi hu. Kya mujhe use time dena chahiye to prove himself ab jab woh ek corner mein aa gaya hai.</td><td>0.3333</td></tr>
+<tr><td>33</td><td>supporter</td><td>Affirmation and Reassurance</td><td>It&#x27;s not for me to say but I wonder if he&#x27;s really going to change as he has not already. </td><td>Mera bolna sahi nahi hoga par I wonder ki kya woh sach mein change hoga jabki he has not already.</td><td>0.3</td></tr>
+<tr><td>34</td><td>seeker</td><td></td><td>That&#x27;s not an easy question to answer. He treats me very well. Always has. And he is frantically trying to accomodate me, now htat I know.</td><td>Iska answer dena itna easy nahi hai. Woh mujhe bahut acche se treat karta hai, always has. And ab jab use pata chal gaya hai, toh he is frantically trying to accommodate me.</td><td>0.3333</td></tr>
+<tr><td>35</td><td>seeker</td><td></td><td>I agree with you. It&#x27;s one of my fears.
+</td><td>I agree with you. Yeh mere biggest fears mein se ek hai.</td><td>0.5</td></tr>
+<tr><td>36</td><td>supporter</td><td>Question</td><td>How do your children feel about this? And his? </td><td>Tumhare kids ka is baare mein kya kehna hai? And what about his kids?</td><td>0.4286</td></tr>
+<tr><td>37</td><td>seeker</td><td></td><td>MY children (6 and 9) have been living with him in their lives as a male figure who is growing into a father figure. He and I have been together for fifteen months, and part-time living together for six.
+</td><td>MERE bache (6 aur 9 saal ke) uske saath reh rahe hain apni life mein ek male figure ke tarah jo father figure banta ja raha hai. Hum dono fifteen months se saath hain, aur six months se part-time live-in mein hain.</td><td>0.3095</td></tr>
+<tr><td>38</td><td>seeker</td><td></td><td>This isn&#x27;t a new relationship. That&#x27;s part of the complication, too.
+</td><td>Yeh koi new relationship nahi hai. Isliye yeh situation aur complicated hai.</td><td>0.3333</td></tr>
+<tr><td>39</td><td>seeker</td><td></td><td>His kids actually asked if they could come live with me while he and his (ex?) figured their shit out.
+</td><td>Uske kids ne actually pucha tha ki can they come live with me jab tak he and his ex apna shit figure out kar rahe hain.</td><td>0.4615</td></tr>
+<tr><td>40</td><td>supporter</td><td>Question</td><td>Yes, I can imagine that it is. It is always really difficult when children are involved. I know you would not want your children to be hurt </td><td>Yes, I can imagine ki yeh kitna tough hai. Jab children involved hote hain toh situation bahut difficult ho jaati hai. I know you would not want your kids to get hurt.</td><td>0.375</td></tr>
+<tr><td>41</td><td>seeker</td><td></td><td>It&#x27;s a messed up situation that COVID has not improved. He was furloughed in May.</td><td>Yeh ek messed up situation hai jise COVID ne aur kharab kar diya hai. He was furloughed in May.</td><td>0.3684</td></tr>
+<tr><td>42</td><td>seeker</td><td></td><td>Indeed I don&#x27;t, you&#x27;re right.
+</td><td>Indeed main nahi chahti, you&#x27;re right.</td><td>0.3333</td></tr>
+<tr><td>43</td><td>supporter</td><td>Self-disclosure</td><td>I hear you. Covid has disrupted the whole world so might this year! I can&#x27;t wait for it to be over. </td><td>I hear you. Covid ne poori world ko disrupt kar diya hai toh this year bhi waisa hi raha! I can&#x27;t wait for it to end.</td><td>0.4615</td></tr>
+<tr><td>44</td><td>seeker</td><td></td><td>But now it seems like it will hurt them if I break up with him.
+</td><td>Par ab aisa lag raha hai ki it will hurt them agar I break up with him.</td><td>0.4706</td></tr>
+<tr><td>45</td><td>supporter</td><td>Others</td><td>But it will hurt them more the longer the situation goes on :( </td><td>Par unhe aur zyada hurt hoga the longer this situation goes on :(</td><td>0.4167</td></tr>
+<tr><td>46</td><td>seeker</td><td></td><td>I wish I could say that I were confident that 2021 would be better, but...
+</td><td>Kaash I could say ki I am confident ki 2021 better hoga, par...</td><td>0.4167</td></tr>
+<tr><td>47</td><td>seeker</td><td></td><td>Too right.
+</td><td>Too right.</td><td>0.0</td></tr>
+<tr><td>48</td><td>seeker</td><td></td><td>And this is all a part of why this is not a simple situation.
+</td><td>And yeh sab isliye hai kyunki this is not a simple situation at all.</td><td>0.3571</td></tr>
+<tr><td>49</td><td>supporter</td><td>Others</td><td>Well it surely could not be worse :)</td><td>Well isse zyada bura toh kya hi ho sakta hai :)</td><td>0.2</td></tr>
+<tr><td>50</td><td>seeker</td><td></td><td>I have no doubt that he loves me very much.
+</td><td>I have no doubt ki he loves me very much yaar.</td><td>0.2727</td></tr>
+<tr><td>51</td><td>seeker</td><td></td><td>Hahahaha! Seems that way. 
+</td><td>Hahahaha! Seems that way.</td><td>0.25</td></tr>
+<tr><td>52</td><td>seeker</td><td></td><td>He didn&#x27;t make this lie up for me. That&#x27;s an interesting thing.
+</td><td>He didn&#x27;t make this lie up sirf mere liye. That&#x27;s a very interesting thing.</td><td>0.2857</td></tr>
+<tr><td>53</td><td>seeker</td><td></td><td>He was living the &quot;divorced dad&quot; lie to A LOT of people.
+</td><td>Woh yeh &quot;divorced dad&quot; wala jhoot was living to A LOT of people.</td><td>0.3077</td></tr>
+<tr><td>54</td><td>seeker</td><td></td><td>Anybody and everybody who was far enough away to be lied to.
+</td><td>Anybody and everybody jo utne door the ki they could be lied to.</td><td>0.3077</td></tr>
+<tr><td>55</td><td>seeker</td><td></td><td>She lives in her bedroom. Only comes out to work two nights a week. DOesn&#x27;t want to have anything to do with her kids (5, 9, 11, 13)
+</td><td>She lives in her bedroom, sirf hafte mein two nights kaam karne ke liye bahar aati hai. Doesn&#x27;t want anything to do with her kids (5, 9, 11, 13 years old).</td><td>0.3704</td></tr>
+<tr><td>56</td><td>supporter</td><td>Others</td><td>(sorry was afk let me catch up)
+</td><td>(sorry afk tha mujhe catch up karne do)</td><td>0.375</td></tr>
+<tr><td>57</td><td>seeker</td><td></td><td>And she and my BF have been living that way for three years. Over a year before I even met him.</td><td>And she aur mera BF have been living that way for three years. Over a year before I even met him.</td><td>0.0952</td></tr>
+<tr><td>58</td><td>supporter</td><td>Providing Suggestions</td><td>Is it possible she is suffering from depression? </td><td>Kya possible hai ki she is suffering from depression?</td><td>0.3333</td></tr>
+<tr><td>59</td><td>seeker</td><td></td><td>I would all but guarantee it.</td><td>Main toh iski poori guarantee all but de sakti hu.</td><td>0.3</td></tr>
+<tr><td>60</td><td>supporter</td><td>Others</td><td>It just worries me that he might treat you the same way if you were ever in the same position </td><td>Mujhe bas is baat ki worry hai ki he might treat you the same way if you were ever in the same position.</td><td>0.3478</td></tr>
+<tr><td>61</td><td>seeker</td><td></td><td>Here&#x27;s the other kicker, though...
+</td><td>Yahan ek aur kicker hai, though...</td><td>0.3333</td></tr>
+<tr><td>62</td><td>seeker</td><td></td><td>She knows about me. 
+</td><td>She knows about me.</td><td>0.25</td></tr>
+<tr><td>63</td><td>seeker</td><td></td><td>(I know. You&#x27;re right. I thought that as well)
+</td><td>(I know. You&#x27;re right. Maine bhi wahi socha tha)</td><td>0.3333</td></tr>
+<tr><td>64</td><td>supporter</td><td>Question</td><td>And how does she feel about you? </td><td>And use tumhare baare mein kaisa lagta hai?</td><td>0.25</td></tr>
+<tr><td>65</td><td>seeker</td><td></td><td>She doesn&#x27;t care. She just wants to keep the status quo. She likes the money and security.
+</td><td>She doesn&#x27;t care at all. Woh bas status quo maintain rakhna chahti hai, she likes the money and security.</td><td>0.3158</td></tr>
+<tr><td>66</td><td>seeker</td><td></td><td>(before he was furloughed, he made very good money.)
+</td><td>(Before he was furloughed, woh bahut acche paise kamata tha.)</td><td>0.3</td></tr>
+<tr><td>67</td><td>supporter</td><td>Providing Suggestions</td><td>I think it would be better if he  were able to come to a sensible financial solution with her. This situation is damaging for everyone. </td><td>I think behtar hoga agar he were able to come to a sensible financial solution with her. Yeh situation sabhi ke liye damaging hai.</td><td>0.375</td></tr>
+<tr><td>68</td><td>seeker</td><td></td><td>Yes!
+</td><td>Yes!</td><td>0.0</td></tr>
+<tr><td>69</td><td>seeker</td><td></td><td>I agree!
+</td><td>Main agree karti hu!</td><td>0.5</td></tr>
+<tr><td>70</td><td>seeker</td><td></td><td>EVERYBODY!
+</td><td>EVERYBODY!</td><td>0.0</td></tr>
+<tr><td>71</td><td>supporter</td><td>Others</td><td>I hope I have been able to have been of some help to you :) A very happy New Year to you! </td><td>I hope main tumhari kuch help kar payi hu :) A very happy New Year to you!</td><td>0.375</td></tr>
+<tr><td>72</td><td>seeker</td><td></td><td>Happy New Year!</td><td>Happy New Year!</td><td>0.0</td></tr>
+<tr><td>73</td><td>supporter</td><td>Information</td><td>You just need to press quit and take the survey - it has to be done at your end :) </td><td>Tumhe bas quit press karke survey lena hai - it has to be done at your end :) roomId</td><td>0.3529</td></tr>
+</table>
+<h2>Conversation 11</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>What canI do to help?</td><td>Main kya help kar sakta hoon aapki?</td><td>0.2857</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Hi! I am trying to find a new job for long time. There is no success in it
+</td><td>Hi! Main long time se new job ke liye try kar raha hoon. Koi success nahi mil rahi hai.</td><td>0.3158</td></tr>
+<tr><td>2</td><td>supporter</td><td>Reflection of feelings</td><td>I feel bad for you.</td><td>Mujhe aapke liye bahut bura lag raha hai yaar.</td><td>0.2222</td></tr>
+<tr><td>3</td><td>supporter</td><td>Providing Suggestions</td><td>There are many openings for Uber and Uber Eats.</td><td>Uber aur Uber Eats mein bahut saari openings hain waise.</td><td>0.4</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>What were you doing before you were looking for a job? Were you in college?</td><td>Job searching start karne se pehle aap kya kar rahe the? Kya aap college mein the?</td><td>0.3125</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>I am not a good driver
+</td><td>Main ek good driver nahi hoon.</td><td>0.3333</td></tr>
+<tr><td>6</td><td>supporter</td><td>Question</td><td>What do you find are your top skill sets?</td><td>Aapke top skill sets kya hain?</td><td>0.5</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>I was working in an IT company as a program analyst </td><td>Main ek IT company mein as a program analyst kaam kar raha tha.</td><td>0.4615</td></tr>
+<tr><td>8</td><td>supporter</td><td>Affirmation and Reassurance</td><td>That is good that you have a good skill set that allows you to find something in the same field of IT.</td><td>Yeh very good baat hai ki aapke paas aise skill sets hain jisse aapko IT field mein easily job mil sakti hai.</td><td>0.3636</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>I am really having hard time to get one
+</td><td>Honestly mujhe ek get karne mein really hard time face karna pad raha hai.</td><td>0.4286</td></tr>
+<tr><td>10</td><td>supporter</td><td>Question</td><td>How so? What is the specific difficulty? Is it with your resume?</td><td>Aisa kaise? Specific difficulty kya hai? Kya resume mein koi issue hai?</td><td>0.3333</td></tr>
+<tr><td>11</td><td>supporter</td><td>Question</td><td>Are you feeling nervous? Anxious?</td><td>Kya aap nervous feel kar rahe ho? Anxious ho?</td><td>0.3333</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>The reason is recession or might be COVID. </td><td>Iska reason recession hai ya shayad COVID might be.</td><td>0.4444</td></tr>
+<tr><td>13</td><td>supporter</td><td>Question</td><td>Any other questions or concerns that you may have for me?</td><td>Koi other questions ya concerns hain jo aap mujhse share karna chahte ho?</td><td>0.3077</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>I am stressed 
+</td><td>Main bahut stressed hoon.</td><td>0.25</td></tr>
+<tr><td>15</td><td>supporter</td><td>Question</td><td>Well, how do you adapt to the work issue? Do you like dogs? There are opportunities for dog walkers.</td><td>Well, aap work issue ke sath kaise adapt karte ho? Kya aapko dogs pasand hain? Dog walkers ke liye bhi opportunities hoti hain.</td><td>0.3478</td></tr>
+<tr><td>16</td><td>supporter</td><td>Self-disclosure</td><td>I made good money in the past walking my neighbors and friends dogs.</td><td>Maine past mein apne neighbors aur friends ke dogs ko walk kara ke accha paisa earn kiya tha.</td><td>0.3333</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>I don&#x27;t have any pet so no experience with it</td><td>Mere paas koi pet nahi hai toh iska no experience hai.</td><td>0.2727</td></tr>
+<tr><td>18</td><td>supporter</td><td>Self-disclosure</td><td>When I get stressed, I try to do vigorous exercises with pushups, chin ups, sit ups or walking fast.</td><td>Jab main stress mein hota hoon, toh main pushups, chin ups, sit ups ya fast walking karke vigorous exercises try karta hoon.</td><td>0.5</td></tr>
+<tr><td>19</td><td>supporter</td><td>Question</td><td>Do you have a place that you can walk briskly in your area of town?</td><td>Kya aapke town ke area mein koi aisi place hai jahan aap brisk walk kar sako?</td><td>0.3125</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>I am not worried financially . I am feeling depressed by trying again and agian, never happened with me before</td><td>Main financially worried nahi hoon. Again and again try karke main depressed feel kar raha hoon, it never happened with me before.</td><td>0.3636</td></tr>
+<tr><td>21</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>Losing a job? It never happened for you before?</td><td>Job losing? Aapke sath it never happened before?</td><td>0.25</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>There are recreational parks, and trails near by</td><td>Yahan nearby recreational parks aur trails hain.</td><td>0.4286</td></tr>
+<tr><td>23</td><td>supporter</td><td>Providing Suggestions</td><td>I would join a support group for those people who need support and want to change careers.</td><td>Main ek support group join kar leta agar main un people mein hota jinko support chahiye aur jo careers change karna chahte hain.</td><td>0.3043</td></tr>
+<tr><td>24</td><td>supporter</td><td>Providing Suggestions</td><td>There are support groups online to help with job loss who can advise you on where to use your interests and skills  to have a more fulfilling life.</td><td>Job loss se deal karne ke liye online support groups hote hain jo aapko guide kar sakte hain ki aap apni interests aur skills ko kahan use karke ek more fulfilling life jee sakte ho.</td><td>0.3429</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>I love my career just getting bit demotivated</td><td>I love my career, bas thoda demotivated feel ho raha hai.</td><td>0.4545</td></tr>
+<tr><td>26</td><td>supporter</td><td>Question</td><td>Well, what other questions or concerns do you have for me?</td><td>Well, aapke paas mere liye what other questions ya concerns hain?</td><td>0.4545</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>Thanks for letting  me know. I would definitely do search </td><td>Letting me know ke liye thanks. Main definitely search karunga.</td><td>0.4</td></tr>
+<tr><td>28</td><td>seeker</td><td></td><td>That was all! Thanks for all your support</td><td>Bas itna hi tha! All support ke liye thank you.</td><td>0.4</td></tr>
+<tr><td>29</td><td>supporter</td><td>Reflection of feelings</td><td>I feel that you have really expressed the important things in your life that you need to. I am proud of you.</td><td>Mujhe lagta hai ki aapne apni life ki important baatein bahut acche se express ki hain jo aapko karni chahiye thi. I am proud of you.</td><td>0.3077</td></tr>
+<tr><td>30</td><td>supporter</td><td>Self-disclosure</td><td>I have been down, but I reached out to support groups.</td><td>Main bhi down feel kar chuka hoon, par I reached out to support groups.</td><td>0.4286</td></tr>
+<tr><td>31</td><td>seeker</td><td></td><td>Have a wonderful New Year ahead! Bye</td><td>Aapka New Year bahut wonderful ho! Bye.</td><td>0.4286</td></tr>
+<tr><td>32</td><td>supporter</td><td>Self-disclosure</td><td>I felt good to help you in December 2020.</td><td>December 2020 mein aapki help karke mujhe very good feel hua tha.</td><td>0.4545</td></tr>
+</table>
+<h2>Conversation 13</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hello how are you?</td><td>Hello, tum kaise ho?</td><td>0.25</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>I&#x27;m, okay, thanks, and you?  I&#x27;m feeling a bit down because I&#x27;m alone for the holidays.</td><td>I&#x27;m okay, thanks, aur tum? Main thoda down feel kar raha hoon because I am alone for the holidays.</td><td>0.3684</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>Well that&#x27;s no good, does your family live far away?</td><td>Well that&#x27;s no good yaar, kya tumhari family bahut door rehti hai?</td><td>0.5</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>Yes, my family is scattered all over the country, like Seattle, Georgia, PA.  I&#x27;m sure I&#x27;m not the only one with no plans this weekend, though.</td><td>Yes, meri family poori country mein scattered hai, like Seattle, Georgia, PA. But I&#x27;m sure ki is weekend no plans hone wala akela main hi nahi hounga.</td><td>0.4815</td></tr>
+<tr><td>4</td><td>supporter</td><td>Self-disclosure</td><td>True but I can understand that, it is hard being alone at the holidays.</td><td>True yaar, but main samajh sakta hoon, holidays mein alone rehna truly hard hota hai.</td><td>0.4</td></tr>
+<tr><td>5</td><td>supporter</td><td>Question</td><td>Did you have plans this weekend?</td><td>Kya is weekend tumne kuch plans banaye the?</td><td>0.375</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>No.  My nearby friends all went away for the holidays.  I could probably just occupy my time with things I need or want to do in order to distract myself.</td><td>No yaar, mere saare nearby friends holidays ke liye bahar chale gaye hain. I will probably just occupy my time with things I need or want to do taaki main distract ho sakoon.</td><td>0.3939</td></tr>
+<tr><td>7</td><td>supporter</td><td>Affirmation and Reassurance</td><td>What kind of hobbies do you have?</td><td>Tumhare paas normally kis kis tarah ke hobbies hain?</td><td>0.2222</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>I&#x27;m teaching myself the piano.  I&#x27;m also teaching myself  how to work a stenography machine for possible future employment as a stenographer.  I also like to read novels.</td><td>I&#x27;m teaching myself the piano. Main ek stenography machine chalana bhi khud se sikh raha hoon for possible future employment as a stenographer. I also like to read novels.</td><td>0.3103</td></tr>
+<tr><td>9</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I have never understood how those work..I find it amazing someone can type out whole words or sentences with one word</td><td>I have never understood ki woh kaise work karte hain.. mujhe yeh dekh kar amazing lagta hai ki someone can type out whole words or sentences with one stroke.</td><td>0.4138</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>Yeah, it&#x27;s pretty cool.  For example, if I hit DRAT in one stroke, then &quot;Did there come a time&quot; will appear in English on my machine&#x27;s  LCD screen.</td><td>Haan, yeh kaafi cool hai. Example ke liye, agar main ek hi stroke mein DRAT hit karun, toh machine ki LCD screen par English mein &quot;Did there come a time&quot; likha aa jayega.</td><td>0.3939</td></tr>
+<tr><td>11</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Wow that is crazy, I don&#x27;t understand how that works, is it preprogrammed or does it go by how the word sounds? </td><td>Wow yeh toh crazy hai, I honestly don&#x27;t understand ki yeh kaise work karta hai, kya yeh preprogrammed hota hai ya word ke sound ke hisaab se chalta hai?</td><td>0.3448</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Each stenographer has their own &quot;Personal Dictionary&quot; which is a list of words in English along with how you in particular write out those words or phrases in steno.  This dictionary is present within the actual steno machine after you transfer it from your laptop to the machine via cable or wifi.  Thus your machine then knows how you write out words in particular and how to translate those words from steno to English - each stenographer writes a little differently.</td><td>Har stenographer ka apna ek &quot;Personal Dictionary&quot; hota hai jo English words ki ek list hai, iske sath ki aap specifically un words ya phrases ko steno mein kaise write karte ho. Yeh dictionary actual steno machine ke andar hi present hoti hai jab aap ise apne laptop se cable ya wifi ke through machine mein transfer kar lete ho. Is tarah se aapki machine ko pata chal jata hai ki aap words ko specially kaise likhte ho aur unhein steno se English mein kaise translate karna hai - har stenographer thoda alag tarike se likhta hai.</td><td>0.3021</td></tr>
+<tr><td>13</td><td>supporter</td><td>Self-disclosure</td><td>OK that makes sense, so you basically program it as the user. I take it your stenography machine becomes pretty close to you lol</td><td>OK yeh bilkul sense banata hai, toh as a user aap basically ise khud program karte ho. I take it ki tumhari stenography machine tumhare kafi close ho jaati hogi lol</td><td>0.4194</td></tr>
+<tr><td>14</td><td>supporter</td><td>Question</td><td>Is this your first holiday alone?</td><td>Kya yeh tumhara first holiday hai jo tum alone spend kar rahe ho?</td><td>0.3077</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>Yes, exactly!  And it&#x27;s very important to back up your personal dictionary to the cloud or a seperate drive so that you don&#x27;t lose it in a hard-drive crash.  A lot of work goes into creating that dictionary!  No, it&#x27;s happened before, being along for the holidays; but you&#x27;ve helped to cheer me up, so thanks!</td><td>Haan, exactly! Aur apni personal dictionary ko cloud ya kisi separate drive par back up karna bahut important hota hai taaki hard-drive crash hone par aap ise lose na kar do. Us dictionary ko create karne mein bahut hard work lagta hai! Nahi, pehle bhi aisa ho chuka hai ki main holidays par alone raha hoon; par tumne mujhe cheer up karne mein help ki hai, so thanks!</td><td>0.3623</td></tr>
+<tr><td>16</td><td>supporter</td><td>Providing Suggestions</td><td>No problem, I hope I have made your day a little better!</td><td>No problem yaar, I hope ki maine tumhara din thoda better bana diya ho!</td><td>0.3571</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>You have, thanks!  Did you do anything special?</td><td>Tumne bana diya, thanks! Did you do anything special?</td><td>0.3333</td></tr>
+<tr><td>18</td><td>supporter</td><td>Providing Suggestions</td><td>Have a good rest of this year and don&#x27;t forget to make your New Year&#x27;s resolution!</td><td>Is year ka rest of the time accha spend karo aur apni New Year&#x27;s resolution banana mat bhoolna!</td><td>0.4444</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>I will do that - you too.  Thanks, again...</td><td>I will do that - tum bhi karna. Thanks, again...</td><td>0.3333</td></tr>
+<tr><td>20</td><td>supporter</td><td>Others</td><td>Not really, stayed home lol... Have a good one!</td><td>Not really, bas ghar par hi raha lol... Have a good one!</td><td>0.5</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>You too... bye now...</td><td>Tum bhi... bye now...</td><td>0.5</td></tr>
+<tr><td>22</td><td>supporter</td><td>Others</td><td>Good day!</td><td>Good day!</td><td>0.0</td></tr>
+<tr><td>23</td><td>supporter</td><td>Question</td><td>What else can I help you with today?</td><td>Aaj main aur kis cheez mein aapki help kar sakta hoon?</td><td>0.1818</td></tr>
+</table>
+<h2>Conversation 14</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>Hi
+</td><td>Hi yaar</td><td>0.5</td></tr>
+<tr><td>1</td><td>supporter</td><td>Others</td><td>hello</td><td>hello</td><td>0.0</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>Hope you are doing well
+</td><td>I hope ki aap bilkul fine honge</td><td>0.4286</td></tr>
+<tr><td>3</td><td>supporter</td><td>Question</td><td>i&#x27;m good, what is troubling you this afternoon?</td><td>Main toh fine hoon, aaj afternoon mein what is troubling you?</td><td>0.4545</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>I am not happy with my friends. They were trying to let me down
+</td><td>Main friends se bilkul happy nahi hoon, they were trying to let me down yaar</td><td>0.4</td></tr>
+<tr><td>5</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>if i get you clearly, you mean your friend disappointed you. how?</td><td>Agar main properly understand karun, toh you mean friends ne aapko disappoint kiya. How?</td><td>0.5</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>Yes. There were a argument between two of my friend while trying to resolve the issue they all started targeting me. </td><td>Yes. Mere do friends ke beech argument tha, aur jab maine issue resolve karne ki try ki, toh sabne mujhe target karna start kar diya.</td><td>0.36</td></tr>
+<tr><td>7</td><td>supporter</td><td>Self-disclosure</td><td>i have a hard time with my friends too sometimes</td><td>Mujhe bhi sometimes friends ke sath hard time face karna padta hai</td><td>0.4167</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Then what you do at that time
+</td><td>Phir aap kya karte ho at that time?</td><td>0.375</td></tr>
+<tr><td>9</td><td>supporter</td><td>Information</td><td>i used to give them time to cool off, when they are back to their senses, they will contact me and apologize </td><td>Main unhe cool off hone ke liye time deta hoon, jab woh apni senses mein wapas aayenge, toh they will contact me and apologize</td><td>0.4167</td></tr>
+<tr><td>10</td><td>supporter</td><td>Question</td><td>what causes the argument in the first place ?
+</td><td>First place mein is argument ka reason kya tha?</td><td>0.4444</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>I was trying to stop the fight, I just said bit loud , &quot;Stop  all this  nonsense at my place.&quot; Then they all started backfiring me. </td><td>Main toh bas fight stop karne ki try kar raha tha, maine thoda loud bol diya, &quot;Stop all this nonsense at my place.&quot; Phir sabne mujhpe hi backfire karna start kar diya.</td><td>0.4062</td></tr>
+<tr><td>12</td><td>supporter</td><td>Providing Suggestions</td><td>oh,jst give them time to reflect on what happen, they will definitely reach out to you, but you also have to make an effort to forgo the situation because they see you raising your voice on them as a sign of command of seniority.</td><td>Oh, unhe thoda time do to reflect on what happened, woh definitely reach out karenge, but tumhe bhi effort lagana padega to forgo the situation kyunki woh tumhara voice raise karna as a sign of command of seniority mante hain.</td><td>0.375</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>I feel like not talking to them. Without any reason they made such a big mess</td><td>Mujhe unse baat karne ka bilkul मन nahi hai. Without any reason they made such a big mess</td><td>0.5</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>I feel like they are not my true friends. you are right I should give them time to realize their mistakes</td><td>Mujhe lagta hai ki woh mere true friends nahi hain. You are right, mujhe unhe time dena chahiye so that they realize their mistakes</td><td>0.5</td></tr>
+<tr><td>15</td><td>supporter</td><td>Providing Suggestions</td><td>exactly, that will also gives you the necessary time to know how to react to their forthcoming apologies </td><td>Exactly, yeh tumhe necessary time bhi dega yeh samajhne ke liye ki how to react to their forthcoming apologies.</td><td>0.4737</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>Thanks for all your suggestions. I would try to implement on it. </td><td>Saare suggestions ke liye thanks yaar. Main ispe try karunga implement karna.</td><td>0.3333</td></tr>
+<tr><td>17</td><td>supporter</td><td>Self-disclosure</td><td>even if they haven&#x27;t reach out, that doesn&#x27;t mean they are not sorry</td><td>Even agar woh reach out nahi karte, iska yeh matlab nahi hai ki they are not sorry</td><td>0.4118</td></tr>
+<tr><td>18</td><td>supporter</td><td>Information</td><td>just be patient with them</td><td>just be patient with them</td><td>0.0</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Thanks! I would not going to talk to them</td><td>Thanks! I am not going to talk to them right now</td><td>0.0</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>have a wonderful New Year! Bye</td><td>Toh aapko bhi New Year bahut wonderful ho yaar! Bye.</td><td>0.4</td></tr>
+<tr><td>21</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>yes, give them time </td><td>yes, thoda time do unhe</td><td>0.4</td></tr>
+<tr><td>22</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>same to you friend</td><td>same to you friend</td><td>0.0</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>bye
+</td><td>bye</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 17</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Others</td><td>hi</td><td>hi yaar</td><td>0.5</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Hello</td><td>Hello</td><td>0.0</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>how are doing you today, what is troubling you? </td><td>Tu aaj kaise feel kar raha hai, what is troubling you?</td><td>0.4545</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>I am not good at all</td><td>I am not good at all yaar</td><td>0.1429</td></tr>
+<tr><td>4</td><td>supporter</td><td>Others</td><td>you are not good, why</td><td>tu theek nahi hai, but why?</td><td>0.3333</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>I am scaring about layoff from job</td><td>Mujhe job se layoff hone ka bohot zyada scaring feel ho raha hai</td><td>0.3077</td></tr>
+<tr><td>6</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>oh, if i get you clearly, you mean covid-19 impact on your job might soon affect you job
+</td><td>Oh, agar I am getting you clearly, toh you mean ki covid-19 impact ki wajah se teri job par jaldi effect pad sakta hai</td><td>0.4583</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>You are very correct</td><td>Tu extremely correct hai yaar</td><td>0.4</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Pandemic is giving us problems</td><td>Pandemic humare liye problems create kar raha hai</td><td>0.375</td></tr>
+<tr><td>9</td><td>supporter</td><td>Affirmation and Reassurance</td><td>yeah, covid-19 is a real bummer but i am sure we will soon get over it and the economy will bounce back </td><td>Haan, covid-19 ek real bummer hai but mujhe complete sure hai ki hum jaldi overcome kar lenge aur economy phir se bounce back karegi</td><td>0.375</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>I pray its over soon, firstly it was paying cut off and now it is layoff</td><td>I pray ki yeh jaldi over ho, first of all pay cut hua tha and now layoff hone ki baatein chal rahi hain</td><td>0.4783</td></tr>
+<tr><td>11</td><td>supporter</td><td>Self-disclosure</td><td>i was furloughed my self and now i am working part-time, its not s lot but it is better than nothing </td><td>Main khud furlough ho gaya tha and now part-time work kar raha hoon, it&#x27;s not a lot but better than nothing hai</td><td>0.3913</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Seriously! What I  am scare of now is how to secure another job</td><td>Seriously! What I am scared of right now is ki doosri job kaise secure karunga</td><td>0.2667</td></tr>
+<tr><td>13</td><td>supporter</td><td>Reflection of feelings</td><td>i can feel your pain just by chatting with you</td><td>bas tere sath chat karke hi I can literally feel your pain</td><td>0.4167</td></tr>
+<tr><td>14</td><td>supporter</td><td>Self-disclosure</td><td>i was scared at first too before but now that i gat something i am doing it feels better a bit </td><td>Main bhi start mein bohot scared tha, par now that I got something and I am doing it, toh it feels a bit better</td><td>0.2917</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>It is not easy my friend! I don&#x27;t even dream about this at all I don&#x27;t believed it is happening </td><td>It is not easy my friend! Main toh yeh kabhi dream bhi nahi kiya tha, I can&#x27;t believe yeh ho raha hai</td><td>0.4545</td></tr>
+<tr><td>16</td><td>supporter</td><td>Information</td><td>yea, it soo surreal, but even though there is a lot lost jobs, there is still a lot of job you can get to keep things balance  </td><td>yea, yeh bohot surreal hai, par even though bohot jobs lost hui hain, still a lot of jobs are out there jisse tu things balance kar sakta hai</td><td>0.4643</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>That is it my friend! A lot of people are losing their jobs every day by day that one a lone is caring</td><td>That is it my friend! Roz kitne log jobs lose kar rahe hain aur woh akela fact hi bohot scary hai</td><td>0.4286</td></tr>
+<tr><td>18</td><td>supporter</td><td>Providing Suggestions</td><td>first of all, polish your resume, go online and ask around </td><td>first of all, apna resume polish kar, online jaa aur logo se pooch</td><td>0.4615</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Thanks friend! That what I was thinking about</td><td>Thanks friend! Main bhi exactly yahi soch raha tha</td><td>0.3333</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>You are too good friend, it is time to go thanks</td><td>You are too good friend, ab mujhe jaana padega, thanks a lot</td><td>0.3333</td></tr>
+<tr><td>21</td><td>supporter</td><td>Information</td><td>from what i have heard and seen, there is job somewhere around, you just have to ask the right person</td><td>From what I have heard and seen, jobs available hain somewhere around, bas tujhe right person se poochne ki need hai</td><td>0.3333</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>Thanks for being there for me. we have to go now. Bye</td><td>Thanks for being there for me yaar. Humein abhi jana hoga. Bye</td><td>0.4167</td></tr>
+</table>
+<h2>Conversation 27</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>Hello?
+</td><td>Hello?</td><td>0.0</td></tr>
+<tr><td>1</td><td>supporter</td><td>Question</td><td>Hello, how can I help you today?</td><td>Hello, aaj main aapki kaise help kar sakta hoon?</td><td>0.2222</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>I don&#x27;t know what to do. I want to quit and punch the new manager in the face.
+</td><td>I don&#x27;t know kya karoon. Mera quit karne ka man kar raha hai aur new manager ko face par punch karne ka.</td><td>0.4091</td></tr>
+<tr><td>3</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>So if I understand correctly, you are upset with your job and your manager?</td><td>Toh agar main properly understand kiya hai, toh aap apne job aur manager se upset ho?</td><td>0.3125</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>The company mostly and myself for having to work there.</td><td>Mostly company se aur myself ki mujhe wahan work karna pad raha hai.</td><td>0.3077</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>I can&#x27;t quit because I have bills to pay and it will be hard to find other job right now.
+</td><td>Main quit nahi kar sakta kyunki bills pay karne hain aur abhi doosri job find karna difficult hoga.</td><td>0.3333</td></tr>
+<tr><td>6</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I am sorry to hear that. I can imagine it is challenging to work at a place where you are unhappy. And I understand it is a tough time right now.</td><td>I am really sorry yeh sunkar. Main imagine kar sakta hoon ki aise place par kaam karna kitna challenging hai jahan aap happy nahi ho. And I understand ki yeh bahut tough time chal raha hai.</td><td>0.3611</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>Yes, it is. And the new manager is useless! He does not appreciate my efforts at all and I know more than him.
+</td><td>Yes, exactly! Aur yeh new manager ekdum useless hai! Woh mere efforts ko बिल्कुल appreciate nahi karta aur I know much more than him.</td><td>0.4583</td></tr>
+<tr><td>8</td><td>supporter</td><td>Self-disclosure</td><td>Yes, I can totally relate! I have been there. I was in a very similar situation at a previous job when departments were reorganized and I ended up working for someone who wasn&#x27;t familiar with my work. It was a challenge and frustrating.</td><td>Haan, main totally relate kar sakta hoon! Main bhi wahan reh chuka hoon. Mera bhi ek previous job mein exact aisa hi situation tha jab departments reorganize hue the aur mujhe ek aise person ke under kaam karna pada jisko mere work ke baare mein kuch nahi pata tha. It was a big challenge and frustrating.</td><td>0.3214</td></tr>
+<tr><td>9</td><td>supporter</td><td>Providing Suggestions</td><td>While I know jobs are scarce right now, do you think you might consider at least taking a look at some job sites, doing some searches just to see if there are some other jobs you might be interested in?</td><td>Halaanki I know ki jobs ki abhi shortage hai, kya you can consider checking job sites, bas yeh dekhne ke liye ki any other jobs available hain kya jismein you might be interested?</td><td>0.4545</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>Yes, that&#x27;s really frustrating. I find myself biting my tongue more than once every day when I hear his opinions about the work.
+</td><td>Haan, that is really frustrating. Main daily apni tongue bite karta hoon more than once jab uska work par opinions sunta hoon.</td><td>0.4545</td></tr>
+<tr><td>11</td><td>supporter</td><td>Reflection of feelings</td><td>Oh yes, I totally get that! I remember having to do the exact same thing, very frustrating!</td><td>Oh yes, main yeh totally get karta hoon! Mujhe remember hai ki mujhe bhi exact same cheez karni padi thi, very frustrating!</td><td>0.4091</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Yes, I have done it. I might try writing alternatives and see if that helps.
+</td><td>Yes, maine kiya hai. I might try writing alternatives aur dekhta hoon ki it helps or not.</td><td>0.4118</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>I used to journal when I was younger but stopped doing when I started working.
+</td><td>I used to journal jab main younger tha par jab job start ki toh I stopped.</td><td>0.4375</td></tr>
+<tr><td>14</td><td>supporter</td><td>Information</td><td>That is a great idea! And there are job sites such as indeed and others you can search to see what jobs are available. You never know. I just know how challenging it is to be in a situation where you are unhappy with your job.</td><td>That is a great idea! Aur indeed jaisi job sites hain jahan aap search kar sakte ho ki kaunsi jobs available hain. You never know. Main bas itna jaanta hoon ki kitna challenging hota hai aisi situation mein rehna jahan aap apni job se happy nahi ho.</td><td>0.383</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>I will look into that site. I will have to update my resume as well.
+</td><td>Main us site ko check karunga. Mujhe apna resume bhi update karna padega.</td><td>0.3077</td></tr>
+<tr><td>16</td><td>supporter</td><td>Others</td><td>Journaling is an excellent idea!! It has helped me a lot! It can help you discover things you might not have otherwise thought about.  </td><td>Journaling ek excellent idea hai!! It has helped me a lot! Yeh aapko discover karne mein help kar sakta hai things jo shayad you would not have thought of otherwise.</td><td>0.3667</td></tr>
+<tr><td>17</td><td>supporter</td><td>Others</td><td>That sounds great! Yes, updating your resume is important. </td><td>That sounds great! Yes, apna resume update karna bahut important hai.</td><td>0.3636</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>I agree. It is just hard to fit it in when you&#x27;re always working.
+</td><td>I agree. Bas problem yeh hai ki jab aap hamesha working hote ho toh time nikalna difficult hota hai.</td><td>0.3158</td></tr>
+<tr><td>19</td><td>supporter</td><td>Others</td><td>I totally get understand that! I know you are in a challenging situation now. But you have come up with some great ideas and you sound very intelligent! I believe in you and feel things will get better for you!</td><td>I totally get and understand that! Main jaanta hoon aap abhi ek challenging situation mein ho. Par aapne kuch bahut great ideas nikale hain aur aap bahut intelligent sound karte ho! I believe in you aur mujhe lagta hai ki things definitely better hongi aapke liye!</td><td>0.413</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>Thanks a lot for that. I feel encouraged and a little better now. I can regain control of things if I focus on the solutions.</td><td>Thanks a lot iske liye. Mujhe ab thoda encouraged aur better feel ho raha hai. Main control wapas pa sakta hoon agar solutions par focus karoon.</td><td>0.3462</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>Have a great day!
+</td><td>Have a great day!</td><td>0.0</td></tr>
+<tr><td>22</td><td>supporter</td><td>Others</td><td>Absolutely! That is great! Thank you so much! I hope you have a great day as well! And good luck to you! :)</td><td>Absolutely! Yeh toh great hai! Thank you so much! I hope ki aapka day bhi bahut accha ho aur best of luck to you! :)</td><td>0.4167</td></tr>
+</table>
+<h2>Conversation 28</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>Hello
+</td><td>Hello</td><td>0.0</td></tr>
+<tr><td>1</td><td>supporter</td><td>Question</td><td>Hi! How can I help you today ?</td><td>Hi! Main aaj aapki kaise help kar sakta hoon?</td><td>0.3333</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>I am feeling quite sad. I miss hanging out with my friends in person. 
+</td><td>Main kaafi sad feel kar raha hoon. Mujhe apne friends ke saath in-person hang out karna miss ho raha hai.</td><td>0.381</td></tr>
+<tr><td>3</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>It looks like you are missing your friends a a lot.  am I right?
+</td><td>Aisa lag raha hai ki you are missing your friends a lot. Am I right?</td><td>0.3333</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>Yes</td><td>Haan</td><td>0.0</td></tr>
+<tr><td>5</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I am missing my friends and family too. Due to COVID it&#x27;s hard for all of us to meet our near and dear. I can totally understand your feeling.
+</td><td>Main bhi apne friends aur family ko miss karta hoon. COVID ki wajah se it&#x27;s hard for all of us to meet our near and dear ones. I can totally understand your feeling yaar.</td><td>0.3529</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>What do you do to cope? 
+</td><td>Aap cope karne ke liye kya steps lete ho?</td><td>0.2222</td></tr>
+<tr><td>7</td><td>supporter</td><td>Self-disclosure</td><td>I do video call. It makes me feel that they are very close to me. </td><td>Main video calls karta hoon, jisse mujhe feel hota hai ki they are very close to me.</td><td>0.4706</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>I do that occasionally but it really is not the same. </td><td>Main kabhi-kabhi karta hoon but it really is not the same.</td><td>0.4167</td></tr>
+<tr><td>9</td><td>supporter</td><td>Reflection of feelings</td><td>I can feel how much you are missing them especially in holidays.  engaging yourself in doing the stuff  which you love can be a good idea</td><td>Main understand kar sakta hoon ki how much you miss them, specially holidays mein. Keeping yourself busy with stuff jo aapko pasand hai could be a great idea.</td><td>0.3571</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>That is true. Although I may have to find a new hobby that isn&#x27;t social
+</td><td>That is true. Halanki mujhe koi naya hobby find karna pad sakta hai jo social na ho.</td><td>0.3529</td></tr>
+<tr><td>11</td><td>supporter</td><td>Information</td><td>Sadness can lead us to frustration. To avoid that we have to  stay motivated and keep doing something which takes those negative thoughts away</td><td>Sadness se frustration ho sakti hai. To avoid that we have to stay motivated and keep doing something jo un negative thoughts ko away le jaye.</td><td>0.3462</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Do you have any suggestions? 
+</td><td>Kya aapke paas kuch specific suggestions hain?</td><td>0.2857</td></tr>
+<tr><td>13</td><td>supporter</td><td>Others</td><td>you can play online games with your friends
+</td><td>Aap apne friends ke saath online games play kar sakte ho.</td><td>0.3636</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>That sounds fun 
+</td><td>That sounds really fun.</td><td>0.0</td></tr>
+<tr><td>15</td><td>supporter</td><td>Providing Suggestions</td><td>giving task or challenges to each other,  making funny videos, having competition for cleaning room are few example which can be tried. </td><td>Ek dusre ko tasks ya challenges dena, funny videos banana, room cleaning ka competition rakhna are few examples jo aap try kar sakte ho.</td><td>0.5</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>Which one do you do personally? 
+</td><td>Inmein se aap personally kaunsa karte ho?</td><td>0.1429</td></tr>
+<tr><td>17</td><td>supporter</td><td>Others</td><td>giving task is my favorite :)</td><td>Tasks dena is mera absolute favorite :)</td><td>0.5</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>What is a good example? 
+</td><td>Iska koi good example kya hoga?</td><td>0.3333</td></tr>
+<tr><td>19</td><td>supporter</td><td>Providing Suggestions</td><td>Telling friend to drink 4 glass of water at once, making bed in 30 seconds, finding particular content on laptop in specific time(30 sec or45 sec)</td><td>Friend ko bolna ki ek hi baar mein 4 glasses of water drink kare, 30 seconds mein bed make karna, laptop par specific time (30 sec ya 45 sec) mein particular content find karna.</td><td>0.4667</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>Those seem pretty interesting. Thanks for the advice
+</td><td>Yeh pretty interesting lag rahe hain. Advice ke liye thanks.</td><td>0.4</td></tr>
+<tr><td>21</td><td>supporter</td><td>Others</td><td>No problem! Is there anything  else that I can help you with</td><td>No problem at all! Kuch aur bhi hai jisme I can help you?</td><td>0.3846</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>No, I think you did a great job giving advice. 
+</td><td>Nahi, I think aapne bohot great job kiya hai giving advice.</td><td>0.4545</td></tr>
+<tr><td>23</td><td>supporter</td><td>Others</td><td>Thanks! Have a wonderful time !</td><td>Thanks! Have a wonderful time, apna khayal rakhna!</td><td>0.375</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>You too! Bye
+</td><td>Aapko bhi! Bye</td><td>0.3333</td></tr>
+</table>
+<h2>Conversation 29</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hello. How are you today?</td><td>Hello yaar. How are you feel kar rahe ho aaj?</td><td>0.5</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Hey , it&#x27;s good to see you , thanks for the meeting</td><td>Hey, milke bahut acha laga, thanks for this meeting yaar.</td><td>0.5</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>Happy to be here. Is there anything on your mind?</td><td>Happy to be here. Kuch mind me chal raha hai kya?</td><td>0.4545</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>Well I&#x27;ve been better, I&#x27;m not doing that great.</td><td>Well I&#x27;ve been better, main utni great condition me nahi hu.</td><td>0.4545</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>It&#x27; just all this stuff with him. I am still thinking about it all the time.</td><td>It&#x27;s just ki yeh sab stuff uske saath chal raha hai. I am still thinking about it all the time.</td><td>0.4</td></tr>
+<tr><td>5</td><td>supporter</td><td>Reflection of feelings</td><td>This is a hard time of year for many people. </td><td>Yeh year ka time bahut hard hota hai kafi saare people ke liye.</td><td>0.3077</td></tr>
+<tr><td>6</td><td>supporter</td><td>Reflection of feelings</td><td>It sounds like you are thinking about a specific person a lot of the time.</td><td>Sunke lag raha hai ki you are thinking about ek specific person bahut jyada time ke liye.</td><td>0.4118</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>Ugh. That&#x27;s the worst.</td><td>Ugh. Woh actually sabse worst hai.</td><td>0.3333</td></tr>
+<tr><td>8</td><td>supporter</td><td>Question</td><td>Is there anything you can think of that would help you to feel better?</td><td>Kuch aisa hai jo aap think kar sako jo aapko better feel karane me help kar sake?</td><td>0.2353</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>Yeah. I hate the way it ended. I really cared about him and feel like the part is still there.</td><td>Yeah. Mujhe yeh end hona bilkul hate hai. I really cared about him and feel hota hai ki woh part abhi bhi wahi hai.</td><td>0.4583</td></tr>
+<tr><td>10</td><td>supporter</td><td>Information</td><td>It sounds like things ended in an unresolved way. That can make it feel like there is no real conclusion.</td><td>Aisa feel hota hai ki cheezein unresolved way me end hui hain, jisse lagta hai ki koi real conclusion nahi mila.</td><td>0.2857</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>Hey! are you there? </td><td>Hey! Are you there wahan par?</td><td>0.3333</td></tr>
+<tr><td>12</td><td>supporter</td><td>Information</td><td>yes, there is a lag in the system. it takes a while for the response to upload</td><td>Yes, system me thoda lag hai. Response upload hone me thoda time lagta hai.</td><td>0.3571</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>Ok fine , it&#x27;s so hard to get over someone after a breakup like this.</td><td>Ok fine, kisi breakup ke baad kisi ko bhulna is so hard yaar.</td><td>0.4615</td></tr>
+<tr><td>14</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Yes, I agree. Sometimes it just takes time to process all the emotions.</td><td>Yes, I agree with you. Sabhi emotions ko process karne me sometimes thoda time lagta hi hai.</td><td>0.4706</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>I mean logically , I know it&#x27;s not. If we were gonna break up, then we were gonna break up</td><td>I mean logically, mujhe pata hai ki it&#x27;s not. Agar hume break up karna hi tha, toh we were gonna break up.</td><td>0.4545</td></tr>
+<tr><td>16</td><td>supporter</td><td>Providing Suggestions</td><td>Yes, that&#x27;s a good point. It sounds like you are thinking this through in a good way, but the emotions are hard to process. Letting yourself feel the emotions is an important part of getting through a difficult situation.</td><td>Yes, that&#x27;s a good point. Lagta hai ki you are thinking this through in a good way, par emotions ko process karna hard hota hai. Khud ko apne emotions feel karne dena ek important part hai is difficult situation se move on karne ke liye.</td><td>0.4222</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>But I want to keep his photos. And how would I even distract myself that much that I&#x27;d stop thinking about him completely.</td><td>Par I want to keep his photos. And main khud ko itna kaise distract karu ki I&#x27;d stop thinking about him completely.</td><td>0.3636</td></tr>
+<tr><td>18</td><td>supporter</td><td>Information</td><td>It is understandable to want to keep photos. Distracting yourself might not be the solution; that could stop you from processing the emotions. There is a stage of grieving for a lost relationship that happens when a relationship ends. There will be grieving for the person, and for the relationship with that person. That is what has to be processed in order to move on.</td><td>Photos rakhna is totally understandable. Distract karna shayad solution na ho; usse aap emotions ko process nahi kar paoge. Relationship end hone par grieving ka ek stage hota hai jo aana hi hai. Us person ke liye aur us relationship ke liye grieving hogi hi. Move on karne ke liye is sab ko process karna padta hai.</td><td>0.3158</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Ok, I mean , I can try, But it&#x27;s just, I don&#x27;t want to leave him behind. I miss him</td><td>Ok, I mean, main try kar sakti hu. But baat yeh hai ki I don&#x27;t want to leave him behind. I miss him so much.</td><td>0.32</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>That makes sense; you care about him so you miss him. This is one of those things that will take time. Accepting and acknowledging the emotions, even when they are painful, will let the emotions evolve and over time they will become less painful. </td><td>That makes sense; aap usse care karte ho isliye you miss him. Yeh aisi cheez hai jisme thoda time lagega. Apne emotions ko accept aur acknowledge karna, chahe woh painful hi kyu na ho, emotions ko evolve hone dega aur over time woh kam painful ho jayenge.</td><td>0.3617</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>But he&#x27;s gone. I know it hurts so badly.</td><td>But he is gone. I know ki yeh bahut badly hurt karta hai.</td><td>0.4615</td></tr>
+<tr><td>22</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Yes, it must be a painful experience. The end of a relationship is a loss, and there is a grieving process to go through. That is a painful experience. I am sorry you have to go through this. I believe that you can manage this experience and end up a stronger person.</td><td>Yes, yeh ek bahut painful experience hoga. Relationship ka end hona ek loss hai, aur ek grieving process se toh gujarna hi padta hai. That is definitely a painful experience. I am so sorry ki aapko yeh sab face karna pad raha hai. I believe ki you can manage this experience and end up a stronger person.</td><td>0.4386</td></tr>
+</table>
+<h2>Conversation 31</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Others</td><td>Hello, my name is Brandon and I will be serving you today. How are you doing?</td><td>Hello, mera naam Brandon hai aur aaj main aapko assist karunga. How are you doing today?</td><td>0.5</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Not too well, I am feeling very sad this holiday season.</td><td>Not too well yaar, is holiday season mujhe bahut sad feel ho raha hai.</td><td>0.4286</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>I am sorry to hear that you are feeling sad this holiday season. Why are you feeling sad?</td><td>I am really sorry ye sunkar ki aapko is holiday season mein sad feel ho raha hai. But aapko sad kyu feel ho raha hai?</td><td>0.44</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>My girlfriend left me for my best friend, now I have no one in my life.</td><td>Meri girlfriend ne mujhe best friend ke liye leave kar diya, ab my life mein koi bhi nahi bacha.</td><td>0.3158</td></tr>
+<tr><td>4</td><td>supporter</td><td>Reflection of feelings</td><td>I see, this sounds really difficult. How long were you dating your girlfriend? Do you have any friends, family or a support system by chance?</td><td>I see, yeh situation kaafi difficult lag rahi hai. Aap apni girlfriend ke sath kitne time se dating kar rahe the? By chance, aapke paas koi friends, family ya koi support system hai kya?</td><td>0.3529</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>We were together for 7 years.  I have no family.  My friend and girlfriend were my only family, we were like the Gatsbys.</td><td>Hum 7 years se sath the. Meri koi family nahi hai. Mera friend aur girlfriend hi meri sirf family the, hum the Gatsbys jaise.</td><td>0.3478</td></tr>
+<tr><td>6</td><td>supporter</td><td>Self-disclosure</td><td>That is a very long time, I had a girlfriend and I was very vested in her and her family. She broke up with me around Christmas time as well. It has been awhile, but I remember getting her gift and it was over sometime afterwards. Do you have any co-workers or involvement with any local groups/organizations/church?</td><td>That is a very long time yaar, meri bhi ek girlfriend thi aur main uske aur uski family ke sath bahut emotionally invested tha. Usne bhi Christmas time ke around hi mera breakup kar diya tha. It has been a while, but mujhe yaad hai ki main uske liye gift laya tha aur kuch time baad sab khatam ho gaya. Kya aapke koi co-workers hain ya aap kisi local groups, organizations ya church mein involved ho?</td><td>0.3766</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>My co-workers don&#x27;t know about my personal life, I don&#x27;t go to church.  Maybe I should go see a therapist?</td><td>Mere co-workers ko meri personal life ke baare mein nahi pata, and main church bhi nahi jata. Maybe mujhe kisi therapist ko consult karna chahiye?</td><td>0.3462</td></tr>
+<tr><td>8</td><td>supporter</td><td>Providing Suggestions</td><td>I think a therapist would be a great way to process this situation since our time is limited. From what you shared, it sounds like you have some past hurts that you may want to share with someone you trust. Do you have insurance or are you uninsured? There are great therapist for the insured and uninsured. :) </td><td>I think ek therapist ek great way hoga is situation ko process karne ke liye because hamare paas time limited hai. Jo apne share kiya, usse lagta hai ki you have kuch past hurts jo aap share karna chahte ho with someone you trust. Do you have insurance, ya phir aap uninsured ho? Insured aur uninsured dono ke liye great therapists available hote hain. :)</td><td>0.4688</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>I do not have insurance, I am between jobs and have nothing currently.  The holidays are an especially lonely time.</td><td>Mere paas insurance nahi hai, main abhi between jobs hoon aur currently mere paas kuch nahi hai. Yeh holidays especially ek lonely time lagta hai.</td><td>0.32</td></tr>
+<tr><td>10</td><td>supporter</td><td>Self-disclosure</td><td>I see, that is very difficult. This season bring many feeling like this myself. If you had a magic wand and could change anything about your situation, what would you change assuming that we cannot fix this situation per se.
+</td><td>I see, yeh bahut difficult hai yaar. This season brings many feelings like this myself. Agar aapke paas ek magic wand hoti and aap apni situation mein kuch bhi change kar sakte, toh what would you change assuming ki hum is situation ko exactly waise fix nahi kar sakte?</td><td>0.4694</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>I would treat my girlfriend better I think.  She was pushing for a threesome with my best friend, but I told her no way.  That is why she left me.</td><td>Honestly mujhe lagta hai ki I should treat my girlfriend better. She was pushing for a threesome with my best friend, par maine clearly no bol diya tha, and that is why usne mujhe leave kar diya.</td><td>0.3514</td></tr>
+<tr><td>12</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>From what I am hearing, it sounds like you have a boundary and your girlfriend did not respect that. I think you deserve someone that respects you and your boundaries. If you do not feel comfortable, then you do not feel comfortable and should not be shamed for it.</td><td>Jo maine hear kiya hai, usse lagta hai ki you had a boundary and your girlfriend ne usko respect nahi kiya. I think you deserve someone jo respect kare aapko aur aapke boundaries ko. If you do not feel comfortable, toh it is okay and you should not be shamed for that.</td><td>0.3654</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>I agree.  She made me watch them have sex once, it was sick.</td><td>I agree. Ek time usne mujhe un dono ko sex karte hue dekhne ke liye force kiya tha, it was so sick.</td><td>0.4091</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>Can a therapist help me with that?
+</td><td>Kya ek therapist is sab mein meri help kar sakta hai?</td><td>0.2727</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>Are you still there sir?</td><td>Sir, are you still wahi ho kya?</td><td>0.4286</td></tr>
+<tr><td>16</td><td>supporter</td><td>Others</td><td>Sorry i was having wifi issues </td><td>Sorry yaar, mujhe thode wifi issues ho rahe the.</td><td>0.3333</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>So what should i do?</td><td>Toh what should I do now?</td><td>0.1667</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>I think I need to have the threesome with them.  She would like to get spitroasted, then I can get her back.</td><td>I think mujhe unke sath threesome kar lena chahiye. She would like to get spitroasted, tab shayad I can get her back.</td><td>0.4091</td></tr>
+<tr><td>19</td><td>supporter</td><td>Self-disclosure</td><td>If it were me, i would seekout a couselor. </td><td>Agar main aapki jagah hota, toh main kisi counselor ko seek out karta.</td><td>0.2308</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>Yes, I think I need some help.  Maybe I have Stockholm Syndrome.</td><td>Yes, I think mujhe kuch help ki zaroorat hai. Maybe mujhe Stockholm Syndrome ho gaya hai.</td><td>0.4375</td></tr>
+</table>
+<h2>Conversation 35</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hi! How are you today?</td><td>Hi! Tumhara day kaisa chal raha hai?</td><td>0.2857</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Could be better, the info i put for my scenario, just happened this morning.</td><td>Better ho sakta tha, jo info maine apne scenario ke liye dali thi, exact situation morning mein hi happen ho gayi.</td><td>0.3333</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>Something unexpected happened today?</td><td>Kuch unexpected happen ho gaya kya aaj?</td><td>0.2857</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>No actually, in fact today seemed to be starting better than any day this week. I support whatever she wants but right after Christmas is hard</td><td>Nahi actually, in fact aaj ka day toh rest of the week se better start ho raha tha. I support whatever she wants par Christmas ke turant baad ka time bahut hard hota hai.</td><td>0.4706</td></tr>
+<tr><td>4</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Holidays can add pressure to our &quot;normal&quot; situations.</td><td>Holidays ki wajah se humare &quot;normal&quot; situations par aur pressure aa jata hai.</td><td>0.3077</td></tr>
+<tr><td>5</td><td>supporter</td><td>Question</td><td>Did you find that your normal coping mechanisms were not as helpful today?</td><td>Kya tumhe laga ki tumhare normal coping mechanisms aaj utne helpful nahi the?</td><td>0.3077</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>Yeah, December has been hard on everyone. I know things will get better but its hard finding positivity when I feel so negative.</td><td>Yeah, December sabke liye hard raha hai. Mujhe pata hai cheezein better ho jayengi par positivity find karna itna hard ho jata hai jab itna negative feel ho raha ho.</td><td>0.3</td></tr>
+<tr><td>7</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>Sounds like your support is not appreciated.</td><td>Aisa feel ho raha hai ki your support is not being appreciated at all.</td><td>0.3571</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Usually coping is either eating a ton of food or smoking marijuana, but with the holiday money is tight. I am listening to emo pop music from the 2000&#x27;s now to help.</td><td>Normally coping ke liye ya toh main bahut sara food khata hu ya marijuana smoke karta hu, par holiday ki wajah se money tight hai. Main 2000&#x27;s ki emo pop music sun raha hu abhi help ke liye.</td><td>0.3421</td></tr>
+<tr><td>9</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Music definitely helps!</td><td>Music definitely help karta hai!</td><td>0.4</td></tr>
+<tr><td>10</td><td>supporter</td><td>Self-disclosure</td><td>I have a list of songs that I like to sing to. I can&#x27;t really sing, like, at all. But I love to do it. And it makes me forget about whatever is going on.
+</td><td>Mere paas songs ki ek playlist hai jiske saath I love to sing along. Main waise sing accha nahi kar sakta, like, bilkul bhi nahi. Par I love doing it. And isse jo bhi stress chal raha hota hai I just forget everything.</td><td>0.4419</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>Honestly, in the past I have been a lot lower than I am now. I really just hope I am able to stay strong for as long as i can right now
+</td><td>Honestly, past mein main much lower state mein raha hu. I just really hope ki I can stay strong abhi.</td><td>0.35</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Honestly i do the same thing a lot. Songs with a lot of emotion that i can belt out
+</td><td>Honestly main bhi same hi cheez karta hu bahut baar. Aise songs jisme bahut emotion ho jinko main zor se belt out kar saku</td><td>0.25</td></tr>
+<tr><td>13</td><td>supporter</td><td>Affirmation and Reassurance</td><td>You are certainly self-aware. Better off than most people!</td><td>Tum definitely self-aware ho. Zyada tar logo se better ho!</td><td>0.4545</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>i will have to find somewhere i can properly exercise my awful vocals lol
+</td><td>Mujhe koi aisi place dhoondhni padegi jahan I can properly exercise my awful vocals lol.</td><td>0.4667</td></tr>
+<tr><td>15</td><td>supporter</td><td>Self-disclosure</td><td>Ah! I like pop songs from the 60&#x27;s :-) </td><td>Ah! Mujhe 60&#x27;s ke pop songs pasand hain :-)</td><td>0.375</td></tr>
+<tr><td>16</td><td>supporter</td><td>Self-disclosure</td><td>Ha! The car is always good! 
+</td><td>Ha! Car hamesha best hoti hai!</td><td>0.3333</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>honestly its because i have been hospitalized due to my mental state. i try to be as self aware as possible now. i just hate the feeling of being blindsided.
+</td><td>honestly isiliye kyunki main apni mental state ki wajah se hospitalize ho chuka hu. Main try karta hu ki ab jitna ho sake self-aware rahu. Bas mujhe woh feeling hate hai jab main blindsided feel karta hu.</td><td>0.2895</td></tr>
+<tr><td>18</td><td>supporter</td><td>Reflection of feelings</td><td>Have you tried The Smiths? Band from the 80&#x27;s. They are my go to for when I am feeling low.
+</td><td>Kya tumne The Smiths ko try kiya hai? 80&#x27;s ka band hai. Woh mere go-to hain jab bhi main low feel kar raha hota hu.</td><td>0.3077</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>i will give the throwbacks a try today. I do get down with a few of the older bands thats for sure
+</td><td>I will give the throwbacks a try today. Mujhe kuch older bands pasand hain woh toh pakka hai.</td><td>0.4444</td></tr>
+<tr><td>20</td><td>supporter</td><td>Reflection of feelings</td><td>To be blindsided is a violation of trust. </td><td>Blindsided hona trust ka violation hota hai.</td><td>0.4286</td></tr>
+<tr><td>21</td><td>supporter</td><td>Providing Suggestions</td><td>Have you spoken to her about it at all, or is that not your jam?</td><td>Kya तुमने usse is baare mein discuss kiya hai, ya that&#x27;s not your jam?</td><td>0.3571</td></tr>
+<tr><td>22</td><td>supporter</td><td>Information</td><td>It&#x27;s ok. A lot of people are non-confrontational. Society tells us we should be able to express our boundaries. Not everyone is comfortable with that and that is ok.</td><td>It&#x27;s ok. Bahut saare log non-confrontational hote hain. Society humein batati hai ki hume apne boundaries express karne chahiye. Har koi usmein comfortable nahi hota aur woh ok hai.</td><td>0.3</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>we literally just talked about it an hour ago. she says she doesnt know what she wants and she doesnt know how long but she doesnt want to be away from me right now. which i feel just isnt fair. i feel like no one can just pick and choose when they want someone around.</td><td>We literally just talked about it an hour ago. Woh bolti hai ki she doesn&#x27;t know what she wants aur use nahi pata how much time it will take par she doesn&#x27;t want to be away from me right now. Jo mujhe lagta hai isn&#x27;t fair at all. I feel like koi bhi aise pick and choose nahi kar sakta ki when they want someone around.</td><td>0.303</td></tr>
+<tr><td>24</td><td>supporter</td><td>Affirmation and Reassurance</td><td>But that puts more responsibility on you for your feelings. Sounds like you have coping skills for that.</td><td>Par isse your feelings ki responsibility tum par hi shift ho jati hai. Sounds like you have good coping skills for that.</td><td>0.4091</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>i know. with COVID this is so much harder. i may just take a long walk and try to focus on myself, because it seems like our future is in flux and it seems like it could go either way.
+</td><td>I know. COVID ke saath this is so much harder. I may just take a long walk aur khud par focus karne ki try karu, kyunki it seems like our future is in flux aur kisi bhi direction mein ja sakta hai.</td><td>0.4048</td></tr>
+<tr><td>26</td><td>supporter</td><td>Reflection of feelings</td><td>You&#x27;re right. That is not fair. You are feeling conflict and abandoned/not-abandoned.
+</td><td>Tum sahi ho. Woh fair nahi hai. Tum conflict aur abandoned/not-abandoned feel kar rahe ho.</td><td>0.3529</td></tr>
+<tr><td>27</td><td>supporter</td><td>Providing Suggestions</td><td>Could you make the decision?</td><td>Kya tum khud decision make kar sakte ho?</td><td>0.25</td></tr>
+<tr><td>28</td><td>seeker</td><td></td><td>i feel like what i may do, is just sleep on the couch for now and give her as much space as possible, at least for now i think</td><td>I feel like what I may do, is just sleep on the couch for now aur give her as much space as possible, at least abhi ke liye toh I think yahi theek hai.</td><td>0.2353</td></tr>
+<tr><td>29</td><td>supporter</td><td>Self-disclosure</td><td>Only you are responsible for you. I was with someone who, although we had great fun together, he couldn&#x27;t be with me as much as I wanted him to. And it made me feel bad. Because it brought up feelings from when I was growing up and neglected.</td><td>Sirf tum hi responsible ho for yourself. Main bhi ek aise person ke saath thi jiske saath we had great fun, par woh couldn&#x27;t be with me as much as I wanted. And it made me feel bad, kyunki it brought up feelings from when I was growing up and neglected.</td><td>0.3137</td></tr>
+<tr><td>30</td><td>supporter</td><td>Self-disclosure</td><td>It took a long time, and it ...wasn&#x27;t a clean break. I just got tired of feeling bad, and the relationship just waned. </td><td>It took a long time, and it... wasn&#x27;t a clean break. Main bas tired ho gayi thi feeling bad, aur relationship gradually wane ho gaya.</td><td>0.32</td></tr>
+<tr><td>31</td><td>supporter</td><td>Providing Suggestions</td><td>Take the time you need, but you can take control, if you want to.</td><td>Take all the time you need, par you can take control, agar tum chahte ho toh.</td><td>0.375</td></tr>
+<tr><td>32</td><td>seeker</td><td></td><td>Right, it just feels crappy right now. literally yesterday her mom was telling me how happy she is that i take such good care of her daughter. I will have to just prioritize myself and hope it all works out. after 5 years its just hard</td><td>Right, abhi bahut crappy feel ho raha hai. Literally kal hi uski mom mujhe bol rahi thi ki woh kitni happy hai ki main uski daughter ka itna accha care karta hu. Mujhe bas khud ko prioritize karna padega aur hope karna padega ki sab work out ho jaye. 5 years ke baad yeh sab bahut hard hota hai.</td><td>0.2414</td></tr>
+<tr><td>33</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>You said it, prioritize yourself. The rest will fall into place. It always does. </td><td>You said it, khud ko prioritize karo. Baaki sab bhi fall into place ho jayega, it always does.</td><td>0.4444</td></tr>
+<tr><td>34</td><td>seeker</td><td></td><td>thank you. i really appreciate it. i will do the best i can i promise.</td><td>Thank you. Main sach mein bahut appreciate karta hu. Main apna best try karunga I promise.</td><td>0.4375</td></tr>
+<tr><td>35</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I know you will ;-)
+</td><td>I know you will ;-)</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 54</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hi, how are you feeling? Is there anything on your mind? </td><td>Hi yaar, how are you feeling? Kuch mind me chal raha hai kya?</td><td>0.4615</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>hello
+</td><td>hello</td><td>0.0</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>What would you like to talk to me about today? </td><td>Aaj tum what would you like to discuss ya baat karna chahte ho with me?</td><td>0.4667</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>yes I would like to find more jobs, hopefuly online
+
+</td><td>Yes, mujhe aur jobs find karni hain, hopefully online.</td><td>0.4444</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>do you have any suggestions?
+</td><td>Tumhare paas koi suggestions hain kya?</td><td>0.1667</td></tr>
+<tr><td>5</td><td>supporter</td><td>Self-disclosure</td><td>Unfortunately I think that a lot of people are trying to find online work right now as people are too scared to go out - I know that I am! </td><td>Unfortunately mujhe lagta hai ki a lot of people are trying to find online work kyunki bahar jaane se everyone is scared - I know ki main bhi hoon!</td><td>0.4286</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>haha, i am the same 
+</td><td>Haha, yeh toh bilkul true hai, I am the same here.</td><td>0.4545</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>Mturk really helps as my side job
+</td><td>Mturk really meri bahut help karta hai as my side job.</td><td>0.4545</td></tr>
+<tr><td>8</td><td>supporter</td><td>Providing Suggestions</td><td>It can be very good yes. Have you tried any other sort of gig work? </td><td>Woh very good ho sakta hai yes. Have you tried koi bhi other sort of gig work?</td><td>0.3529</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>I heard finally Antarctica got Coronavirus
+</td><td>Maine suna ki finally Antarctica got Coronavirus.</td><td>0.4286</td></tr>
+<tr><td>10</td><td>supporter</td><td>Others</td><td>Oh wow, that is really bad. At least there aren&#x27;t very many people there .. I think it&#x27;s mainly research people. </td><td>Oh wow, yeh toh sach me bahut bad news hai. At least wahan pe zyada log nahi hain .. I think wahan mainly research wale log hi hote hain.</td><td>0.3571</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>I have applied for them but never got them. So I am trying to become a YouTuber
+</td><td>Maine apply kiya tha for them par kabhi nahi mila. So ab I am trying to become a YouTuber.</td><td>0.4737</td></tr>
+<tr><td>12</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>So you feel that perhaps you could make some money by vlogging? </td><td>Toh tumhe lagta hai ki you can earn some money by vlogging?</td><td>0.4167</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>yes who wants to live in Antarctica lol
+
+
+</td><td>Yes, aur waise bhi who wants to live in Antarctica, lol.</td><td>0.3636</td></tr>
+<tr><td>14</td><td>supporter</td><td>Others</td><td>I think it would be fun to visit but not for very long. </td><td>Mujhe lagta hai ki visit karna fun hoga but not for very long.</td><td>0.4615</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>possibly, problem is that i don&#x27;t want to show myself online, what do you think about wearing a full face mask and do youtube?
+</td><td>Possibly, problem yeh hai ki I don&#x27;t want to show myself online, so what do you think agar main full face mask pehen kar YouTube karun?</td><td>0.3077</td></tr>
+<tr><td>16</td><td>supporter</td><td>Providing Suggestions</td><td>Well, perhaps you could vlog about the need to wear facemasks? </td><td>Well, shayad tum facemasks pehne ki need par vlog bana sakte ho?</td><td>0.3333</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>I think that is a great idea. Full mask is better than a partial mask
+</td><td>Mujhe lagta hai yeh ek great idea hai. Full mask is much better than a partial mask.</td><td>0.3529</td></tr>
+<tr><td>18</td><td>supporter</td><td>Information</td><td>Yes it is! Beware that there are a lot of people trying to make money on youtube though - you need to get lucky. </td><td>Yes it is! Par dhyaan rakhna ki there are many people trying to make money on YouTube - tumhe thoda lucky hona padega.</td><td>0.3636</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Right, thanks for your advice, They do any crazy stuff to make money
+</td><td>Right, thanks for your advice, log paise kamane ke liye koi bhi crazy stuff karte hain</td><td>0.4375</td></tr>
+<tr><td>20</td><td>supporter</td><td>Others</td><td>It&#x27;s a difficult time for us all :) People are doing what they have to in order to put food on their tables I think. </td><td>Yeh hum sab ke liye ek difficult time hai :) People are honestly doing jo unhe karna padta hai to put food on their tables, mujhe lagta hai.</td><td>0.4444</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>i know right, when in desperation people go crazy
+
+</td><td>i know right, jab desperation hoti hai toh log crazy ho jaate hain</td><td>0.3846</td></tr>
+<tr><td>22</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I am hopeful that with the vaccine having been developed, things might start to improve shortly. </td><td>Main hopeful hoon ki with the vaccine having been developed, things shayad shortly improve hona start ho jayein.</td><td>0.3889</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>i want to be prepared before I go into that state
+</td><td>i want to be prepared before I go into that state</td><td>0.0</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>I hope so too
+1</td><td>I hope so too
+1</td><td>0.0</td></tr>
+<tr><td>25</td><td>supporter</td><td>Providing Suggestions</td><td>Can you think of things to look forward to in the New Year that might cheer you up a little? </td><td>Kya tum kuch aise things soch sakte ho in the New Year jo tumhe thoda cheer up kar sakein?</td><td>0.3684</td></tr>
+<tr><td>26</td><td>seeker</td><td></td><td>oh yes the stock price may keep going up. Like Tesla, that cheears me up
+</td><td>oh yes stock price shayad up hi jaate rahenge. Jaise Tesla, woh mujhe cheer up karta hai</td><td>0.4706</td></tr>
+<tr><td>27</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Well, maybe the change of administration in some parts of the world will help a little. </td><td>Well, duniya ke kuch parts me administration ka change hona shayad thodi help kar de.</td><td>0.3333</td></tr>
+<tr><td>28</td><td>seeker</td><td></td><td>what do you mean?
+</td><td>what do you mean?</td><td>0.0</td></tr>
+<tr><td>29</td><td>supporter</td><td>Others</td><td>I mean that political change can help people and give them fresh hope. Or, depress them :) </td><td>Mera matlab hai ki political change can help people and give them fresh hope. Ya phir, depress them :)</td><td>0.3333</td></tr>
+<tr><td>30</td><td>seeker</td><td></td><td>Oh yes
+</td><td>Oh yes</td><td>0.0</td></tr>
+<tr><td>31</td><td>seeker</td><td></td><td>They&#x27;re gonna give out 600 dollars to us I hope
+</td><td>Woh humein 600 dollars give out karne wale hain, I really hope jaldi mile.</td><td>0.4615</td></tr>
+<tr><td>32</td><td>supporter</td><td>Others</td><td>That would be a big help for people who are struggling! </td><td>That would be a big help for people jo struggle kar rahe hain!</td><td>0.3077</td></tr>
+<tr><td>33</td><td>seeker</td><td></td><td>Right now I am not too desperate and can enjoy listening to Christmas songs,
+</td><td>Right now main bahut zyada desperate nahi hoon aur Christmas songs sunkar enjoy kar raha hoon,</td><td>0.375</td></tr>
+<tr><td>34</td><td>supporter</td><td>Question</td><td>Christmas is a good time of year but it is also expensive. Do you think that it has increased your financial woes? </td><td>Christmas is a good time of year par yeh expensive bhi hota hai. Do you think ki isne your financial woes increase kar diye hain?</td><td>0.4</td></tr>
+<tr><td>35</td><td>seeker</td><td></td><td>It is a beautiful time. Not really, as I did not buy any expensive gifts etc
+</td><td>It is a beautiful time. Not really, kyunki maine koi bhi expensive gifts etc buy nahi kiye</td><td>0.3529</td></tr>
+<tr><td>36</td><td>supporter</td><td>Others</td><td>I am glad to hear that .. too many people think they have to spend too much. Anyway I hope you have had a lovely day and all the best to you </td><td>Main yeh sunkar glad hoon .. bahut se log sochte hain ki unhe bahut zyada spend karna padega. Anyway I hope tumhara day lovely raha ho aur all the best to you</td><td>0.3871</td></tr>
+<tr><td>37</td><td>seeker</td><td></td><td>well, thank you for your advice. It was great taoking to you. Merry Christmas
+</td><td>Well, thank you so much for your advice yaar. It was great talking to you, aur Merry Christmas!</td><td>0.1111</td></tr>
+<tr><td>38</td><td>supporter</td><td>Others</td><td>And you! </td><td>And you!</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 64</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>Good morning
+</td><td>Good morning yaar</td><td>0.3333</td></tr>
+<tr><td>1</td><td>supporter</td><td>Others</td><td>Hello</td><td>Hello ji</td><td>0.5</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>Merry Christmas
+</td><td>Merry Christmas!</td><td>0.0</td></tr>
+<tr><td>3</td><td>supporter</td><td>Others</td><td>Good morning</td><td>Good morning</td><td>0.0</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>Merry Christmas</td><td>Merry Christmas aapko bhi!</td><td>0.5</td></tr>
+<tr><td>5</td><td>supporter</td><td>Question</td><td>How may I help you today?</td><td>Batao, how can I help you aaj?</td><td>0.2857</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>I&#x27;m just struggling real bad with depression lately.
+</td><td>Main lately depression ke saath real bad struggle kar raha hoon, yaar.</td><td>0.4167</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>I feel like I&#x27;m not any good, but the other part of my mind says that just isn&#x27;t true.
+</td><td>Mujhe feel hota hai ki I&#x27;m not any good, but dusra part mere mind ka kehta hai ki that just isn&#x27;t true.</td><td>0.4545</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Despite having those conflicting thoughts....I can&#x27;t get going.
+</td><td>Yeh conflicting thoughts hone ke despite... main get going nahi kar pa raha hoon.</td><td>0.3571</td></tr>
+<tr><td>9</td><td>seeker</td><td></td><td>I&#x27;ve been in a downward spiral....IDK how to escape it
+</td><td>Main ek downward spiral mein fas gaya hoon.... IDK isse kaise escape karu.</td><td>0.3077</td></tr>
+<tr><td>10</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I am so sorry i know how you are feeling just know everything is going to be okay</td><td>I am so sorry, main samajh sakta hoon ki how you are feeling, bas yeh jaano ki everything is going to be okay.</td><td>0.3913</td></tr>
+<tr><td>11</td><td>supporter</td><td>Question</td><td>what has been making your depression start?</td><td>Aapke is depression ka start hone ka kya reason raha hai?</td><td>0.2727</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>I mean things do typically work themselves out, they always do....but I just can&#x27;t get out of this rut I&#x27;ve been in.
+
+</td><td>I mean things normally automatically work out ho jaati hain, always hoti hain... par I just can&#x27;t get out of this rut.</td><td>0.3182</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>Well I lost my job because my GF had texted me saying she didn&#x27;t want to be with me anymore....and I just couldn&#x27;t handle it.
+</td><td>Well, meri job chali gayi thi kyunki meri GF ne mujhe text kiya tha ki she didn&#x27;t want to be with me anymore.... aur main isko handle nahi kar paya.</td><td>0.4333</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>Then I just started going downhill from there.....have had difficulty finding another job, or trying to replace lost income.
+</td><td>Tab se things started going downhill for me..... mujhe doosri job dhoondhne mein aur lost income ko replace karne mein bahut difficulty ho rahi hai.</td><td>0.4</td></tr>
+<tr><td>15</td><td>supporter</td><td>Providing Suggestions</td><td>Have you looked into seeking therapy that will sometimes help with your depression</td><td>Kya aapne therapy seek karne ke baare mein socha hai? That will sometimes help with your depression.</td><td>0.4706</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>I have an appointment scheduled with a Doctor on Tuesday actually....
+</td><td>Mera Tuesday ko ek doctor ke saath appointment scheduled hai actually....</td><td>0.4545</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>I made a call the other day....which was difficult in and of itself
+</td><td>Maine last day call karke fix kiya tha.... jo ki apne aap mein hi ek difficult task tha.</td><td>0.3333</td></tr>
+<tr><td>18</td><td>supporter</td><td>Providing Suggestions</td><td>That is good. Have you been looking for another job putting in applications everywhere?</td><td>That is really good. Kya aap doosri job ke liye applications daal rahe ho aur everywhere try kar rahe ho?</td><td>0.4</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Yes I have....I&#x27;ve had difficulty trying to receive a call back though.
+</td><td>Yes, I have.... par mujhe wapas call back receive karne mein difficulty ho rahi hai.</td><td>0.4667</td></tr>
+<tr><td>20</td><td>supporter</td><td>Self-disclosure</td><td>I know it is hard right now finding a job with this pandemic going on and it will take time but i know you will find a job soon</td><td>I know is pandemic mein job find karna hard hai, aur ismein time lagega, but I know aap jaldi hi ek job find kar loge.</td><td>0.48</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>which has been frustrating in and of itself. I know it&#x27;s all mental, but I just can&#x27;t break through.
+</td><td>Jo ki in and of itself kaafi frustrating hai. I know it&#x27;s all mental, par main isko break through nahi kar pa raha.</td><td>0.4783</td></tr>
+<tr><td>22</td><td>supporter</td><td>Self-disclosure</td><td>You have to remain positive and keep your head and tell your self everything will be okay</td><td>You have to remain positive and keep your head up, aur apne aap ko bolo ki everything will be okay.</td><td>0.3</td></tr>
+<tr><td>23</td><td>supporter</td><td>Reflection of feelings</td><td>I can understand how you are feeling and you are not alone</td><td>I can understand how you are feeling, aur remember karo ki you are not alone.</td><td>0.2</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>I really appreciate you listening, and understandig
+</td><td>I really appreciate ki aap listen kar rahe ho aur understand kar rahe ho.</td><td>0.3571</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>it&#x27;s tremendously helpful
+</td><td>Yeh tremendously helpful hai yaar.</td><td>0.4</td></tr>
+<tr><td>26</td><td>supporter</td><td>Providing Suggestions</td><td>You are welcome. Everything will be okay just know that.</td><td>You are most welcome. Everything will be okay, bas yeh baat yaad rakho.</td><td>0.3846</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>You&#x27;re right...I do know that, I just need to truly believe it. Every day is a new day for opportunity and to be better then yesterday.
+</td><td>You&#x27;re right... I do know that, bas mujhe ispe truly believe karna hai. Har din ek new day hota hai opportunity ke liye aur yesterday se behtar banne ke liye.</td><td>0.3667</td></tr>
+<tr><td>28</td><td>supporter</td><td>Providing Suggestions</td><td>Right and you have to take control of those negative thoughts and replace them with positive thoughts</td><td>Right, aur aapko un negative thoughts ka control lena hoga aur unhe positive thoughts se replace karna hoga.</td><td>0.3889</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>I could do a better job of reframing situations and looking at everything as &#x27;glass half full&#x27; instead of empty
+</td><td>Main situations ko reframe karne mein aur sab kuch &#x27;glass half full&#x27; dekhne mein better job kar sakta hoon instead of empty.</td><td>0.4545</td></tr>
+<tr><td>30</td><td>supporter</td><td>Information</td><td>You are right you have to learn to control your feelings towards a situation</td><td>You are right, aapko kisi bhi situation ke towards apne feelings ko control karna sikhna hi hoga.</td><td>0.4118</td></tr>
+<tr><td>31</td><td>seeker</td><td></td><td>I do tend to overreact or just go overboard pretty easily.....I agree with you there.
+</td><td>Main thoda overreact kar jaata hoon ya jaldi hi overboard ho jaata hoon..... I totally agree with you on this.</td><td>0.45</td></tr>
+<tr><td>32</td><td>supporter</td><td>Providing Suggestions</td><td>Don&#x27;t let depression take full control of you then it will be all bad </td><td>Depression ko apna full control mat lene do, nahi toh sab kuch aur bad ho jayega.</td><td>0.3125</td></tr>
+<tr><td>33</td><td>seeker</td><td></td><td>That&#x27;s true....I will start doing a better job at looking at the brighter side of things....it&#x27;s not as bad as I make it seem I guess.
+</td><td>That&#x27;s true.... main ab brighter side of things dekhne ki better koshish karunga.... yeh utna bura bhi nahi hai jitna main bana deta hoon, I guess.</td><td>0.3462</td></tr>
+<tr><td>34</td><td>supporter</td><td>Providing Suggestions</td><td>once you learn how to have control over your feelings over situations then it will be pretty easy to maintain</td><td>Once aap learn kar lo ki situations par apne feelings ka control kaise rakhna hai, toh isko maintain karna pretty easy ho jayega.</td><td>0.3478</td></tr>
+<tr><td>35</td><td>seeker</td><td></td><td>I think seeing the doctor will help a ton too. you&#x27;ve been extremely helpful
+</td><td>Mujhe lagta hai doctor ko dekhna bhi ek ton help karega. You&#x27;ve been extremely helpful, yaar.</td><td>0.4375</td></tr>
+<tr><td>36</td><td>supporter</td><td>Others</td><td>Yes seeing a doctor would really be helpful for you.</td><td>Yes, doctor ko consult karna aapke liye really helpful hoga.</td><td>0.5</td></tr>
+<tr><td>37</td><td>seeker</td><td></td><td>Thank you for spending 15 minutes talking to me
+</td><td>Thank you mere sath yeh 15 minutes spend karke baat karne ke liye.</td><td>0.3333</td></tr>
+<tr><td>38</td><td>supporter</td><td>Others</td><td>No problem. have a Merry Christmas and cheer up please :)</td><td>No problem at all. Aapko Merry Christmas aur please thoda cheer up ho jao :)</td><td>0.3571</td></tr>
+<tr><td>39</td><td>seeker</td><td></td><td>I will, you&#x27;ve been a huge help :D
+</td><td>I will, aapne bahut badi help ki hai meri :D</td><td>0.4</td></tr>
+<tr><td>40</td><td>supporter</td><td>Providing Suggestions</td><td>I am glad I helped you today. Take Care.</td><td>I am glad ki main aaj aapki help kar paya. Take care!</td><td>0.5</td></tr>
+</table>
+<h2>Conversation 69</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>How can I assist you today?</td><td>Aaj main aapki kaise assist kar sakta hu?</td><td>0.25</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>I am not happy at all</td><td>Main bilkul bhi happy nahi hu yaar</td><td>0.1429</td></tr>
+<tr><td>2</td><td>supporter</td><td>Reflection of feelings</td><td>I feel that I can help you.</td><td>Mujhe feel hota hai ki I can definitely help you.</td><td>0.4</td></tr>
+<tr><td>3</td><td>supporter</td><td>Self-disclosure</td><td>I have felt bad on Christmas as well, but feelings pass.</td><td>Maine bhi Christmas par bura feel kiya tha, but feelings pass ho jaati hain.</td><td>0.3571</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>The fear of layoff from job</td><td>Job se layoff hone ka darr laga hai</td><td>0.25</td></tr>
+<tr><td>5</td><td>supporter</td><td>Affirmation and Reassurance</td><td>You are making the right decision to talk to me.</td><td>Aap mujhse talk karke ekdum right decision le rahe ho.</td><td>0.3</td></tr>
+<tr><td>6</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>So, you are in fear of losing a full-time job or pat-time job?</td><td>Toh, aapko full-time job ya part-time job lose hone ka fear hai?</td><td>0.4286</td></tr>
+<tr><td>7</td><td>supporter</td><td>Question</td><td>What makes you think and fear that layoffs at your job are imminent?</td><td>Aapko aisa kyun lag raha hai aur what is the reason ki job se layoffs imminent hain?</td><td>0.4118</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Full time, three months a go my salary was cutoff</td><td>Full-time hai, teen mahine pehle meri salary cutoff ho gayi thi</td><td>0.3333</td></tr>
+<tr><td>9</td><td>supporter</td><td>Reflection of feelings</td><td>I feel bad about that.</td><td>Yeh sunke mujhe bahut bad feel ho raha hai.</td><td>0.2222</td></tr>
+<tr><td>10</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>So, you have been out of a job for three months?</td><td>Toh, aap three months se without job ho kya?</td><td>0.4444</td></tr>
+<tr><td>11</td><td>supporter</td><td>Question</td><td>How else can I help?</td><td>Main aur kis tarah se aapki help kar sakta hu?</td><td>0.2</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Not really just the salary  was cut into two because of pandemic now they are planning to layoff some staffs which I am scare of, not to affect me</td><td>Not really, pandemic ki wajah se salary two half me cut ho gayi thi and now they are planning to layoff some staff jisse I am feeling so scared, ki kahin mujh par effect na aaye.</td><td>0.3889</td></tr>
+<tr><td>13</td><td>supporter</td><td>Information</td><td>Have you consider becoming an Uber driver or Lyft driver to supplement your income?</td><td>Kya aapne apna income supplement karne ke liye Uber driver ya Lyft driver banne ka consider kiya hai?</td><td>0.3889</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>Thanks! I am not even thinking about that at all</td><td>Thanks! Maine toh is baare me bilkul bhi think nahi kiya tha</td><td>0.1667</td></tr>
+<tr><td>15</td><td>supporter</td><td>Affirmation and Reassurance</td><td>You can definitely do it as a way to buffer yourself against loss of income.</td><td>Aap income loss ke against buffer banane ke liye isko definitely try kar sakte ho.</td><td>0.4</td></tr>
+<tr><td>16</td><td>supporter</td><td>Question</td><td>Does that suggestion help?</td><td>Kya yeh suggestion aapke liye really helpful hai?</td><td>0.375</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>Yes! I will consider that, </td><td>Yes! Main isko zaroor consider karunga,</td><td>0.3333</td></tr>
+<tr><td>18</td><td>supporter</td><td>Providing Suggestions</td><td>You could also reduce fear by considering Door dash and other food delivery services.</td><td>Aap DoorDash aur doosri food delivery services ko bhi consider karke apna fear reduce kar sakte ho.</td><td>0.3529</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>I feel relived now because of your suggestions</td><td>Aapke suggestions ki wajah se I feel very relived now.</td><td>0.4</td></tr>
+<tr><td>20</td><td>seeker</td><td></td><td>You are too good, thanks</td><td>Aap bahut good ho, thanks.</td><td>0.4</td></tr>
+<tr><td>21</td><td>supporter</td><td>Affirmation and Reassurance</td><td>You have been a good person to take my advices.</td><td>Aapne meri advices listen ki, isliye you are such a good person.</td><td>0.3333</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>You must be guidance and counselor,</td><td>Aapko toh guidance aur counselor hona chahiye,</td><td>0.2857</td></tr>
+<tr><td>23</td><td>supporter</td><td>Self-disclosure</td><td>I once struggled as well with fear over my job security, but decded to work many jobs to pay the bills.</td><td>Maine bhi ek time par job security ke fear ke sath struggle kiya tha, par bills pay karne ke liye bahut saari jobs karne ka decide kiya tha.</td><td>0.3214</td></tr>
+<tr><td>24</td><td>supporter</td><td>Question</td><td>Do you need any other help?</td><td>Kya aapko any other help ki need hai?</td><td>0.5</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>Hoo! I thank God today, I meet a right person.</td><td>Hoo! Aaj main God ko thank karta hu ki I met a right person.</td><td>0.5</td></tr>
+<tr><td>26</td><td>seeker</td><td></td><td>Thank you for every thing,</td><td>Har cheez ke liye thank you,</td><td>0.3333</td></tr>
+<tr><td>27</td><td>supporter</td><td>Reflection of feelings</td><td>I feel good to point you in the best direction.....are we done?</td><td>Mujhe aapko best direction me point out karke bahut accha feel ho raha hai.....kya hum done hain?</td><td>0.3333</td></tr>
+<tr><td>28</td><td>supporter</td><td>Information</td><td>Merry Christmas and Happy New Year.</td><td>Merry Christmas and Happy New Year aapko wish karta hu.</td><td>0.3</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>Noting more to seek help for, you have help me a lot. Merry Christmas and Happy New Year to you too. Bye and Thanks</td><td>Ab seek karne ke liye kuch nahi hai, aapne meri bahut help ki hai. Merry Christmas and Happy New Year to you too. Bye and Thanks</td><td>0.4615</td></tr>
+<tr><td>30</td><td>supporter</td><td>Providing Suggestions</td><td>I try and suggest ideas that benefit others.</td><td>Main aisi ideas try karke suggest karta hu jisse doosron ka benefit ho.</td><td>0.3077</td></tr>
+<tr><td>31</td><td>seeker</td><td></td><td>Thanks</td><td>Thanks</td><td>0.0</td></tr>
+<tr><td>32</td><td>supporter</td><td>Providing Suggestions</td><td>You can select the red Quit and Finish button</td><td>Aap red Quit and Finish button select kar sakte ho</td><td>0.4</td></tr>
+<tr><td>33</td><td>seeker</td><td></td><td>Bye for now</td><td>Abhi ke liye bye</td><td>0.25</td></tr>
+<tr><td>34</td><td>supporter</td><td>Others</td><td>Cheers to your health.</td><td>Cheers to your health.</td><td>0.0</td></tr>
+<tr><td>35</td><td>seeker</td><td></td><td>You are good. Thanks bye</td><td>Aap bahut acche ho. Thanks bye</td><td>0.3333</td></tr>
+</table>
+<h2>Conversation 71</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>My friends are trying to shame me.</td><td>Mere friends mujhe public mein shame karne ki try kar rahe hain.</td><td>0.3333</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>How ridiculous....</td><td>Kitna ridiculous hai yaar....</td><td>0.25</td></tr>
+<tr><td>2</td><td>supporter</td><td>Question</td><td>hi i am sorry to hear that 
+</td><td>Hi, I am so sorry yeh sab sun kar</td><td>0.4444</td></tr>
+<tr><td>3</td><td>supporter</td><td>Question</td><td>what are they trying to shame you with?</td><td>Woh kis cheez ko lekar tumhe shame karne ki try kar rahe hain?</td><td>0.1538</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>what are they trying to shame you with?</td><td>Woh kis cheez ko lekar tumhe shame karne ki try kar rahe hain?</td><td>0.1538</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>It is Christmas and my friends say that I do not donate enough to charity.</td><td>Christmas ka time hai aur mere friends bol rahe hain ki main charity mein enough donate nahi karta.</td><td>0.3333</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>They are putting me on a guilt trip.  My one old friend is the President of a local non-profit.</td><td>Mujhe guilt trip par daal rahe hain. Mera ek old friend toh local non-profit ka President hai.</td><td>0.4444</td></tr>
+<tr><td>7</td><td>supporter</td><td>Reflection of feelings</td><td>well, the donation to charity should be what either you can affort or volunteeer, it all depends on your situation
+</td><td>Well, charity donation toh utna hi hona chahiye jitna aap afford kar sako ya volunteer karo, yeh totally aapki situation par depend karta hai.</td><td>0.3333</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>I am not making much income with the COVID-19, either.
+</td><td>Honestly, COVID-19 ki wajah se meri income bhi kuch खास generate nahi ho rahi hai, I mean it.</td><td>0.3333</td></tr>
+<tr><td>9</td><td>supporter</td><td>Reflection of feelings</td><td>it has to come from the heart and if your circumstances do not allow that then they should not talk badly about you</td><td>Yeh sab heart se aana chahiye aur agar aapke circumstances allow nahi karte, toh unhe absolutely aapko bad talk nahi karna chahiye.</td><td>0.2727</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>Two different (so-called) friends of mine need to get a life.</td><td>Mere two different (so-called) friends ko apni life mein kuch productive karna chahiye.</td><td>0.5</td></tr>
+<tr><td>11</td><td>supporter</td><td>Others</td><td>shame on them to do that to you</td><td>Shame on them jo aapke saath aisa behave kar rahe hain</td><td>0.3636</td></tr>
+<tr><td>12</td><td>supporter</td><td>Others</td><td>well you might not consider them real friends if that is what they do.</td><td>Well, agar unki aisi harkatein hain toh you might not consider them real friends anymore.</td><td>0.4</td></tr>
+<tr><td>13</td><td>supporter</td><td>Information</td><td>it is always easier to judge over other people then to validate what anyone self is doing.</td><td>Dusre logo ko judge karna hamesha easy hota hai instead of yeh validate karne ke ki khud koi kya action le raha hai.</td><td>0.3043</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>Yeah, people don&#x27;t know that just because my two friends go &quot;Way back,&quot; does not mean they should be able to to hurt me, emotionally.</td><td>Yeah, logo ko yeh nahi pata ki sirf isliye ki my two friends go &quot;Way back,&quot; does not mean ki they should be able to hurt me emotionally.</td><td>0.3214</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>What should I do about these two (so-called) friends? </td><td>Mujhe in dono (so-called) friends ke saath kya karna chahiye?</td><td>0.3636</td></tr>
+<tr><td>16</td><td>supporter</td><td>Providing Suggestions</td><td>definatly not  ...have you tried explaining your situation to them?</td><td>Definitely not... kya aapne apni situation unhe explain karne ki try ki hai?</td><td>0.3846</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>No, they don&#x27;t know that I am in financial trouble myself.</td><td>No, unhe nahi pata ki I am in financial trouble myself.</td><td>0.3636</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>COVID-19 has wrecked my steady income levels....</td><td>COVID-19 ne mere steady income levels ko puri tarah wreck kar diya hai....</td><td>0.3077</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Things were great, this time last year.</td><td>Pichle saal this time par sab kuch kitna amazing aur great tha.</td><td>0.3333</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>well i know thats something most people do not want to disclose can you help the organization with donating your time?</td><td>Well, I know yeh aisi cheez hai jo most log disclose nahi karna chahte, par kya aap organization ko apna time donate karke help kar sakte ho?</td><td>0.3333</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>I might be able to do that.</td><td>Maybe main yeh definitely try kar sakta hoon.</td><td>0.375</td></tr>
+<tr><td>22</td><td>supporter</td><td>Others</td><td>unfortunatly it is right now very comen this situation, so no shame for that,</td><td>Unfortunately abhi yeh situation bohot common hai, so iske liye koi shame nahi honi chahiye,</td><td>0.3333</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>Well, I used to donate a LOT in year&#x27;s past.</td><td>Well, main pichle years mein LOT donate kiya karta tha.</td><td>0.4</td></tr>
+<tr><td>24</td><td>supporter</td><td>Providing Suggestions</td><td>a lot of times donating time to help organisatiosn is more valuable then money.</td><td>A lot of times organizations ko apna time donate karna money donate karne se zyada valuable hota hai.</td><td>0.4444</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>Great point.</td><td>Great point.</td><td>0.0</td></tr>
+<tr><td>26</td><td>supporter</td><td>Others</td><td>times and situations change so thats ok.</td><td>Times aur situations change hoti rehti hain toh that&#x27;s ok.</td><td>0.5</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>My friends may like to know that I am trading time....instead of donating money.</td><td>Mere friends ko yeh jaankar surprise hoga ki main money donate karne ki jagah apna time trade kar raha hoon....</td><td>0.3</td></tr>
+<tr><td>28</td><td>supporter</td><td>Providing Suggestions</td><td>i worked for a non profit and the biggest struggle was to find volunteers to help out</td><td>Maine ek non-profit ke liye kaam kiya hai aur hamara biggest struggle help ke liye volunteers find karna hi hota tha.</td><td>0.3182</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>Yes, you make a good point.</td><td>Yes, aapne ek good point bola.</td><td>0.5</td></tr>
+<tr><td>30</td><td>supporter</td><td>Providing Suggestions</td><td>I feel that is a great donation and if they do not like that tell them money is easy to give time not</td><td>Mujhe feel hota hai ki yeh ek great donation hai aur agar unko yeh pasand na aaye toh tell them money is easy to give, time not.</td><td>0.4444</td></tr>
+<tr><td>31</td><td>seeker</td><td></td><td>The proble is that some people just want to shame people without knowing their plight.</td><td>The problem is ki kuch log without knowing their plight bas logo ko shame karna chahte hain.</td><td>0.4706</td></tr>
+<tr><td>32</td><td>supporter</td><td>Providing Suggestions</td><td>Yeah, true, we need to stay above them then in all actuality  we don&#x27;t know what goes on behind closed doors in their life. sometimes people like that reflect </td><td>Yeah, true, hume unse upar rehna chahiye kyunki in reality hum nahi jaante ki unki closed doors life ke piche kya chal raha hai. Sometimes aise log reflect karte hain.</td><td>0.3</td></tr>
+<tr><td>33</td><td>seeker</td><td></td><td>I need to think of others ways to contribute that won&#x27;t have my friends hating on me.</td><td>Mujhe contribute karne ke other ways sochne honge so that my friends won&#x27;t hate on me.</td><td>0.3125</td></tr>
+<tr><td>34</td><td>seeker</td><td></td><td>I have pride, too.</td><td>Meri bhi kuch pride hai.</td><td>0.2</td></tr>
+<tr><td>35</td><td>supporter</td><td>Others</td><td>BUt it should be what you want not what your &#x27;freinds want.</td><td>Par it should be what you want, na ki what your &#x27;friends&#x27; want.</td><td>0.2308</td></tr>
+<tr><td>36</td><td>supporter</td><td>Others</td><td>you should be proud of yourself.</td><td>Aapko apne aap par definitely proud feel hona chahiye.</td><td>0.3333</td></tr>
+<tr><td>37</td><td>seeker</td><td></td><td>Yeah......</td><td>Yeah......</td><td>0.0</td></tr>
+<tr><td>38</td><td>supporter</td><td>Information</td><td>Hopefully next year will bring better things and maybe even a better friend that does not judge into your life.</td><td>Hopefully next year apne saath better things lekar aayega aur shayad ek aisa better friend bhi jo judge na kare.</td><td>0.4</td></tr>
+<tr><td>39</td><td>seeker</td><td></td><td>The problem is that I am not sure it my friends are going to believe me; I am a well-to-do individual</td><td>Problem yeh hai ki mujhe sure nahi ki mere friends meri baat par believe karenge; main ek well-to-do individual hoon.</td><td>0.3636</td></tr>
+<tr><td>40</td><td>seeker</td><td></td><td>We can only hope for a better 2021
+</td><td>Hum bas ek better 2021 ke liye expect aur hope kar sakte hain.</td><td>0.25</td></tr>
+<tr><td>41</td><td>seeker</td><td></td><td>Not sure how quickly the markets rebound....</td><td>Pata nahi markets kitni fast rebound hongi aur recover karengi....</td><td>0.4</td></tr>
+<tr><td>42</td><td>supporter</td><td>Others</td><td>well if they do not believe you as well you might really need to rethink your friendships and the meaning in those so called freind ships.</td><td>Well, agar woh aap par believe nahi karte, toh you might really need to rethink your friendships and unke true meaning ko.</td><td>0.4091</td></tr>
+<tr><td>43</td><td>supporter</td><td>Others</td><td>hopefully soon for all of us, but hold on to the thought of being healthy</td><td>Hopefully yeh jaldi ho sab ke liye, par hold on to the thought of being healthy.</td><td>0.4375</td></tr>
+<tr><td>44</td><td>seeker</td><td></td><td>Well, I usually go to their get-togethers. Both of my friends are well-to-do.</td><td>Well, main usually unke get-togethers mein jata hoon. Mere dono friends well-to-do hain.</td><td>0.5</td></tr>
+<tr><td>45</td><td>supporter</td><td>Others</td><td>I am hoping you will find the right solution.</td><td>Main hope kar rahi hoon ki you will find the right solution.</td><td>0.4167</td></tr>
+<tr><td>46</td><td>seeker</td><td></td><td>Well, you have been helpful.</td><td>Well, aapne kaafi help ki hai.</td><td>0.3333</td></tr>
+<tr><td>47</td><td>seeker</td><td></td><td>Thank you. Good bye.</td><td>Thank you. Good bye.</td><td>0.0</td></tr>
+<tr><td>48</td><td>supporter</td><td>Others</td><td>thanks I wish you all the luck and health</td><td>Thanks, main aapko all the luck aur health wish karti hoon.</td><td>0.4545</td></tr>
+<tr><td>49</td><td>supporter</td><td>Others</td><td>good bye</td><td>Good bye.</td><td>0.0</td></tr>
+<tr><td>50</td><td>seeker</td><td></td><td>Happy Holidays.</td><td>Happy Holidays.</td><td>0.0</td></tr>
+<tr><td>51</td><td>supporter</td><td>Others</td><td>same</td><td>Same to you.</td><td>0.0</td></tr>
+<tr><td>52</td><td>supporter</td><td>Information</td><td>you need to end the chat</td><td>Aapko yeh chat end karni hogi.</td><td>0.3333</td></tr>
+</table>
+<h2>Conversation 75</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Others</td><td>Hi</td><td>Hi yaar</td><td>0.5</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>hello</td><td>hello</td><td>0.0</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>how are you? I wanted to briefly chat about my jealous feeling</td><td>how are you? Main thoda briefly chat karna chahti thi apne jealous feeling ke baare mein</td><td>0.4375</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>My friend sent me a pic as a greeting showing her hubby and I am jealous
+</td><td>Meri friend ne mujhe ek pic bheji as a greeting jisme uska hubby hai and I am feeling jealous</td><td>0.4737</td></tr>
+<tr><td>4</td><td>supporter</td><td>Question</td><td>I am doing good. How are you?</td><td>I am doing good. Aap batao, how are you?</td><td>0.2222</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>Next time I see her I want to hide my jealous feeling, but not sure if I can do it well</td><td>Next time jab main use milungi toh I want to hide my jealous feeling, par I am not sure ki main ye well kar paungi</td><td>0.44</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>great. I am good
+</td><td>great. I am good</td><td>0.0</td></tr>
+<tr><td>7</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>so, you envy your friend having a good spouse, is that correct?</td><td>Toh basically, matlab ye hai ki you are feeling envious ki tumhari friend ke paas ek good spouse hai, is that correct?</td><td>0.5</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>yes that is correct</td><td>yes that is correct</td><td>0.0</td></tr>
+<tr><td>9</td><td>supporter</td><td>Question</td><td>Are you a female, if I may ask?</td><td>Are you a female, agar main pooch sakta hoon?</td><td>0.4444</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>yes </td><td>yes</td><td>0.0</td></tr>
+<tr><td>11</td><td>supporter</td><td>Question</td><td>Do you have a husband or bf?</td><td>Kya aapka koi husband ya bf hai currently?</td><td>0.375</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>I could say I am a female that is one of those left out </td><td>Main keh sakti hoon ki I am a female that is one of those left out</td><td>0.3125</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>not currently</td><td>not currently</td><td>0.0</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>I really don&#x27;t know how those women find partners and get married and stay with the same partner for a long time. </td><td>Mujhe honestly samajh nahi aata ki how those women find partners, get married, aur phir itne long time tak stay karte hain.</td><td>0.5</td></tr>
+<tr><td>15</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>You get frustrated that other people are achieving something, you are not able to do. Is that a fair understanding?</td><td>You get frustrated ki other people are achieving something, jo aap nahi kar pa rahe ho. Is that a fair understanding?</td><td>0.381</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>I think so, I am not complaining but I guess I am haha</td><td>I think so, main complain nahi kar rahi hoon par I guess I am haha</td><td>0.4667</td></tr>
+<tr><td>17</td><td>supporter</td><td>Question</td><td>What do you think about your self as person? Kid, affectionate, caring?</td><td>Aapko kya lagta hai ki as a person aap kaisi ho? Kind, affectionate ya caring?</td><td>0.4</td></tr>
+<tr><td>18</td><td>supporter</td><td>Others</td><td>*kind</td><td>*kind</td><td>0.0</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>I am very sexy and fun but not relaxed, I am caring I think but am not good at showing it. blush!</td><td>Main bohot sexy aur fun hoon par zyada relaxed nahi rehti, caring bhi hoon I think par I am just not good at showing it. blush!</td><td>0.4231</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>To be honest, here what I feel about you.. you have a lots of good qualities, you are a wonderful person. However, you shortchange yourself. If you can, please start building some self confidence.. Be proud of yourself.. </td><td>Honestly speaking, yahan mujhe lagta hai ki you have a lot of good qualities, aap ek wonderful person ho. Par aap khud ko shortchange karti ho. Agar ho sake, toh please build some self confidence and be proud of yourself.</td><td>0.475</td></tr>
+<tr><td>21</td><td>supporter</td><td>Providing Suggestions</td><td>Someone having a good hubby does not mean that she is happier than you</td><td>Kisi ke paas agar good hubby hai toh iska ye matlab bilkul nahi hai ki she is happier than you.</td><td>0.3</td></tr>
+<tr><td>22</td><td>seeker</td><td></td><td>true true</td><td>true true</td><td>0.0</td></tr>
+<tr><td>23</td><td>supporter</td><td>Providing Suggestions</td><td>One secret in life is if you wish other people be happy from your heart, in turn it makes you happy. Give it a try, and you will realize it. </td><td>Life ka ek secret ye hai ki agar aap dil se wish karo ki other people be happy, toh in turn wo aapko bhi happy banata hai. Give it a try, aur aapko realize hoga.</td><td>0.4286</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>Oh really! I will definitely try that. Great advice.</td><td>Oh really! Main definitely ise try karungi. Bohot great advice hai.</td><td>0.4545</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>Thank you. I hope you have a good Xmas
+</td><td>Thank you so much. Main hope karti hoon ki aapka Xmas acha ho.</td><td>0.4615</td></tr>
+<tr><td>26</td><td>seeker</td><td></td><td>I wish your happiness over Chrismas! :)
+</td><td>I really wish ki aapko Christmas par bohot saari happiness mile! :)</td><td>0.4545</td></tr>
+<tr><td>27</td><td>supporter</td><td>Providing Suggestions</td><td>We see so many picture perfect couples in celebrity world... some of them fall apart quickly.. we need to focus on our lives and pursue our happiness... </td><td>Hum kitne saare picture perfect couples dekhte hain celebrity world mein... kuch toh unme se fall apart quickly.. hume focus karna chahiye on our lives and pursue our happiness...</td><td>0.4483</td></tr>
+<tr><td>28</td><td>supporter</td><td>Others</td><td>Happy Holidays...
+</td><td>Happy Holidays...</td><td>0.0</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>Happy holidays :)
+</td><td>Happy holidays :)</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 77</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>Hello, it&#x27;s nice to meet you.</td><td>Hello, milke bahot nice laga.</td><td>0.4</td></tr>
+<tr><td>1</td><td>supporter</td><td>Question</td><td>Thank you. How are you?</td><td>Thank you. Tum kaise ho?</td><td>0.4</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>Honestly, I&#x27;ve been feeling very depressed lately. My dog died a month ago and I&#x27;ve just been feeling very empty. </td><td>Honestly, main kafi depressed feel kar raha hoon lately. Mera dog ek mahina pehle mar gaya and I am just feeling super empty.</td><td>0.4783</td></tr>
+<tr><td>3</td><td>supporter</td><td>Question</td><td>Very sorry for you loss. How long you had the dog?</td><td>So sorry for your loss yaar. Tumne dog kitne time se rakha tha?</td><td>0.4615</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>7 years. I had him since he was a puppy. He would have turned 8 years old next month.</td><td>7 years. Jab wo puppy tha tab se mere paas tha. Next month wo 8 years ka turn hone wala tha.</td><td>0.3158</td></tr>
+<tr><td>5</td><td>supporter</td><td>Reflection of feelings</td><td>I understand what you are going through. This is one of most difficult time of someone&#x27;s life.  </td><td>Main understand kar sakta hoon ki tum kya go through kar rahe ho. This is one of the most difficult times in someone&#x27;s life.</td><td>0.4167</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>Thank you. One of my coworkers told me that &quot;he was just a dog and that I should get over it,&quot;
+ but I just can&#x27;t. He brought so much joy to my life and now that I don&#x27;t have him anymore, I just feel so empty. </td><td>Thank you. Mere ek coworker ne mujhe bola ki &quot;he was just a dog and that I should get over it,&quot; par main nahi kar pa raha hoon. Usne meri life mein itni joy laayi thi aur ab wo nahi hai toh I just feel so empty.</td><td>0.4468</td></tr>
+<tr><td>7</td><td>supporter</td><td>Reflection of feelings</td><td>It is not just a dog. How insensitive of someone say that.</td><td>Wo just ek dog nahi tha. Koi kaise itna insensitive ho sakta hai aisi baat bolne mein.</td><td>0.1765</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Well, my coworker lost his mother to COVID so I guess he is going through some tough times too.
+</td><td>Well, mere coworker ki mom COVID ki wajah se expire ho gayi thi toh I guess wo bhi kuch tough times se go through kar raha hai.</td><td>0.3704</td></tr>
+<tr><td>9</td><td>supporter</td><td>Providing Suggestions</td><td>I suggest you pretty soon adapt another dog. This might help you fill up the emptiness. </td><td>I suggest ki tum pretty soon ek aur dog adopt kar lo. This might help you fill up the emptiness.</td><td>0.3</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>I have been trying to get out of my slump. I even thought about getting a new dog, but that just brings up sad memories. What do you think I should do?
+</td><td>I have been trying to get out of my slump. Maine ek naya dog lene ka bhi socha tha, but that just brings up sad memories. What do you think mujhe kya karna chahiye?</td><td>0.3529</td></tr>
+<tr><td>11</td><td>supporter</td><td>Providing Suggestions</td><td>If you are not ready to get a new dog, another thing you might try to spend some time volunteering in a dog shelter... that might give you different perspective</td><td>Agar tum ek naya dog adopt karne ke liye ready nahi ho, toh another option jo tum try kar sakte ho wo hai kisi dog shelter mein thoda time volunteer karna... usse tumhe completely different perspective mil sakta hai.</td><td>0.3333</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>That actually sounds like a good idea. I hope the shelter near me will take volunteers with COVID and all.
+</td><td>Ye idea actually kafi accha lag raha hai. I just hope COVID aur baaki sab situations ke chalte mere paas wala shelter volunteers ko allow karta ho.</td><td>0.3333</td></tr>
+<tr><td>13</td><td>supporter</td><td>Providing Suggestions</td><td>If you are not comfortable going out due to COVID, you could involve some activities online promoting dog adaption and create awareness online and through social media.. </td><td>Agar tum COVID ki wajah se bahar jaane mein comfortable nahi ho, toh tum online kuch activities mein involve ho sakte ho jo dog adoption promote karein aur social media ke through awareness create kar sakte ho.</td><td>0.3243</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>That&#x27;s a great idea. I would love to get involved in anything related to pets. They need a loving home, especially during times like these.
+</td><td>Ye ek great idea hai. Pets se related kisi bhi cheez mein involve hona mujhe bahot pasand aayega. Unhe ek loving home ki zarurat hoti hai, specially aise times mein.</td><td>0.3</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>Thank you for suggesting that.
+</td><td>Ye suggestion dene ke liye thank you.</td><td>0.4286</td></tr>
+<tr><td>16</td><td>supporter</td><td>Question</td><td>Anything else I could help you with today?</td><td>Anything else main help kar sakta hoon aaj?</td><td>0.375</td></tr>
+<tr><td>17</td><td>seeker</td><td></td><td>No, I&#x27;ll try following the advice you suggested. Hopefully, that&#x27;ll help me get out of my slump.
+</td><td>Nahi, I will try following your advice. Hopefully, usse mujhe is slump se bahar aane mein help milegi.</td><td>0.5</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>I may even meet another dog that way too
+</td><td>Maybe is process mein mujhe koi aur dog bhi mil jaye.</td><td>0.3636</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Thank you again
+</td><td>Thank you again.</td><td>0.0</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>Thank you. Please use &quot;Finish and Quit&quot; to end the discussion.</td><td>Thank you. Discussion end karne ke liye please &quot;Finish and Quit&quot; use karo.</td><td>0.3846</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>It says you need to send more messages?
+</td><td>It says ki tumhe kuch aur messages send karne padenge?</td><td>0.4</td></tr>
+<tr><td>22</td><td>supporter</td><td>Question</td><td>Sure.. do you have any other pet?</td><td>Sure.. do you have koi aur pet?</td><td>0.2857</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>Nope, I just had Rex. 
+</td><td>Nope, mere paas bas Rex tha.</td><td>0.3333</td></tr>
+<tr><td>24</td><td>seeker</td><td></td><td>My mom had a cat though, but I was never a fan of the cat. I just bonded with Rex naturally.
+</td><td>Meri mom ke paas ek cat thi though, par main kabhi cat ka fan nahi raha. Mera connection bas Rex ke sath naturally ban gaya tha.</td><td>0.3077</td></tr>
+</table>
+<h2>Conversation 81</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hello</td><td>Hello yaar</td><td>0.5</td></tr>
+<tr><td>1</td><td>seeker</td><td></td><td>Hello, I hope you can help me.
+</td><td>Hello, I hope ki aap meri help kar paoge.</td><td>0.4444</td></tr>
+<tr><td>2</td><td>supporter</td><td>Others</td><td>Sure I can</td><td>Haan sure, I can.</td><td>0.25</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>I work hard at my job in an office.  We acquired another company and my job is now twice the work.
+</td><td>Main apne office job mein bahut hard work karta hoon. Humne ek doosri company acquire ki hai aur ab meri job mein double work ho gaya hai.</td><td>0.3333</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>Two of my coworkers have gotten a raise and I have not gotten anything!
+</td><td>Mere do coworkers ko raise mil gaya hai and mujhe absolutely kuch bhi nahi mila!</td><td>0.2667</td></tr>
+<tr><td>5</td><td>supporter</td><td>Question</td><td>Have you talked to your boss about it?</td><td>Kya tune apne boss se is matter par properly talk kiya hai?</td><td>0.3333</td></tr>
+<tr><td>6</td><td>seeker</td><td></td><td>I have hinted around that my job is sooo busy and he knows it, I haven&#x27;t come out and said anything yet.
+</td><td>Maine hint diya tha ki meri job bahut busy hai and use pata bhi hai, but maine abhi tak openly kuch discuss nahi kiya hai.</td><td>0.28</td></tr>
+<tr><td>7</td><td>supporter</td><td>Reflection of feelings</td><td>I can understand how you feeling you work extremely hard and get no raise when you deserve it</td><td>I can understand ki tujhe kaisa feel ho raha hoga, tu extremely hard work karta hai and jab deserve karta hai tab raise nahi milta.</td><td>0.4</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Yes, I have been at the job for 15 years and make a decent salary but this amount of work is insane.  Do you think I should bring it up to him&gt;
+</td><td>Haan, mujhe is job mein 15 years ho gaye hain aur decent salary milti hai, but work ka amount insane hai. Tujhe kya lagta hai, mujhe ye topic uske saamne bring up karna chahiye?</td><td>0.303</td></tr>
+<tr><td>9</td><td>supporter</td><td>Providing Suggestions</td><td>oh wow 15 years? I really believe you need a raise and doing more work now.</td><td>Oh wow, 15 years? Mujhe honestly lagta hai ki tujhe raise milna chahiye kyunki tu ab zyada work kar raha hai.</td><td>0.3</td></tr>
+<tr><td>10</td><td>supporter</td><td>Providing Suggestions</td><td>I honestly think you should bring it up to your boss</td><td>I honestly think ki tujhe ye apne boss ke saath discuss karna chahiye.</td><td>0.3846</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>Yes, I think so too.  I like my boss but he is funny about things sometimes.  Any ideas on how I could bring it up to him.  I hate feeling this way, my attitude is really turning sour.
+</td><td>Haan, mujhe bhi aisa hi lagta hai. I like my boss but wo thoda funny hai regarding things kabhi kabhi. Koi idea hai ki how I could bring it up to him? Mujhe ye feeling se nafrat hai, mera attitude sach mein sour ho raha hai.</td><td>0.4348</td></tr>
+<tr><td>12</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I can&#x27;t believe he has not given you a raise by now </td><td>I can&#x27;t believe ki usne abhi tak tujhe raise nahi diya hai.</td><td>0.3333</td></tr>
+<tr><td>13</td><td>seeker</td><td></td><td>I know!
+</td><td>I know yaar!</td><td>0.3333</td></tr>
+<tr><td>14</td><td>supporter</td><td>Providing Suggestions</td><td>Just tell him that you need to have a serious talk with him and tell him straight up what is on your mind don&#x27;t hold it back</td><td>Bas use tell kar de ki tujhe ek serious talk karni hai and jo bhi tere mind mein hai woh straight up bol de, kuch hold back mat kar.</td><td>0.3103</td></tr>
+<tr><td>15</td><td>seeker</td><td></td><td>So, I guess I&#x27;ll have to be honest and brave at the same time.  
+</td><td>Toh fir mujhe honest aur brave dono banna padega at the same time.</td><td>0.4615</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>Do you think I should bring in proof....paperwork, etc.  I have been working extra as well.
+</td><td>Tujhe kya lagta hai, should I bring in proof... jaise paperwork, etc.? Maine extra work bhi kiya hai.</td><td>0.5</td></tr>
+<tr><td>17</td><td>supporter</td><td>Providing Suggestions</td><td>Yes I know you can do it but that is the only way to solve the situation is by communicating with him</td><td>Haan I know tu kar sakta hai, but situation solve karne ka sirf ek hi way hai ki tu uske saath proper communication kare.</td><td>0.3333</td></tr>
+<tr><td>18</td><td>supporter</td><td>Information</td><td>Yes that would help more by bringing in proof to him </td><td>Yes, agar tu proof sath layega toh woh aur zyada help karega.</td><td>0.25</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Ok, I am just so angry over the whole thing, I&#x27;m going to have to keep my cool and let him know without getting an attitude, do you think that will work?
+</td><td>Ok, main is poori baat par bahut angry hoon, I&#x27;m going to have to keep my cool and let him know without getting an attitude, kya tujhe lagta hai ye work karega?</td><td>0.4062</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>Yes just remain calm with him </td><td>Yes, bas uske saamne remain calm.</td><td>0.5</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>I will try, I hope I don&#x27;t start crying!  I tend to get frustrated and cry.
+</td><td>Main try karunga, I hope I don&#x27;t start crying! Mujhe jaldi frustration hoti hai and I tend to cry.</td><td>0.3158</td></tr>
+<tr><td>22</td><td>supporter</td><td>Others</td><td>getting a attitude with him will not help at all </td><td>Uske aage attitude dikhana bilkul bhi help nahi karega.</td><td>0.2222</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>Yes, you are right, it will make it a bad situation.
+</td><td>Haan, tu bilkul right hai, isse situation aur bhi bad ho jayegi.</td><td>0.25</td></tr>
+<tr><td>24</td><td>supporter</td><td>Self-disclosure</td><td>Don&#x27;t let this situation get to you so much </td><td>Is situation ko apne upar itna haavi mat hone de yaar.</td><td>0.1818</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>O
+</td><td>O</td><td>0.0</td></tr>
+<tr><td>26</td><td>seeker</td><td></td><td>oops
+</td><td>Oops</td><td>0.0</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>I&#x27;ll try not to, I have to be calm, like you said
+</td><td>I will try my best, mujhe calm rehna padega jaise tune bola.</td><td>0.4167</td></tr>
+<tr><td>28</td><td>supporter</td><td>Self-disclosure</td><td>Everything will be ok</td><td>Everything will be ok, sab theek ho jayega.</td><td>0.5</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>Thank you so much for your positive support!
+</td><td>Thank you so much mere ko itna positive support dene ke liye!</td><td>0.5</td></tr>
+<tr><td>30</td><td>seeker</td><td></td><td>I&#x27;ll let him know I need to talk and I&#x27;ll remain calm
+</td><td>I&#x27;ll let him know ki mujhe talk karni hai and I&#x27;ll remain calm.</td><td>0.3077</td></tr>
+<tr><td>31</td><td>supporter</td><td>Providing Suggestions</td><td>Your welcome i am sure he will give you a raise once you talk to him</td><td>Your welcome, mujhe completely sure hai ki once you talk to him, wo tujhe raise de dega.</td><td>0.4118</td></tr>
+<tr><td>32</td><td>seeker</td><td></td><td>Fingers crossed!  I really have gone above and beyond and feel I really deserve it.
+</td><td>Fingers crossed! Maine sach mein above and beyond work kiya hai aur mujhe lagta hai ki main truly deserve karta hoon.</td><td>0.381</td></tr>
+<tr><td>33</td><td>supporter</td><td>Self-disclosure</td><td>I will be praying that you get the raise because you deserve it</td><td>I will be praying ki tujhe raise mil jaye kyunki you truly deserve it.</td><td>0.3571</td></tr>
+<tr><td>34</td><td>seeker</td><td></td><td>Thank you so much, you&#x27;ve been very helpful!
+</td><td>Thank you so much, tune meri bahut help ki hai!</td><td>0.5</td></tr>
+<tr><td>35</td><td>supporter</td><td>Others</td><td>Your most welcome</td><td>Your most welcome yaar.</td><td>0.25</td></tr>
+<tr><td>36</td><td>seeker</td><td></td><td>Merry Christmas!
+</td><td>Merry Christmas!</td><td>0.0</td></tr>
+<tr><td>37</td><td>supporter</td><td>Others</td><td>Merry Christmas to you to!</td><td>Merry Christmas to you bhi!</td><td>0.2</td></tr>
+</table>
+<h2>Conversation 86</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>supporter</td><td>Question</td><td>Hello there! How can I encourage you today?</td><td>Hello there! Aaj main aapko kaise encourage kar sakta hoon?</td><td>0.3</td></tr>
+<tr><td>1</td><td>supporter</td><td>Question</td><td>Hello? Anyone there?</td><td>Hello? Koi hai kya yahan, I mean are you there?</td><td>0.4</td></tr>
+<tr><td>2</td><td>seeker</td><td></td><td>Hi sorry
+</td><td>Hi sorry</td><td>0.0</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>I&#x27;m having trouble getting motivated to finish my senior thesis
+</td><td>Mujhe apne senior thesis ko finish karne mein motivation nahi mil rahi hai, I am having serious trouble.</td><td>0.5</td></tr>
+<tr><td>4</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>Ah! I remember my thesis, a lot of work. One thing for certain, I have a lot of pride over my accomplishment, it was well worth it. When is it due?</td><td>Ah! Mujhe apna thesis yaad hai, bahut zyada work hota hai. Ek baat toh certain hai, mujhe apne accomplishment par bahut pride feel hota hai, it was totally well worth it. Ye due kab hai?</td><td>0.3714</td></tr>
+<tr><td>5</td><td>seeker</td><td></td><td>In about a month.
+</td><td>In about a month.</td><td>0.0</td></tr>
+<tr><td>6</td><td>supporter</td><td>Affirmation and Reassurance</td><td>I&#x27;m sure you will be able to finish it, sometimes we find ourselves in a slump and need some fresh air blown our way. </td><td>Main sure hoon ki you will finish it, sometimes hum ek slump mein phass jaate hain and we need fresh air.</td><td>0.4286</td></tr>
+<tr><td>7</td><td>supporter</td><td>Question</td><td>Do you have an advisor who is holding you accountable?</td><td>Kya koi advisor hai jo aapko accountable rakh rahi hai, or do you need someone?</td><td>0.4667</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>Yes, but I&#x27;ve been really bad about keeping her in the loop. I feel bad when I fall behind, and then I&#x27;m fearful of getting back in touch with her.
+</td><td>Yes, lekin main unhe loop mein rakhne mein really bad rahi hoon. Jab main peeche ho jaati hoon toh mujhe bura feel hota hai, and then I&#x27;m fearful of getting back in touch with her.</td><td>0.4571</td></tr>
+<tr><td>9</td><td>supporter</td><td>Self-disclosure</td><td>Whenever I have a large project and lose motivation, I set my goals on paper, then break it down into smaller bites. For example, I will make sure I work one hour on certain days, or call a friend, I generate ideas to keep me on track.</td><td>Jab bhi mere paas koi large project hota hai aur motivation lose ho jaati hai, toh main apne goals paper par set karti hoon, phir usko smaller bites mein break kar deti hoon. For example, main ensure karti hoon ki certain days par one hour work karoon, ya kisi friend ko call karoon, main aise ideas generate karti hoon jo mujhe on track rakhein.</td><td>0.375</td></tr>
+<tr><td>10</td><td>supporter</td><td>Reflection of feelings</td><td>Yes, I sometimes feel guilty and then don&#x27;t want to face the music, but actually the best thing to do is recognize you are NOT the first person she knows that got behind. So she is surely experienced with people who need some encouragement. She is the BEST person to go to, actually.</td><td>Yes, mujhe bhi kai baar guilty feel hota hai and then face nahi karna chahti, lekin actually best thing yeh hai ki aap recognize karo you are NOT the first person she knows jo behind ho gayi ho. Toh woh surely experienced hain un logo ke saath jinhe encouragement chahiye hoti hai. She is the BEST person to go to, actually.</td><td>0.4754</td></tr>
+<tr><td>11</td><td>seeker</td><td></td><td>That sounds like a good idea regarding putting it down on paper.
+</td><td>That sounds like a really good idea, paper par likhna definitely helpful hoga.</td><td>0.2308</td></tr>
+<tr><td>12</td><td>supporter</td><td>Self-disclosure</td><td>It has always helped me. For example, you can break it down into 4 weeks, then each week write your goals -- maybe put call Advisor or go stop by every week, but I would put that first for the first week.</td><td>Isne hamesha meri help ki hai. For example, aap isko 4 weeks mein break kar sakte ho, phir har week apne goals likho -- maybe put call Advisor or go stop by every week, lekin main usko first week ke liye sabse pehle rakhungi.</td><td>0.4524</td></tr>
+<tr><td>13</td><td>supporter</td><td>Providing Suggestions</td><td>Then as you check off items, you will see you are moving, even if at a snail&#x27;s pace, you are moving, and that always encourages me. Sometimes I do not realize how much I AM doing, until I see it on paper. Paper doesn&#x27;t lie, but my emotions sometimes cloud my thinking.</td><td>Phir jaise jaise aap items check off karoge, you will see ki you are moving, chahe snail&#x27;s pace par ho, and yeh cheez hamesha mujhe encourage karti hai. Kabhi mujhe realise nahi hota ki main kitna work kar rahi hoon, jab tak paper par na dekh loon. Paper kabhi lie nahi karta, lekin my emotions cloud my thinking.</td><td>0.3966</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>My other problem is that I&#x27;m a perfectionist. I tend to over-analyze and get bogged down, especially when doing research.
+</td><td>My other problem is that main ek perfectionist hoon. Main over-analyze karne lagti hoon aur bogged down ho jaati hoon, especially jab research kar rahi hoti hoon.</td><td>0.4286</td></tr>
+<tr><td>15</td><td>supporter</td><td>Providing Suggestions</td><td>Another idea is rewards, when you finish one goal, perhaps put a reward for yourself,  a yogurt with sprinkles or something like that</td><td>Ek aur idea rewards ka hai, jab aap ek goal finish kar lo, toh apne liye ek reward rakho, jaise yogurt with sprinkles ya kuch aisa.</td><td>0.3077</td></tr>
+<tr><td>16</td><td>supporter</td><td>Self-disclosure</td><td>You sound like me! I had to learn that I need to strive for EXCELLENCE, not perfection. Perfection will drain us. Do the best I can, leave the rest to God. </td><td>Aap bilkul mere jaisi ho! Mujhe seekhna pada tha ki mujhe EXCELLENCE ke liye strive karna hai, perfection ke liye nahi. Perfection humein drain kar deta hai. Do the best I can, leave the rest to God.</td><td>0.4054</td></tr>
+<tr><td>17</td><td>supporter</td><td>Information</td><td>That is why a time line is good. For example, you make a goal that you will work on your reference and citation page for one hour, after that, you are DONE, If you have time at the end, you can revisit it. The hour is my suggestion, you make your own. lol THAT way, you don&#x27;t get caught going on and on for 6 hours to make it perfect. One hour is reasonable. </td><td>Isi liye ek timeline hona accha hota hai. For example, aap goal banao ki aap reference aur citation page par one hour ke liye work karoge, uske baad you are DONE. Agar end mein time bache toh aap revisit kar sakte ho. One hour mera suggestion hai, aap apna khud banao. Lol. THAT way, aap 6 hours tak usko perfect banane ke liye go on and on nahi hote. One hour is reasonable.</td><td>0.4306</td></tr>
+<tr><td>18</td><td>seeker</td><td></td><td>That definitely sounds reasonable. Putting micro deadlines in might be what I need to do to keep me focused.
+</td><td>That definitely sounds reasonable. Micro deadlines rakhna shayad wahi hai jo mujhe focused rakhne ke liye chahiye.</td><td>0.4118</td></tr>
+<tr><td>19</td><td>supporter</td><td>Self-disclosure</td><td>I do this with EVERYTHING in life because I tend to go on and on too focused and lose track of everything. lol For example, I clean each room for 15 minutes a week. If it needs more, I do more, but I set the timer and you would be surprised how well that works, otherwise, I will spend all my time perfecting one room and the rest is a mess.</td><td>Main life ki EVERYHING ke sath yahi karti hoon kyunki main bhi zyada focused ho kar lose track kar leti hoon. Lol. For example, main har room ko week mein 15 minutes clean karti hoon. Agar aur zaroorat ho toh I do more, lekin main timer set karti hoon and you would be surprised ki kitna ache se yeh work karta hai, warna main saara time ek room ko perfect banane mein laga doongi and baaki sab mess ban jayega.</td><td>0.3291</td></tr>
+<tr><td>20</td><td>supporter</td><td>Information</td><td>Also, your Advisor will know tips to help you too. She has advised a lot of people, her objectivity and experience can give get RIGHT to the heart of any problem, quickly too.</td><td>Also, aapki Advisor ko bhi tips pata hongi jo aapki help karengi. She has advised so many people, unki objectivity aur experience kisi bhi problem ke RIGHT heart tak pahuncha sakti hai, woh bhi jaldi.</td><td>0.4286</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>My advisor is a tough woman, I&#x27;m not going to beat around the bush. She tends to make everything miserable.
+</td><td>Meri advisor ek tough woman hain, main beat around the bush nahi karne wali. Woh har cheez ko miserable bana deti hain.</td><td>0.3636</td></tr>
+<tr><td>22</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Tough advisors are TOUGH. lol But You sound intelligent and you obviously WANT to do this, it is a goal of yours, I&#x27;m sure you can take it! </td><td>Tough advisors are TOUGH. Lol. Par Aap intelligent lagte ho aur aap obviously yeh karna chahte ho, yeh aapka goal hai, I&#x27;m sure aap isko take kar sakte ho!</td><td>0.3448</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>I&#x27;ll try to keep that in mind. It&#x27;s something I do feel like I need to finish for my own sake. 
+</td><td>I&#x27;ll try to keep that in mind, honestly. Yeh aisi cheez hai jo mujhe feel hota hai ki mujhe apne khud ke sake ke liye finish karni chahiye.</td><td>0.3571</td></tr>
+<tr><td>24</td><td>supporter</td><td>Others</td><td>It is only one more month of your life. If you buckle down, it will be over and done with before you know it. And I assure you, you will look back in pride at your accomplishments!</td><td>Yeh aapki life ka sirf one more month hai. Agar aap buckle down kar loge, toh aapke pata chalne se pehle hi yeh over and done with ho jayega. And main assure karti hoon, aap apne accomplishments ko pride ke sath peeche mud kar dekhoge!</td><td>0.3333</td></tr>
+<tr><td>25</td><td>seeker</td><td></td><td>That sounds like a wonderful feeling. But so far away.
+</td><td>That sounds like a wonderful feeling. Par abhi bahut door lag raha hai.</td><td>0.4615</td></tr>
+<tr><td>26</td><td>supporter</td><td>Self-disclosure</td><td>My Graduation Day was amazing.  This is what life is about, working NOW for rewards later. It&#x27;s like a garden, you sow, you weed, you wait for rain and weed some more. You keep waiting and weeding, then later harvest come. It takes time to work a little each day, then time passes whether you lay on your bed or whether you are in the garden working. If you lay on your bed, you get nothing, if you work a little every day, in time, you reap rewards. </td><td>Mera Graduation Day amazing tha. Life isi ke baare mein hai, rewards ke liye NOW work karna. Yeh ek garden ki tarah hai, aap sow karte ho, weed karte ho, rain ka wait karte ho aur thoda aur weed karte ho. Aap keep waiting and weeding, phir later harvest aata hai. Thoda thoda work karne mein time lagta hai, phir time pass hota hai chahe aap bed par layo ya garden mein work karo. Agar bed par layoge toh kuch nahi milega, agar thoda daily work karoge, toh time ke sath rewards reap karoge.</td><td>0.3404</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>That&#x27;s a very poetic way of putting it.
+</td><td>That&#x27;s a very poetic way of putting it, sach mein.</td><td>0.2</td></tr>
+<tr><td>28</td><td>supporter</td><td>Information</td><td>Not much in life is easy or free, if we keep working little by little, as time passes, you real a lot of rewards, in fact, you will reap rewards of finishing this thesis for YEARS even decades. It is a great goal and a worthy one to keep at. </td><td>Life mein zyada kuch easy ya free nahi hai, agar hum little by little work karte rahein, jaise jaise time pass hota hai, aap bahut saare rewards real karte ho, in fact, aap is thesis ko finish karne ke rewards YEARS tak, decades tak reap karoge. Yeh ek great goal hai aur ek worthy one hai jis par keep at karna chahiye.</td><td>0.4032</td></tr>
+<tr><td>29</td><td>seeker</td><td></td><td>I&#x27;ll keep that in mind as I move forward. I really appreciate your help.
+</td><td>Main isko dhyan mein rakhungi jaise jaise main move forward karungi. I really appreciate your help.</td><td>0.4375</td></tr>
+<tr><td>30</td><td>supporter</td><td>Reflection of feelings</td><td>I commend you for doing the thesis and I also know it can get weary as time passes, but with some goals on paper a visit to the ADVISOR (hee hee) will set you up right for continued success. </td><td>Main aapko thesis karne ke liye commend karti hoon and I also know ki time ke sath yeh weary ho sakta hai, lekin paper par kuch goals aur ADVISOR (hee hee) ki ek visit aapko continued success ke liye bilkul set kar degi.</td><td>0.3256</td></tr>
+<tr><td>31</td><td>supporter</td><td>Others</td><td>You are very welcome. Have a blessed evening!! </td><td>You are very welcome, aur have a blessed evening!!</td><td>0.1111</td></tr>
+<tr><td>32</td><td>seeker</td><td></td><td>Thanks, you too!
+</td><td>Thanks, you too!</td><td>0.0</td></tr>
+</table>
+<h2>Conversation 94</h2><table><tr><th>#</th><th>speaker</th><th>strategy</th><th>English original</th><th>Hinglish rewrite</th><th>CMI</th></tr>
+<tr><td>0</td><td>seeker</td><td></td><td>I still see him from time to time online, but I don&#x27;t know why he just dropped me.
+</td><td>Main usko online occasionally dekhti hoon, but I don&#x27;t know why usne mujhe drop kar diya.</td><td>0.5</td></tr>
+<tr><td>1</td><td>supporter</td><td>Question</td><td>Who do you see online?
+</td><td>Tum kisko online dekhti ho?</td><td>0.2</td></tr>
+<tr><td>2</td><td>supporter</td><td>Providing Suggestions</td><td>What did he drop on you?
+</td><td>Usne tum par kya drop kiya?</td><td>0.1667</td></tr>
+<tr><td>3</td><td>seeker</td><td></td><td>I occasionally see the guy that I was dating online, and it makes me feel sad all over again.
+</td><td>Main occasionally us guy ko online dekhti hoon jiske sath main date kar rahi thi, and it makes me feel sad all over again.</td><td>0.4583</td></tr>
+<tr><td>4</td><td>seeker</td><td></td><td>He dropped our relationship. </td><td>Usne hamara relationship drop kar diya.</td><td>0.3333</td></tr>
+<tr><td>5</td><td>supporter</td><td>Question</td><td>Can you block notifications for him? 
+</td><td>Kya tum uske notifications block kar sakti ho?</td><td>0.25</td></tr>
+<tr><td>6</td><td>supporter</td><td>Information</td><td>How long ago did he stop it?
+</td><td>Kitna time ho gaya usne ye sab stop kiya?</td><td>0.2222</td></tr>
+<tr><td>7</td><td>seeker</td><td></td><td>I thought seriously about that, but for some stupid reason, I keep thinking, &quot;What if he comes to his senses and wants to contact me?&quot;</td><td>Maine iske bare mein seriously socha tha, par for some stupid reason, main sochti rehti hoon, &quot;What if he comes to his senses and wants to contact me?&quot;</td><td>0.4643</td></tr>
+<tr><td>8</td><td>seeker</td><td></td><td>A couple months ago, but I haven&#x27;t gotten over him.
+</td><td>A couple months ago, par main abhi tak over it nahi hui hoon.</td><td>0.4615</td></tr>
+<tr><td>9</td><td>supporter</td><td>Providing Suggestions</td><td>If you block him and he wants to get in touch, he will find a way.  Make him work hard </td><td>Agar tum usko block karogi and agar woh touch mein aana chahega, toh woh koi rasta dhoond lega. Make him work hard yaar!</td><td>0.3043</td></tr>
+<tr><td>10</td><td>seeker</td><td></td><td>You really think playing hard to get will work?
+</td><td>Tujhe sach mein lagta hai ki playing hard to get work karega?</td><td>0.4167</td></tr>
+<tr><td>11</td><td>supporter</td><td>Restatement or Paraphrasing</td><td>I think if he is interested still it will, if not his loss.</td><td>Mujhe lagta hai agar woh abhi bhi interested hai toh it will work, nahi toh it&#x27;s his loss.</td><td>0.3889</td></tr>
+<tr><td>12</td><td>seeker</td><td></td><td>Thanks for saying that, but I still have the problem of wanting to be in a relationship.
+</td><td>Thanks for saying that, par mujhe abhi bhi ek relationship mein rehne ki problem hai.</td><td>0.4</td></tr>
+<tr><td>13</td><td>supporter</td><td>Providing Suggestions</td><td>With him, or a relationship with someone?</td><td>Uske sath, ya kisi aur ke sath relationship?</td><td>0.125</td></tr>
+<tr><td>14</td><td>seeker</td><td></td><td>With him... he was perfect (or at least I thought), but also, I&#x27;m lonely, and it&#x27;s hard to process not being in a relationship during the pandemic.
+</td><td>Uske sath... woh perfect tha (ya kam se kam mujhe laga), but also, I&#x27;m lonely, and it&#x27;s hard to process not being in a relationship during this pandemic.</td><td>0.3571</td></tr>
+<tr><td>15</td><td>supporter</td><td>Affirmation and Reassurance</td><td>Have you tried making other connections online? A lot of people are home during this pandemic, you may meet someone much better.</td><td>Kya tumne online doosri connections try ki hain? Bahut saare log is pandemic mein home par hain, you may meet someone much better.</td><td>0.4783</td></tr>
+<tr><td>16</td><td>seeker</td><td></td><td>True. What can I do to get over him in the meantime?
+</td><td>True. In the meantime, main usko get over karne ke liye kya kar sakti hoon?</td><td>0.4</td></tr>
+<tr><td>17</td><td>supporter</td><td>Providing Suggestions</td><td>Keep busy! Get mad instead of sad! </td><td>Keep busy! Sad hone ke bajaye get mad!</td><td>0.375</td></tr>
+<tr><td>18</td><td>supporter</td><td>Providing Suggestions</td><td>I would not contact him if he was not contacting me.  You deserve better than that!</td><td>Main toh contact nahi karti agar woh mujhe contact nahi kar raha tha. You deserve better than that!</td><td>0.3889</td></tr>
+<tr><td>19</td><td>seeker</td><td></td><td>Lol. I think I can do that!
+</td><td>Lol. Mujhe lagta hai I can do that!</td><td>0.5</td></tr>
+<tr><td>20</td><td>supporter</td><td>Providing Suggestions</td><td>Yes, we women function better when we get pissed!</td><td>Yes, hum women better function karti hain jab hum pissed off ho jaati hain!</td><td>0.4286</td></tr>
+<tr><td>21</td><td>seeker</td><td></td><td>You&#x27;re right. What do I do if he contacts me again? Do I let the conversation play out and see what happens?
+</td><td>You&#x27;re right. Agar usne mujhe phir se contact kiya toh what should I do? Kya main conversation ko play out hone doon and dekhun kya hota hai?</td><td>0.3704</td></tr>
+<tr><td>22</td><td>supporter</td><td>Reflection of feelings</td><td>Play it cool and be ready to make up a whole bunch of fun things you have been doing.  </td><td>Play it cool and ready raho ek whole bunch of fun things batane ke liye jo tum kar rahi thi.</td><td>0.5</td></tr>
+<tr><td>23</td><td>seeker</td><td></td><td>That&#x27;s a good idea. I can do that.
+</td><td>Yeh accha idea hai. I can do that.</td><td>0.375</td></tr>
+<tr><td>24</td><td>supporter</td><td>Others</td><td>Of course you can! </td><td>Of course tum kar sakti ho!</td><td>0.3333</td></tr>
+<tr><td>25</td><td>supporter</td><td>Information</td><td>You may find your feelings have changed.  Sometimes we just want what we don&#x27;t have, lol.</td><td>Tumhe realize hoga ki tumhari feelings change ho chuki hain. Sometimes hume bas wohi chahiye hota hai jo we don&#x27;t have, lol.</td><td>0.3182</td></tr>
+<tr><td>26</td><td>seeker</td><td></td><td>That&#x27;s also true. 
+</td><td>Yeh bhi true hai.</td><td>0.25</td></tr>
+<tr><td>27</td><td>seeker</td><td></td><td>Thanks, I will try that!
+</td><td>Thanks, main yeh try karoongi!</td><td>0.4</td></tr>
+<tr><td>28</td><td>supporter</td><td>Others</td><td>You are welcome.  Stay strong, you are stronger than you think.</td><td>You are welcome. Stay strong, tum jitna sochti ho usse zyada strong ho.</td><td>0.4615</td></tr>
+</table>
