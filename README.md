@@ -66,9 +66,11 @@ vs Translate-Pivot better on every metric (p < 0.01); Register Gate CMI gap 0.12
 | CodeMixESC w/o Register Gate | 7.95 | 12.33 | 19.28 | 0.125 | 6.35 |
 | **CodeMixESC** | **8.14** | **12.69** | **19.32** | **0.101** | 6.51 |
 
+<!-- RESULTS:START -->
 *The full grid (English, Light, Heavy; zero-shot, few-shot CoT, MultiAgentESC, Translate-Pivot, CodeMixESC and
 ablations; pairwise LLM judge) runs on `gemma-4-26b-a4b-it` agents and a fixed 50-turn sample per version;
 tables are written to [`results/tables/`](results/tables) as the runs finish.*
+<!-- RESULTS:END -->
 
 ## Live demo
 
