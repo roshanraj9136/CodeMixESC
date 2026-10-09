@@ -256,7 +256,7 @@ SUGGESTIONS = {
 }
 
 with chat_col:
-    box = st.container(height=470, border=True)
+    box = st.container(height=330, border=True)
     with box:
         if not st.session_state.dialog:
             with st.chat_message("assistant", avatar=":material/favorite:"):
