@@ -28,3 +28,4 @@ data/esconv_hien/*.partial.json
 report/figures/*.aux
 report/figures/*.log
 report/figures/arch_preview*
+.venv-demo/
