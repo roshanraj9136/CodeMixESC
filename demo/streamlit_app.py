@@ -171,8 +171,8 @@ def insight_panel(rec, retriever):
                          icon=":material/autorenew:", color="orange")
             else:
                 st.badge("Rewrite was not closer, original kept", icon=":material/info:", color="gray")
-    with st.expander(f":material/manufacturing: Behind the scenes · {rec.get('n_calls', 0)} LLM calls, "
-                     f"{rec.get('latency', 0):.0f} s"):
+    with st.expander(f":material/manufacturing: Behind the scenes · {rec.get('n_calls', 0)} LLM calls "
+                     f"({rec.get('latency', 0):.0f} s of model time, partly in parallel)"):
         ids = rec.get("retrieved") or []
         if ids:
             st.markdown("**Similar past cases** found by the cross-lingual retriever (3 of 10, English case bank):")
