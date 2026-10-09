@@ -79,7 +79,7 @@ vs Translate-Pivot better on every metric (p < 0.01); Register Gate CMI gap 0.12
 
 Paired bootstrap over conversations: Heavy vs MultiAgentESC: ROUGE-L +3.58 [+1.83, +5.27], p < 0.01; Light vs MultiAgentESC: ROUGE-L +0.15 [-1.75, +2.09], p=0.93; Heavy vs Translate-Pivot: ROUGE-L +0.62 [-1.09, +2.40], p=0.47; Light vs Translate-Pivot: ROUGE-L +4.85 [+3.03, +6.79], p < 0.01.
 
-Pairwise LLM judge (`gemma-4-31b-it`, both orders): CodeMixESC vs MultiAgentESC on Light: overall win/tie/lose 74.0; CodeMixESC vs Translate-Pivot on Light: overall win/tie/lose 44.0; CodeMixESC vs MultiAgentESC on Heavy: overall win/tie/lose 86.0; CodeMixESC vs Translate-Pivot on Heavy: overall win/tie/lose 56.0.
+Pairwise LLM judge (`gemma-4-31b-it`, both orders): CodeMixESC vs MultiAgentESC on Light: overall win/tie/lose 74/6/20 percent of the turns (p < 0.01); CodeMixESC vs Translate-Pivot on Light: overall win/tie/lose 44/24/32 percent of the turns (p = 0.42); CodeMixESC vs MultiAgentESC on Heavy: overall win/tie/lose 86/10/4 percent of the turns (p < 0.01); CodeMixESC vs Translate-Pivot on Heavy: overall win/tie/lose 56/20/24 percent of the turns (p = 0.02).
 <!-- RESULTS:END -->
 
 ## Live demo
