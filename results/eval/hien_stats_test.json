@@ -1,0 +1,56 @@
+{
+ "en": {
+  "conversations": 100,
+  "utterances": 3140,
+  "words_per_utt": 14.63343949044586,
+  "cmi": 0.014014117931275577,
+  "cmi_seeker": 0.018005171079298388,
+  "cmi_supporter": 0.009888651076195007,
+  "hi_frac": 0.01496953194401443,
+  "scripts": {
+   "Roman": 3140
+  },
+  "false_hindi_rate": 0.012604858441104509,
+  "false_hindi_rate_strong": 0.003932191541419084,
+  "turn_cmi_s": 0.01706363636363636,
+  "turn_plain_english": 0.9958677685950413
+ },
+ "light": {
+  "conversations": 100,
+  "utterances": 3140,
+  "words_per_utt": 15.879299363057324,
+  "cmi": 0.1617357522531255,
+  "cmi_seeker": 0.15751356734866434,
+  "cmi_supporter": 0.16610013509478355,
+  "hi_frac": 0.1634448817648028,
+  "scripts": {
+   "Roman": 3140
+  },
+  "in_band": 0.9446467589220685,
+  "band_checked": 2746,
+  "labse_sim": 0.8809421656050955,
+  "regenerated": 0.6990445859872612,
+  "words_per_utt_en": 14.63343949044586,
+  "turn_cmi_s": 0.16736859504132232,
+  "turn_plain_english": 0.08429752066115702
+ },
+ "heavy": {
+  "conversations": 100,
+  "utterances": 3140,
+  "words_per_utt": 16.96656050955414,
+  "cmi": 0.3445337746563621,
+  "cmi_seeker": 0.33206452967179184,
+  "cmi_supporter": 0.3574229683062157,
+  "hi_frac": 0.5007394699513439,
+  "scripts": {
+   "Roman": 3140
+  },
+  "in_band": 0.8747323340471093,
+  "band_checked": 2802,
+  "labse_sim": 0.7091720382165605,
+  "regenerated": 0.4840764331210191,
+  "words_per_utt_en": 14.63343949044586,
+  "turn_cmi_s": 0.41513305785123966,
+  "turn_plain_english": 0.04297520661157025
+ }
+}

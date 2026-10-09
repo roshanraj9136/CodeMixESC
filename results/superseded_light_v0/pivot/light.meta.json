@@ -1,8 +1,9 @@
 {
- "system": "zero_shot",
- "base_system": "zero_shot",
+ "system": "pivot",
+ "base_system": "pivot",
  "spec": {
-  "kind": "zero_shot"
+  "kind": "pivot",
+  "encoder": "roberta"
  },
  "version": "light",
  "split": "test",
@@ -10,9 +11,9 @@
  "delta": null,
  "n_turns": 98,
  "limit": null,
- "git_commit": "fb14d9e",
- "started": "2026-10-09T01:47:38.012888+00:00",
- "finished": "2026-10-09T01:51:31.103022+00:00",
+ "git_commit": "57665cd",
+ "started": "2026-10-09T06:59:57.424113+00:00",
+ "finished": "2026-10-09T08:54:40.584172+00:00",
  "n_done": 98,
  "n_missing": 0,
  "n_with_failed_calls": 0,
