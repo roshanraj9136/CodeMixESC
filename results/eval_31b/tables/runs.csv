@@ -1,0 +1,6 @@
+system,version,records,coverage,missing,failed,none,failed_calls,truncated_calls,duplicates,unreadable,stale,in_tables,model,delta
+maesc,Light,98,98.0,2,0,0,0,71,0,0,0,yes,gemma-4-31b-it,
+pivot,Light,98,98.0,2,0,0,0,70,0,0,0,yes,gemma-4-31b-it,
+codemixesc,Light,97,97.0,3,0,0,0,73,0,0,0,yes,gemma-4-31b-it,0.2
+cmx_noft,Light,48,48.0,52,0,0,0,15,0,0,0,no,,
+cmx_nogate,Light,97,97.0,3,0,0,0,73,0,0,0,yes,gemma-4-31b-it,0.2

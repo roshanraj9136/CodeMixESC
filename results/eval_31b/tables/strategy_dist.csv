@@ -1,0 +1,5 @@
+version,system,n,Question,Restatement or Paraphrasing,Reflection of feelings,Self-disclosure,Affirmation and Reassurance,Providing Suggestions,Information,Others,None
+Light,MultiAgentESC,97,3.092784,0.0,7.216495,2.061856,15.463918,1.030928,1.030928,2.061856,68.041237
+Light,Translate-Pivot,97,1.030928,0.0,6.185567,3.092784,14.43299,4.123711,1.030928,2.061856,68.041237
+Light,CodeMixESC,97,4.123711,0.0,4.123711,3.092784,11.340206,6.185567,1.030928,2.061856,68.041237
+Light,w/o Register Gate,97,4.123711,0.0,4.123711,3.092784,11.340206,6.185567,1.030928,2.061856,68.041237

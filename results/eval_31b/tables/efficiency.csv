@@ -1,0 +1,5 @@
+version,system,n_calls,extra_calls_vs_maesc,latency,multi_path,words,over_30_words
+Light,MultiAgentESC,6.309278,0.0,240.70634,31.958763,22.56701,0.0
+Light,Translate-Pivot,8.030928,1.721649,301.967351,31.958763,24.082474,0.0
+Light,CodeMixESC,6.505155,0.195876,250.485804,31.958763,22.185567,0.0
+Light,w/o Register Gate,6.350515,0.041237,245.291077,31.958763,22.463918,0.0

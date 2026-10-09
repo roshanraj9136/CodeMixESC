@@ -1,0 +1,24 @@
+{
+ "system": "codemixesc",
+ "base_system": "codemixesc",
+ "spec": {
+  "kind": "multi",
+  "encoder": "mpnet-ft",
+  "register": true,
+  "gate": true
+ },
+ "version": "light",
+ "split": "test",
+ "model": "gemma-4-31b-it",
+ "delta": 0.2,
+ "n_turns": 98,
+ "limit": null,
+ "git_commit": "84da0a8",
+ "started": "2026-10-08T21:10:16.406781+00:00",
+ "finished": "2026-10-08T23:15:52.270009+00:00",
+ "n_done": 97,
+ "n_missing": 1,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 1,
+ "interrupted": false
+}

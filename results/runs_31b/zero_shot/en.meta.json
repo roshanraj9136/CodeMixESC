@@ -1,0 +1,21 @@
+{
+ "system": "zero_shot",
+ "base_system": "zero_shot",
+ "spec": {
+  "kind": "zero_shot"
+ },
+ "version": "en",
+ "split": "test",
+ "model": "gemma-4-31b-it",
+ "delta": null,
+ "n_turns": 100,
+ "limit": null,
+ "git_commit": "5a265ca",
+ "started": "2026-10-07T21:21:23.209601+00:00",
+ "finished": "2026-10-07T21:32:02.469679+00:00",
+ "n_done": 100,
+ "n_missing": 0,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 0,
+ "interrupted": false
+}

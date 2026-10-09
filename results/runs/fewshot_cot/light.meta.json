@@ -1,0 +1,21 @@
+{
+ "system": "fewshot_cot",
+ "base_system": "fewshot_cot",
+ "spec": {
+  "kind": "fewshot_cot"
+ },
+ "version": "light",
+ "split": "test",
+ "model": "gemma-4-26b-a4b-it",
+ "delta": null,
+ "n_turns": 98,
+ "limit": null,
+ "git_commit": "fa27140",
+ "started": "2026-10-09T02:14:41.002773+00:00",
+ "finished": "2026-10-09T02:28:10.118585+00:00",
+ "n_done": 98,
+ "n_missing": 0,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 0,
+ "interrupted": false
+}

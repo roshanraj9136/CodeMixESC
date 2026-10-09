@@ -1,0 +1,205 @@
+{
+ "delta": 0.15,
+ "gate_metric": "hi_frac",
+ "rule": "largest delta with pooled gate distance (hi_frac) <= best + 0.01 and chrF >= ungated - 1.0",
+ "levels": [
+  "light",
+  "heavy"
+ ],
+ "encoder": "mpnet-ft",
+ "model": "gemma-4-26b-a4b-it",
+ "table": [
+  {
+   "delta": null,
+   "light": {
+    "n": 40,
+    "distance": 0.1847,
+    "cmi_gap": 0.12575,
+    "gate_rate": 0.0,
+    "chrf": 21.795019360809423
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.11710000000000001,
+    "cmi_gap": 0.095975,
+    "gate_rate": 0.0,
+    "chrf": 19.810448717799243
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.15089999999999998,
+    "cmi_gap": 0.1108625,
+    "gate_rate": 0.0,
+    "chrf": 20.76579602340097
+   }
+  },
+  {
+   "delta": 0.05,
+   "light": {
+    "n": 40,
+    "distance": 0.146825,
+    "cmi_gap": 0.115425,
+    "gate_rate": 0.7,
+    "chrf": 21.93218914167247
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.086725,
+    "cmi_gap": 0.07730000000000001,
+    "gate_rate": 0.775,
+    "chrf": 20.053539428143864
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.116775,
+    "cmi_gap": 0.09636249999999999,
+    "gate_rate": 0.7375,
+    "chrf": 20.954510794851185
+   }
+  },
+  {
+   "delta": 0.1,
+   "light": {
+    "n": 40,
+    "distance": 0.147075,
+    "cmi_gap": 0.115675,
+    "gate_rate": 0.5,
+    "chrf": 21.939888754526166
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.0887,
+    "cmi_gap": 0.077525,
+    "gate_rate": 0.45,
+    "chrf": 20.031252690966916
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.11788749999999999,
+    "cmi_gap": 0.09659999999999999,
+    "gate_rate": 0.475,
+    "chrf": 20.94677739061146
+   }
+  },
+  {
+   "delta": 0.15,
+   "light": {
+    "n": 40,
+    "distance": 0.147875,
+    "cmi_gap": 0.116475,
+    "gate_rate": 0.45,
+    "chrf": 21.913242249177266
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.091475,
+    "cmi_gap": 0.07805,
+    "gate_rate": 0.3,
+    "chrf": 19.99726639338948
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.119675,
+    "cmi_gap": 0.0972625,
+    "gate_rate": 0.375,
+    "chrf": 20.916187809849482
+   }
+  },
+  {
+   "delta": 0.2,
+   "light": {
+    "n": 40,
+    "distance": 0.15525,
+    "cmi_gap": 0.12384999999999999,
+    "gate_rate": 0.375,
+    "chrf": 21.9207246805946
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.09855,
+    "cmi_gap": 0.08512499999999999,
+    "gate_rate": 0.2,
+    "chrf": 19.97758176087246
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.12689999999999999,
+    "cmi_gap": 0.1044875,
+    "gate_rate": 0.2875,
+    "chrf": 20.909379631716966
+   }
+  },
+  {
+   "delta": 0.25,
+   "light": {
+    "n": 40,
+    "distance": 0.15525,
+    "cmi_gap": 0.12384999999999999,
+    "gate_rate": 0.325,
+    "chrf": 21.9207246805946
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.099725,
+    "cmi_gap": 0.0863,
+    "gate_rate": 0.125,
+    "chrf": 19.990684584261782
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.1274875,
+    "cmi_gap": 0.105075,
+    "gate_rate": 0.225,
+    "chrf": 20.91612382024908
+   }
+  },
+  {
+   "delta": 0.3,
+   "light": {
+    "n": 40,
+    "distance": 0.161625,
+    "cmi_gap": 0.13022499999999998,
+    "gate_rate": 0.275,
+    "chrf": 21.906869116885858
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.107325,
+    "cmi_gap": 0.0879,
+    "gate_rate": 0.05,
+    "chrf": 19.96184086481811
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.13447499999999998,
+    "cmi_gap": 0.10906249999999999,
+    "gate_rate": 0.1625,
+    "chrf": 20.897538445562287
+   }
+  },
+  {
+   "delta": 0.35,
+   "light": {
+    "n": 40,
+    "distance": 0.16219999999999998,
+    "cmi_gap": 0.1308,
+    "gate_rate": 0.225,
+    "chrf": 21.914117884638067
+   },
+   "heavy": {
+    "n": 40,
+    "distance": 0.11710000000000001,
+    "cmi_gap": 0.095975,
+    "gate_rate": 0.0,
+    "chrf": 19.810448717799243
+   },
+   "all": {
+    "n": 80,
+    "distance": 0.13965,
+    "cmi_gap": 0.1133875,
+    "gate_rate": 0.1125,
+    "chrf": 20.822375657601707
+   }
+  }
+ ]
+}

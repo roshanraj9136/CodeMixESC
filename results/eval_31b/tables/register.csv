@@ -1,0 +1,6 @@
+system,light_cmi_gap,light_hi_frac_gap,light_script
+MultiAgentESC,0.106564,0.106564,100.0
+Translate-Pivot,0.193911,0.383363,100.0
+CodeMixESC,0.100742,0.100742,100.0
+w/o Register Gate,0.125178,0.139302,100.0
+Gold reference,0.059896,0.063332,100.0
