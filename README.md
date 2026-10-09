@@ -52,8 +52,9 @@ from the base paper's repository.
 | Pipeline (profiler, cross-lingual retriever, register-aware agents, Register Gate, baselines) | done, 110 unit tests, CI |
 | ESConv-HiEn development set (12 conversations × Light/Heavy) | done: Light 85% of utterances in the target CMI band (mean CMI 0.17), Heavy 83% (mean CMI 0.37) |
 | Cross-lingual retriever (MNRL, 16,951 Hinglish–English pairs, best checkpoint by dev retrieval) | done |
-| ESConv-HiEn test set (100 conversations × Light/Heavy) | Light 98/100, Heavy 70/100 (generation limited by the free-tier daily quota) |
-| Experiments (agents `gemma-4-26b-a4b-it`, judge `gemma-4-31b-it`; multi-agent systems on a fixed 100-turn sample; δ = 0.15 tuned on dev) | running |
+| ESConv-HiEn test set (100 conversations × Light/Heavy, 3,140 utterances each) | done: Light 94.5% of checked utterances in the target CMI band (mean CMI 0.16, 16% Hindi words), Heavy 87.5% (mean CMI 0.35, 50% Hindi words); [statistics](results/tables/hien_stats_test.md) |
+| Dataset quality check | LLM rater on all 200 conversations running; manual 20% sample: `streamlit run scripts/qc_rater.py` |
+| Experiments (agents `gemma-4-26b-a4b-it`, judge `gemma-4-31b-it`; multi-agent systems on a fixed 100-turn sample; δ = 0.15 tuned on dev) | running: Heavy and Light main comparison first, then the pivot, baselines, English and ablations |
 
 **Retrieval robustness on the development set** (151 turns per version, k = 10, 95%
 cluster-bootstrap CI; full table in [`results/tables/retrieval_dev.md`](results/tables/retrieval_dev.md)).
