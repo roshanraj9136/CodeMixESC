@@ -391,9 +391,9 @@ def draw_panel(rec=None, R=None):
             empty_panel()
 
 
-draw_panel(next((r for r in reversed(st.session_state.traces) if r), None))
-
 prompt = (prompt or picked or "").strip()
+if not prompt:  # with a new message the panel is drawn once R is known (no stale cards in between)
+    draw_panel(next((r for r in reversed(st.session_state.traces) if r), None))
 if prompt:
     counter = usage_counter()
     if counter["day"] != time.strftime("%Y-%m-%d"):
