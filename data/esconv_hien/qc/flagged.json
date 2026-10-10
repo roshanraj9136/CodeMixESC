@@ -1,80 +1,68 @@
 {
- "light:59": {
-  "naturalness": 2,
-  "meaning": 5,
-  "source": "llm",
-  "comment": "The rewrite is not natural Hinglish; it simply inserts the word 'yaar' at the end of almost every sentence as a filler. Turn [2] is particularly awkward ('aur bhi more'), and the overall mixing feels robotic rather than like a native speaker's chat.",
-  "problem_turns": [
-   2,
-   4,
-   9,
-   12,
-   15,
-   20,
-   21,
-   24,
-   25
-  ]
- },
- "light:72": {
-  "naturalness": 2,
-  "meaning": 5,
-  "source": "llm",
-  "comment": "The rewrite is not natural Hinglish; it simply appends filler words like 'yaar', 'pata nahi', and 'theek hai' to the end of English sentences. This creates a repetitive, robotic pattern that does not reflect how native speakers actually code-mix.",
-  "problem_turns": [
-   3,
-   5,
-   6,
-   7,
-   8,
-   13,
-   14,
-   15,
-   16,
-   21,
-   24,
-   28
-  ]
- },
- "light:71": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite uses a repetitive 'filler' approach, inserting phrases like 'pata nahi' (I don't know) and 'sach mein' (really) randomly into sentences where they don't fit logically, often changing the meaning or adding confusion.",
-  "problem_turns": [
-   4,
-   5,
-   6,
-   12,
-   14,
-   16,
-   28
-  ]
- },
- "light:78": {
+ "light:1": {
   "naturalness": 2,
   "meaning": 4,
   "source": "llm",
-  "comment": "The Hinglish is very unnatural and reads like a machine translation; it incorrectly inserts Hindi words ('se') into English grammatical structures (e.g., 'How long se it has been'). The mixing is clunky and does not reflect how native speakers actually code-mix.",
+  "comment": "The rewrite is very unnatural; it simply inserts 'yaar', 'sach mein', 'pata nahi', and 'theek hai' as fillers into English sentences without actually translating phrases into Hindi. This creates a robotic, non-native feel rather than authentic Hinglish code-mixing.",
   "problem_turns": [
-   7,
-   8,
-   11,
-   18,
-   24
-  ]
- },
- "light:45": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply inserts 'yaar', 'sach mein', and 'pata nahi' into English sentences without changing the syntax to actual Hinglish. Additionally, it adds phrases not present in the original (e.g., 'tension ho rahi hogi', 'pata nahi kya karun'), which alters the meaning and emotional tone.",
-  "problem_turns": [
-   4,
+   3,
    8,
    9,
+   11,
+   12,
+   17,
+   18,
+   30,
+   37,
+   40,
+   44,
+   48,
+   49,
+   54,
+   58,
+   60,
+   61,
+   65
+  ]
+ },
+ "light:42": {
+  "naturalness": 2,
+  "meaning": 5,
+  "source": "llm",
+  "comment": "The rewrite is barely Hinglish; it mostly keeps the English original as is, and the supporter's additions of 'yaar' feel repetitive and forced. Many seeker turns have zero mixing, and turn 5 contains ungrammatical phrasing ('Does your partner ko pata hai?').",
+  "problem_turns": [
+   2,
+   4,
+   5,
+   6,
+   8,
+   10,
+   12,
    14,
-   15
+   16
+  ]
+ },
+ "light:38": {
+  "naturalness": 2,
+  "meaning": 5,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it simply appends Hindi words like 'yaar', 'bahut', or 'kya' to the end of full English sentences. This is not how native Hinglish speakers code-mix, as it feels like a literal translation exercise rather than a natural conversation.",
+  "problem_turns": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   10,
+   14,
+   16,
+   17,
+   18,
+   32,
+   33,
+   35,
+   36,
+   38
   ]
  },
  "light:40": {
@@ -100,20 +88,165 @@
    56
   ]
  },
- "light:60": {
+ "light:94": {
   "naturalness": 2,
   "meaning": 5,
   "source": "llm",
-  "comment": "The rewrite is unnatural because it overuses 'yaar' as a filler at the end of almost every sentence, including formal questions and supportive statements where it doesn't fit. The mixing is too superficial, mostly just appending Hindi words to English sentences rather than natural code-switching.",
+  "comment": "The rewrite is barely Hinglish; it is mostly plain English with 'yaar' and 'par' sprinkled in. Many turns remain 100% English, failing the requirement for code-mixing.",
   "problem_turns": [
    1,
+   2,
    4,
+   6,
+   9,
+   19,
+   21,
+   24
+  ]
+ },
+ "light:52": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite overuses 'yaar' and 'theek hai' as filler words in almost every turn, making it sound robotic and unnatural rather than like a native speaker. In turn 28, 'pata nahi' (I don't know) is used incorrectly, changing the meaning of the sentence.",
+  "problem_turns": [
+   9,
+   12,
+   14,
+   17,
+   19,
+   21,
+   25,
+   28
+  ]
+ },
+ "light:13": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar', 'sach mein', and 'pata nahi' are inserted randomly regardless of context, making it feel robotic rather than natural. Turn 16 is grammatically broken ('hope ki maine make your day'), and turn 12 cuts off the end of the original explanation.",
+  "problem_turns": [
+   3,
+   6,
+   8,
+   12,
+   16
+  ]
+ },
+ "light:69": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is extremely unnatural because it simply appends the word 'yaar' to almost every single sentence regardless of context. This is not how native Hinglish speakers code-mix; it feels like a robotic template rather than a natural conversation.",
+  "problem_turns": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   8,
+   9,
    11,
-   16,
    18,
    20,
-   22,
+   24,
+   26,
+   28,
+   30,
+   31,
+   32,
+   33,
+   35
+  ]
+ },
+ "light:19": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is not actual Hinglish; it is simply English text with Hindi filler words (yaar, sach mein, pata nahi) tacked onto the end of sentences. This reads as robotic and unnatural rather than a native code-mixed conversation.",
+  "problem_turns": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   9,
+   13,
+   15,
+   18,
+   19
+  ]
+ },
+ "light:45": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it simply inserts 'yaar', 'sach mein', and 'pata nahi' into English sentences without changing the syntax to actual Hinglish. Additionally, it adds phrases not present in the original (e.g., 'tension ho rahi hogi', 'pata nahi kya karun'), which alters the meaning and emotional tone.",
+  "problem_turns": [
+   4,
+   8,
+   9,
+   14,
+   15
+  ]
+ },
+ "light:11": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it simply appends random Hindi filler words (yaar, sach mein, pata nahi, theek hai) to English sentences without actual code-mixing. In several turns, these fillers change the meaning (e.g., turn 3 and 10 add 'pata nahi' (I don't know) to statements where the speaker is actually providing information or asking a question).",
+  "problem_turns": [
+   3,
+   7,
+   10,
+   11,
+   15,
+   19,
+   22
+  ]
+ },
+ "light:29": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite relies on repetitive filler words like 'yaar', 'sach mein', and 'pata nahi' inserted randomly, which feels robotic rather than natural. More critically, these fillers often change the meaning (e.g., turn 8 and 10 add 'I don't know' to the supporter's questions, undermining the professional support strategy).",
+  "problem_turns": [
+   6,
+   8,
+   10,
+   15,
+   17,
+   18
+  ]
+ },
+ "light:71": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite uses a repetitive 'filler' approach, inserting phrases like 'pata nahi' (I don't know) and 'sach mein' (really) randomly into sentences where they don't fit logically, often changing the meaning or adding confusion.",
+  "problem_turns": [
+   4,
+   5,
+   6,
+   12,
+   14,
+   16,
    28
+  ]
+ },
+ "light:82": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it mostly just appends 'yaar' to English sentences rather than code-mixing. Some turns have awkward insertions like 'How may i help you aaj?' and 'thodi getting dog dementia' which are not how native speakers talk.",
+  "problem_turns": [
+   2,
+   6,
+   9,
+   11,
+   19
   ]
  },
  "light:88": {
@@ -142,19 +275,25 @@
    24
   ]
  },
- "light:97": {
+ "light:93": {
   "naturalness": 2,
   "meaning": 4,
   "source": "llm",
-  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar', 'sach mein', and 'pata nahi' are inserted randomly without regard for context or grammar. In several turns (e.g., 4, 8), the added Hindi phrases change the tone or introduce unnatural emotions not present in the original.",
+  "comment": "The rewrite is not natural Hinglish; it simply appends 'yaar' or 'sach mein' to the end of English sentences, which feels robotic and repetitive rather than like a native code-mixed conversation. Some turns add filler phrases (e.g., 'tension ho rahi hai') that weren't in the original.",
   "problem_turns": [
+   1,
    2,
-   4,
+   3,
    5,
    6,
-   8,
    9,
-   12
+   14,
+   15,
+   21,
+   26,
+   28,
+   30,
+   31
   ]
  },
  "light:65": {
@@ -167,112 +306,6 @@
    10,
    12,
    17
-  ]
- },
- "light:62": {
-  "naturalness": 2,
-  "meaning": 5,
-  "source": "llm",
-  "comment": "The rewrite is not actual Hinglish; it is simply English text with the word 'yaar' appended to almost every sentence. This is highly unnatural and does not reflect how native speakers code-mix.",
-  "problem_turns": [
-   0,
-   1,
-   2,
-   3,
-   7,
-   11,
-   13,
-   15,
-   18,
-   20,
-   23,
-   27,
-   28,
-   29,
-   32
-  ]
- },
- "light:49": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar' is appended to almost every sentence regardless of context, making it sound robotic and unnatural rather than like a native speaker. Additionally, some turns (like 22) slightly alter the meaning by adding 'not' where it wasn't in the original.",
-  "problem_turns": [
-   0,
-   2,
-   6,
-   7,
-   11,
-   18,
-   33,
-   40,
-   44
-  ]
- },
- "light:37": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural because it simply appends 'yaar' to almost every single sentence, which is not how native speakers code-mix. It feels like a robotic application of a rule rather than natural conversation.",
-  "problem_turns": [
-   0,
-   1,
-   2,
-   4,
-   7,
-   11,
-   13,
-   14,
-   16,
-   20,
-   21,
-   23,
-   26,
-   28,
-   31
-  ]
- },
- "light:81": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is not natural Hinglish; it simply inserts Hindi filler words (yaar, sach mein, theek hai) into English sentences. In turns 6, 8, and 17, these fillers are used incorrectly, changing the grammatical sense or adding confusion (e.g., using 'pata nahi' as a question tag).",
-  "problem_turns": [
-   6,
-   8,
-   17
-  ]
- },
- "light:11": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply appends random Hindi filler words (yaar, sach mein, pata nahi, theek hai) to English sentences without actual code-mixing. In several turns, these fillers change the meaning (e.g., turn 3 and 10 add 'pata nahi' (I don't know) to statements where the speaker is actually providing information or asking a question).",
-  "problem_turns": [
-   3,
-   7,
-   10,
-   11,
-   15,
-   19,
-   22
-  ]
- },
- "light:77": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite suffers from 'filler word' syndrome, where 'yaar', 'theek hai', and 'sach mein' are inserted randomly regardless of context. Specifically, turn 9 changes the meaning by adding 'Tension ho rahi hai' (I am feeling tense), which is not in the original and is contextually incorrect.",
-  "problem_turns": [
-   1,
-   3,
-   9,
-   11,
-   12,
-   16,
-   18,
-   20,
-   23
   ]
  },
  "light:89": {
@@ -313,55 +346,138 @@
    36
   ]
  },
- "light:42": {
+ "light:72": {
   "naturalness": 2,
   "meaning": 5,
   "source": "llm",
-  "comment": "The rewrite is barely Hinglish; it mostly keeps the English original as is, and the supporter's additions of 'yaar' feel repetitive and forced. Many seeker turns have zero mixing, and turn 5 contains ungrammatical phrasing ('Does your partner ko pata hai?').",
+  "comment": "The rewrite is not natural Hinglish; it simply appends filler words like 'yaar', 'pata nahi', and 'theek hai' to the end of English sentences. This creates a repetitive, robotic pattern that does not reflect how native speakers actually code-mix.",
+  "problem_turns": [
+   3,
+   5,
+   6,
+   7,
+   8,
+   13,
+   14,
+   15,
+   16,
+   21,
+   24,
+   28
+  ]
+ },
+ "light:35": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural, relying on repetitive filler words like 'yaar', 'sach mein', and 'theek hai' inserted randomly. More importantly, it adds phrases like 'tension ho rahi hai' (I am feeling stressed/tense) and 'pata nahi' (I don't know) which change the meaning and emotional tone of the original turns.",
+  "problem_turns": [
+   5,
+   8,
+   17,
+   25
+  ]
+ },
+ "light:36": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite overuses 'yaar', 'sach mein', and 'pata nahi' as filler words, often inserting them in places that make no sense grammatically or contextually. Specifically, 'pata nahi' (I don't know) is incorrectly added to questions, changing the meaning from a direct inquiry to a confused statement.",
+  "problem_turns": [
+   9,
+   17,
+   20,
+   32,
+   35,
+   38,
+   44
+  ]
+ },
+ "light:30": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it simply appends 'yaar' and 'sach mein' to the end of English sentences like a template rather than actually code-mixing. This does not reflect how native Hinglish speakers communicate in chat.",
+  "problem_turns": [
+   1,
+   2,
+   3,
+   4,
+   6,
+   7,
+   11,
+   12,
+   13,
+   14,
+   16,
+   19,
+   22,
+   23,
+   25,
+   26,
+   27,
+   28,
+   29,
+   30
+  ]
+ },
+ "light:80": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural, relying on 'filler' words like 'yaar', 'sach mein', and 'theek hai' inserted randomly without regard for grammar or context. In turn 8, the meaning is changed from 'holding myself to a high degree' to 'feeling tension', and in turn 11, 'kya karun' (what should I do) is incorrectly inserted into the supporter's question.",
+  "problem_turns": [
+   8,
+   11,
+   13,
+   14,
+   17,
+   18,
+   26
+  ]
+ },
+ "light:22": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The Hinglish is very unnatural; it feels like English sentences with random Hindi filler words ('sach mein', 'pata nahi', 'yaar') inserted without regard for syntax or context. In several turns, these fillers actually change the meaning or tone (e.g., turn 3 and 9 make the supporter sound confused or questioning rather than empathetic).",
+  "problem_turns": [
+   3,
+   4,
+   6,
+   9,
+   14,
+   15
+  ]
+ },
+ "light:47": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is unnatural because it simply appends 'yaar' and 'sach mein' to English sentences rather than actually code-mixing. Additionally, some turns introduce hallucinated phrases (e.g., 'pata nahi', 'aur kya karun', 'tension ho rahi hai') that change the original meaning.",
+  "problem_turns": [
+   1,
+   3,
+   6,
+   12,
+   16,
+   20,
+   23
+  ]
+ },
+ "light:97": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar', 'sach mein', and 'pata nahi' are inserted randomly without regard for context or grammar. In several turns (e.g., 4, 8), the added Hindi phrases change the tone or introduce unnatural emotions not present in the original.",
   "problem_turns": [
    2,
    4,
    5,
    6,
    8,
-   10,
-   12,
-   14,
-   16
-  ]
- },
- "light:52": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite overuses 'yaar' and 'theek hai' as filler words in almost every turn, making it sound robotic and unnatural rather than like a native speaker. In turn 28, 'pata nahi' (I don't know) is used incorrectly, changing the meaning of the sentence.",
-  "problem_turns": [
    9,
-   12,
-   14,
-   17,
-   19,
-   21,
-   25,
-   28
-  ]
- },
- "light:7": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite relies on repetitive, robotic insertions of 'yaar', 'sach mein', and 'theek hai' as fillers rather than natural code-mixing. In several turns, these fillers are placed awkwardly or used in contexts where they don't make sense (e.g., turn 12 and 13).",
-  "problem_turns": [
-   5,
-   6,
-   8,
-   9,
-   12,
-   13,
-   15,
-   18,
-   24,
-   28
+   12
   ]
  },
  "light:98": {
@@ -395,74 +511,24 @@
    32
   ]
  },
- "light:29": {
+ "light:41": {
   "naturalness": 2,
   "meaning": 3,
   "source": "llm",
-  "comment": "The rewrite relies on repetitive filler words like 'yaar', 'sach mein', and 'pata nahi' inserted randomly, which feels robotic rather than natural. More critically, these fillers often change the meaning (e.g., turn 8 and 10 add 'I don't know' to the supporter's questions, undermining the professional support strategy).",
+  "comment": "The rewrite suffers from 'filler-word syndrome,' where Hindi words like 'yaar', 'theek hai', and 'sach mein' are inserted randomly without regard for context or grammar. Additionally, 'tension ho rahi hai' is used incorrectly as a generic filler for 'because' or 'worry' in turns 4, 5, 20, and 21, which alters the original meaning.",
   "problem_turns": [
-   6,
-   8,
-   10,
-   15,
-   17,
-   18
-  ]
- },
- "light:69": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is extremely unnatural because it simply appends the word 'yaar' to almost every single sentence regardless of context. This is not how native Hinglish speakers code-mix; it feels like a robotic template rather than a natural conversation.",
-  "problem_turns": [
-   0,
-   1,
-   2,
    3,
    4,
+   5,
+   7,
    8,
-   9,
-   11,
-   18,
-   20,
-   24,
-   26,
-   28,
-   30,
-   31,
-   32,
-   33,
-   35
-  ]
- },
- "light:80": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural, relying on 'filler' words like 'yaar', 'sach mein', and 'theek hai' inserted randomly without regard for grammar or context. In turn 8, the meaning is changed from 'holding myself to a high degree' to 'feeling tension', and in turn 11, 'kya karun' (what should I do) is incorrectly inserted into the supporter's question.",
-  "problem_turns": [
-   8,
-   11,
-   13,
    14,
-   17,
    18,
-   26
-  ]
- },
- "light:47": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is unnatural because it simply appends 'yaar' and 'sach mein' to English sentences rather than actually code-mixing. Additionally, some turns introduce hallucinated phrases (e.g., 'pata nahi', 'aur kya karun', 'tension ho rahi hai') that change the original meaning.",
-  "problem_turns": [
-   1,
-   3,
-   6,
-   12,
-   16,
+   19,
    20,
-   23
+   21,
+   24,
+   26
   ]
  },
  "light:68": {
@@ -489,89 +555,57 @@
    62
   ]
  },
- "light:36": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite overuses 'yaar', 'sach mein', and 'pata nahi' as filler words, often inserting them in places that make no sense grammatically or contextually. Specifically, 'pata nahi' (I don't know) is incorrectly added to questions, changing the meaning from a direct inquiry to a confused statement.",
-  "problem_turns": [
-   9,
-   17,
-   20,
-   32,
-   35,
-   38,
-   44
-  ]
- },
- "light:9": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply appends 'yaar', 'sach mein', and 'tension ho rahi hai' to English sentences without actual code-mixing. Additionally, 'tension ho rahi hai' is used incorrectly as a filler and in turn 25, a significant part of the original meaning (the rimjobs offer) is completely omitted.",
-  "problem_turns": [
-   7,
-   10,
-   22,
-   24,
-   25
-  ]
- },
- "light:18": {
+ "light:46": {
   "naturalness": 2,
   "meaning": 4,
   "source": "llm",
-  "comment": "The rewrite relies on repetitive fillers like 'yaar' and incorrectly inserts phrases like 'theek hai' (okay) and 'pata nahi' (I don't know) into sentences where they don't fit the context, making the dialogue sound robotic and unnatural.",
+  "comment": "The rewrite is not natural Hinglish; it simply appends Hindi filler words (yaar, batao, theek hai, sach mein) to the end of full English sentences. This reads like a translation bot rather than a native speaker's code-mixing style.",
   "problem_turns": [
-   3,
-   9,
-   16,
-   19,
-   20,
-   21
-  ]
- },
- "light:19": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is not actual Hinglish; it is simply English text with Hindi filler words (yaar, sach mein, pata nahi) tacked onto the end of sentences. This reads as robotic and unnatural rather than a native code-mixed conversation.",
-  "problem_turns": [
-   1,
+   0,
    2,
    3,
    4,
    5,
-   6,
-   7,
-   9,
+   8,
+   11,
    13,
    15,
+   16,
+   17,
    18,
-   19
+   27,
+   28,
+   29,
+   41
   ]
  },
- "light:38": {
+ "light:78": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The Hinglish is very unnatural and reads like a machine translation; it incorrectly inserts Hindi words ('se') into English grammatical structures (e.g., 'How long se it has been'). The mixing is clunky and does not reflect how native speakers actually code-mix.",
+  "problem_turns": [
+   7,
+   8,
+   11,
+   18,
+   24
+  ]
+ },
+ "light:60": {
   "naturalness": 2,
   "meaning": 5,
   "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply appends Hindi words like 'yaar', 'bahut', or 'kya' to the end of full English sentences. This is not how native Hinglish speakers code-mix, as it feels like a literal translation exercise rather than a natural conversation.",
+  "comment": "The rewrite is unnatural because it overuses 'yaar' as a filler at the end of almost every sentence, including formal questions and supportive statements where it doesn't fit. The mixing is too superficial, mostly just appending Hindi words to English sentences rather than natural code-switching.",
   "problem_turns": [
    1,
-   2,
-   3,
    4,
-   5,
-   10,
-   14,
+   11,
    16,
-   17,
    18,
-   32,
-   33,
-   35,
-   36,
-   38
+   20,
+   22,
+   28
   ]
  },
  "light:53": {
@@ -603,6 +637,38 @@
    44
   ]
  },
+ "light:18": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite relies on repetitive fillers like 'yaar' and incorrectly inserts phrases like 'theek hai' (okay) and 'pata nahi' (I don't know) into sentences where they don't fit the context, making the dialogue sound robotic and unnatural.",
+  "problem_turns": [
+   3,
+   9,
+   16,
+   19,
+   20,
+   21
+  ]
+ },
+ "light:7": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite relies on repetitive, robotic insertions of 'yaar', 'sach mein', and 'theek hai' as fillers rather than natural code-mixing. In several turns, these fillers are placed awkwardly or used in contexts where they don't make sense (e.g., turn 12 and 13).",
+  "problem_turns": [
+   5,
+   6,
+   8,
+   9,
+   12,
+   13,
+   15,
+   18,
+   24,
+   28
+  ]
+ },
  "light:23": {
   "naturalness": 2,
   "meaning": 4,
@@ -618,28 +684,6 @@
    13,
    15,
    21
-  ]
- },
- "light:34": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is not actual Hinglish; it is simply English text with 'yaar', 'sach mein', and 'theek hai' appended to the ends of sentences. This is an unnatural pattern that does not reflect how native speakers code-mix.",
-  "problem_turns": [
-   0,
-   1,
-   2,
-   3,
-   4,
-   5,
-   6,
-   7,
-   9,
-   10,
-   11,
-   15,
-   16,
-   22
   ]
  },
  "light:15": {
@@ -661,133 +705,21 @@
    33
   ]
  },
- "light:92": {
+ "light:59": {
   "naturalness": 2,
-  "meaning": 4,
+  "meaning": 5,
   "source": "llm",
-  "comment": "The rewrite is extremely unnatural. It simply appends 'yaar' to almost every single sentence, which is not how native Hinglish speakers code-mix. It feels like a robotic application of a 'Hinglish' rule rather than a natural conversation.",
+  "comment": "The rewrite is not natural Hinglish; it simply inserts the word 'yaar' at the end of almost every sentence as a filler. Turn [2] is particularly awkward ('aur bhi more'), and the overall mixing feels robotic rather than like a native speaker's chat.",
   "problem_turns": [
-   0,
-   1,
+   2,
    4,
-   5,
-   6,
    9,
-   10,
-   13,
-   14,
-   15,
-   16,
-   17,
-   18,
-   20,
-   21,
-   23,
-   25,
-   26,
-   27,
-   28,
-   31,
-   33,
-   36
-  ]
- },
- "light:30": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply appends 'yaar' and 'sach mein' to the end of English sentences like a template rather than actually code-mixing. This does not reflect how native Hinglish speakers communicate in chat.",
-  "problem_turns": [
-   1,
-   2,
-   3,
-   4,
-   6,
-   7,
-   11,
    12,
-   13,
-   14,
-   16,
-   19,
-   22,
-   23,
-   25,
-   26,
-   27,
-   28,
-   29,
-   30
-  ]
- },
- "light:46": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is not natural Hinglish; it simply appends Hindi filler words (yaar, batao, theek hai, sach mein) to the end of full English sentences. This reads like a translation bot rather than a native speaker's code-mixing style.",
-  "problem_turns": [
-   0,
-   2,
-   3,
-   4,
-   5,
-   8,
-   11,
-   13,
    15,
-   16,
-   17,
-   18,
-   27,
-   28,
-   29,
-   41
-  ]
- },
- "light:41": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite suffers from 'filler-word syndrome,' where Hindi words like 'yaar', 'theek hai', and 'sach mein' are inserted randomly without regard for context or grammar. Additionally, 'tension ho rahi hai' is used incorrectly as a generic filler for 'because' or 'worry' in turns 4, 5, 20, and 21, which alters the original meaning.",
-  "problem_turns": [
-   3,
-   4,
-   5,
-   7,
-   8,
-   14,
-   18,
-   19,
    20,
    21,
    24,
-   26
-  ]
- },
- "light:1": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it simply inserts 'yaar', 'sach mein', 'pata nahi', and 'theek hai' as fillers into English sentences without actually translating phrases into Hindi. This creates a robotic, non-native feel rather than authentic Hinglish code-mixing.",
-  "problem_turns": [
-   3,
-   8,
-   9,
-   11,
-   12,
-   17,
-   18,
-   30,
-   37,
-   40,
-   44,
-   48,
-   49,
-   54,
-   58,
-   60,
-   61,
-   65
+   25
   ]
  },
  "light:4": {
@@ -824,77 +756,21 @@
    73
   ]
  },
- "light:22": {
+ "light:49": {
   "naturalness": 2,
   "meaning": 4,
   "source": "llm",
-  "comment": "The Hinglish is very unnatural; it feels like English sentences with random Hindi filler words ('sach mein', 'pata nahi', 'yaar') inserted without regard for syntax or context. In several turns, these fillers actually change the meaning or tone (e.g., turn 3 and 9 make the supporter sound confused or questioning rather than empathetic).",
+  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar' is appended to almost every sentence regardless of context, making it sound robotic and unnatural rather than like a native speaker. Additionally, some turns (like 22) slightly alter the meaning by adding 'not' where it wasn't in the original.",
   "problem_turns": [
-   3,
-   4,
-   6,
-   9,
-   14,
-   15
-  ]
- },
- "light:35": {
-  "naturalness": 2,
-  "meaning": 3,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural, relying on repetitive filler words like 'yaar', 'sach mein', and 'theek hai' inserted randomly. More importantly, it adds phrases like 'tension ho rahi hai' (I am feeling stressed/tense) and 'pata nahi' (I don't know) which change the meaning and emotional tone of the original turns.",
-  "problem_turns": [
-   5,
-   8,
-   17,
-   25
-  ]
- },
- "light:82": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite is very unnatural; it mostly just appends 'yaar' to English sentences rather than code-mixing. Some turns have awkward insertions like 'How may i help you aaj?' and 'thodi getting dog dementia' which are not how native speakers talk.",
-  "problem_turns": [
+   0,
    2,
    6,
-   9,
+   7,
    11,
-   19
-  ]
- },
- "light:13": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite suffers from 'filler-word syndrome,' where 'yaar', 'sach mein', and 'pata nahi' are inserted randomly regardless of context, making it feel robotic rather than natural. Turn 16 is grammatically broken ('hope ki maine make your day'), and turn 12 cuts off the end of the original explanation.",
-  "problem_turns": [
-   3,
-   6,
-   8,
-   12,
-   16
-  ]
- },
- "light:73": {
-  "naturalness": 2,
-  "meaning": 4,
-  "source": "llm",
-  "comment": "The rewrite suffers from 'filler-word fatigue,' where 'yaar', 'sach mein', 'theek hai', and 'tension ho rahi hai' are mechanically appended to almost every turn regardless of context. This makes the conversation feel robotic and unnatural rather than like a native speaker's code-mixing.",
-  "problem_turns": [
-   3,
-   6,
-   8,
-   14,
-   16,
    18,
-   22,
-   24,
-   30,
-   34,
-   35,
-   39,
-   43
+   33,
+   40,
+   44
   ]
  },
  "light:51": {
@@ -922,40 +798,164 @@
    19
   ]
  },
- "light:94": {
-  "naturalness": 2,
-  "meaning": 5,
-  "source": "llm",
-  "comment": "The rewrite is barely Hinglish; it is mostly plain English with 'yaar' and 'par' sprinkled in. Many turns remain 100% English, failing the requirement for code-mixing.",
-  "problem_turns": [
-   1,
-   2,
-   4,
-   6,
-   9,
-   19,
-   21,
-   24
-  ]
- },
- "light:93": {
+ "light:81": {
   "naturalness": 2,
   "meaning": 4,
   "source": "llm",
-  "comment": "The rewrite is not natural Hinglish; it simply appends 'yaar' or 'sach mein' to the end of English sentences, which feels robotic and repetitive rather than like a native code-mixed conversation. Some turns add filler phrases (e.g., 'tension ho rahi hai') that weren't in the original.",
+  "comment": "The rewrite is not natural Hinglish; it simply inserts Hindi filler words (yaar, sach mein, theek hai) into English sentences. In turns 6, 8, and 17, these fillers are used incorrectly, changing the grammatical sense or adding confusion (e.g., using 'pata nahi' as a question tag).",
   "problem_turns": [
+   6,
+   8,
+   17
+  ]
+ },
+ "light:73": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite suffers from 'filler-word fatigue,' where 'yaar', 'sach mein', 'theek hai', and 'tension ho rahi hai' are mechanically appended to almost every turn regardless of context. This makes the conversation feel robotic and unnatural rather than like a native speaker's code-mixing.",
+  "problem_turns": [
+   3,
+   6,
+   8,
+   14,
+   16,
+   18,
+   22,
+   24,
+   30,
+   34,
+   35,
+   39,
+   43
+  ]
+ },
+ "light:9": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural; it simply appends 'yaar', 'sach mein', and 'tension ho rahi hai' to English sentences without actual code-mixing. Additionally, 'tension ho rahi hai' is used incorrectly as a filler and in turn 25, a significant part of the original meaning (the rimjobs offer) is completely omitted.",
+  "problem_turns": [
+   7,
+   10,
+   22,
+   24,
+   25
+  ]
+ },
+ "light:34": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is not actual Hinglish; it is simply English text with 'yaar', 'sach mein', and 'theek hai' appended to the ends of sentences. This is an unnatural pattern that does not reflect how native speakers code-mix.",
+  "problem_turns": [
+   0,
    1,
    2,
    3,
+   4,
+   5,
+   6,
+   7,
+   9,
+   10,
+   11,
+   15,
+   16,
+   22
+  ]
+ },
+ "light:92": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is extremely unnatural. It simply appends 'yaar' to almost every single sentence, which is not how native Hinglish speakers code-mix. It feels like a robotic application of a 'Hinglish' rule rather than a natural conversation.",
+  "problem_turns": [
+   0,
+   1,
+   4,
    5,
    6,
    9,
+   10,
+   13,
    14,
    15,
+   16,
+   17,
+   18,
+   20,
    21,
+   23,
+   25,
+   26,
+   27,
+   28,
+   31,
+   33,
+   36
+  ]
+ },
+ "light:77": {
+  "naturalness": 2,
+  "meaning": 3,
+  "source": "llm",
+  "comment": "The rewrite suffers from 'filler word' syndrome, where 'yaar', 'theek hai', and 'sach mein' are inserted randomly regardless of context. Specifically, turn 9 changes the meaning by adding 'Tension ho rahi hai' (I am feeling tense), which is not in the original and is contextually incorrect.",
+  "problem_turns": [
+   1,
+   3,
+   9,
+   11,
+   12,
+   16,
+   18,
+   20,
+   23
+  ]
+ },
+ "light:62": {
+  "naturalness": 2,
+  "meaning": 5,
+  "source": "llm",
+  "comment": "The rewrite is not actual Hinglish; it is simply English text with the word 'yaar' appended to almost every sentence. This is highly unnatural and does not reflect how native speakers code-mix.",
+  "problem_turns": [
+   0,
+   1,
+   2,
+   3,
+   7,
+   11,
+   13,
+   15,
+   18,
+   20,
+   23,
+   27,
+   28,
+   29,
+   32
+  ]
+ },
+ "light:37": {
+  "naturalness": 2,
+  "meaning": 4,
+  "source": "llm",
+  "comment": "The rewrite is very unnatural because it simply appends 'yaar' to almost every single sentence, which is not how native speakers code-mix. It feels like a robotic application of a rule rather than natural conversation.",
+  "problem_turns": [
+   0,
+   1,
+   2,
+   4,
+   7,
+   11,
+   13,
+   14,
+   16,
+   20,
+   21,
+   23,
    26,
    28,
-   30,
    31
   ]
  }

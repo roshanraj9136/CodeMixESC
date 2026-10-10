@@ -16,6 +16,7 @@
 | codemixesc | EN | 50 | 100.0 | 0 | 0 | 0 | 0 | 82 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
 | codemixesc | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 95 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
 | codemixesc | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 110 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
-| cmx_noft | Heavy | 2 | 4.0 | 48 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | no | – | – |
+| cmx_noft | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 102 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
+| cmx_noxl | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 105 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
 | cmx_nogate | Light | 50 | 100.0 | 0 | 0 | 0 | 0 | 95 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |
 | cmx_nogate | Heavy | 50 | 100.0 | 0 | 0 | 0 | 0 | 110 | 0 | 0 | 0 | yes | gemma-4-26b-a4b-it | 0.15 |

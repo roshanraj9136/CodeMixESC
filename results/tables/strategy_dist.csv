@@ -12,3 +12,5 @@ Heavy,MultiAgentESC,50,2.0,6.0,18.0,2.0,26.0,4.0,2.0,6.0,34.0
 Heavy,Translate-Pivot,50,10.0,0.0,8.0,2.0,24.0,6.0,4.0,4.0,42.0
 Heavy,CodeMixESC,50,10.0,10.0,6.0,6.0,22.0,8.0,0.0,4.0,34.0
 Heavy,w/o Register Gate,50,10.0,10.0,6.0,6.0,22.0,8.0,0.0,4.0,34.0
+Heavy,w/o retriever fine-tuning,50,10.0,0.0,14.0,4.0,20.0,10.0,0.0,6.0,36.0
+Heavy,w/o cross-lingual retriever,50,6.0,2.0,16.0,2.0,24.0,4.0,2.0,10.0,34.0

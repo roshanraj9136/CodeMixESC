@@ -15,3 +15,5 @@ Heavy,MultiAgentESC,10.22,0.0,68.00406,66.0,23.18,0.0
 Heavy,Translate-Pivot,11.22,1.0,62.20448,58.0,24.34,0.0
 Heavy,CodeMixESC,10.7,0.48,61.03322,66.0,23.82,0.0
 Heavy,w/o Register Gate,10.14,-0.08,59.829268,66.0,23.84,0.0
+Heavy,w/o retriever fine-tuning,10.38,0.16,56.40288,64.0,23.92,2.0
+Heavy,w/o cross-lingual retriever,10.6,0.38,58.30528,66.0,23.06,0.0

@@ -1,0 +1,24 @@
+{
+ "system": "cmx_noxl",
+ "base_system": "cmx_noxl",
+ "spec": {
+  "kind": "multi",
+  "encoder": "roberta",
+  "register": true,
+  "gate": true
+ },
+ "version": "heavy",
+ "split": "test",
+ "model": "gemma-4-26b-a4b-it",
+ "delta": 0.15,
+ "n_turns": 50,
+ "limit": null,
+ "git_commit": "c19fbf6",
+ "started": "2026-10-09T20:40:39.351075+00:00",
+ "finished": "2026-10-10T04:13:12.322846+00:00",
+ "n_done": 50,
+ "n_missing": 0,
+ "n_with_failed_calls": 0,
+ "errors_this_run": 0,
+ "interrupted": false
+}
