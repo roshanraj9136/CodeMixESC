@@ -38,7 +38,7 @@ the strategy labels kept, for a controlled robustness study.
 |---|---|---|---|---|
 | English original | 1.5% | 0.01 | – | – |
 | Light (target CMI 0.1–0.3) | 16% | 0.16 | 94.5% | 0.88 |
-| Heavy (target CMI 0.3–0.5) | 50% | 0.35 | 87.5% | 0.71 |
+| Heavy (target CMI 0.3–0.5) | 50% | 0.34 | 87.5% | 0.71 |
 
 **Retrieval robustness** (all 1,210 test turns, k = 10, 95% conversation-level bootstrap CI,
 [full table](results/tables/retrieval_test.md)). Overlap@10 = share of the cases retrieved for a Hinglish post
@@ -52,19 +52,8 @@ that are also retrieved for its English original; P@10 = share with the query's 
 | **multilingual mpnet, fine-tuned (ours)** | **73.2** ± 1.3 | **53.3** ± 1.8 | 32.0 ± 2.0 | 31.5 ± 1.9 |
 
 Heavy code-mixing breaks the English retriever (27% of its cases survive); ours keeps 53% (+26.3 points,
-CI [24.6, 28.2]) and keeps the retrieved strategies stable (JSD 0.15 → 0.01), at a small cost in problem-type
-precision (−2 to −4 points).
-
-**Reply quality, first run** (Light, 97 common turns, agents `gemma-4-31b-it`;
-[tables](results/eval_31b/tables)). Paired bootstrap: CodeMixESC vs MultiAgentESC ROUGE-L +1.27 (p < 0.05);
-vs Translate-Pivot better on every metric (p < 0.01); Register Gate CMI gap 0.125 → 0.101 (p < 0.01).
-
-| System | BLEU-2 | ROUGE-L | chrF | CMI gap ↓ | LLM calls / turn |
-|---|---|---|---|---|---|
-| MultiAgentESC | 7.43 | 11.42 | 19.03 | 0.107 | 6.31 |
-| Translate-Pivot | 3.37 | 6.74 | 17.25 | 0.194 | 8.03 |
-| CodeMixESC w/o Register Gate | 7.95 | 12.33 | 19.28 | 0.125 | 6.35 |
-| **CodeMixESC** | **8.14** | **12.69** | **19.32** | **0.101** | 6.51 |
+CI [24.6, 28.2]) and makes the strategies of the retrieved cases more stable across languages (pooled strategy
+JSD 0.0015 → 0.00015), at a small cost in problem-type precision (−2 to −4 points).
 
 <!-- RESULTS:START -->
 **Reply quality and register match** (agents `gemma-4-26b-a4b-it`, the same 50 sampled turns for every system; [all tables](results/tables)). ROUGE-L against the human supporter reply; CMI gap = distance between the reply's and the user's code-mixing (lower is better).
@@ -84,10 +73,23 @@ Pairwise LLM judge (`gemma-4-31b-it`, both orders): CodeMixESC vs MultiAgentESC 
 Ablations (Heavy): removing the retriever fine-tuning or replacing the cross-lingual retriever by the English one does not change ROUGE-L significantly, so the reply gain over MultiAgentESC on Heavy comes from the register-aware agents; the fine-tuned retriever's benefit is the robust retrieval above, and the Register Gate lowers the CMI gap ([ablation table](results/tables/ablation.md)).
 <!-- RESULTS:END -->
 
+**Earlier run with larger agents** (Light only, 97 common turns, `gemma-4-31b-it` agents; superseded by the grid
+above because that model was too slow for the full grid; [tables](results/eval_31b/tables)). Here CodeMixESC
+beat MultiAgentESC on ROUGE-L (+1.27, p < 0.05) and Translate-Pivot on every metric (p < 0.01), and the Register
+Gate lowered the CMI gap (0.125 → 0.101, p < 0.01). On the final 50-turn grid the Light difference to
+MultiAgentESC is not significant, so the clear gain is on Heavy mixing.
+
+| System | BLEU-2 | ROUGE-L | chrF | CMI gap ↓ | LLM calls / turn |
+|---|---|---|---|---|---|
+| MultiAgentESC | 7.43 | 11.42 | 19.03 | 0.107 | 6.31 |
+| Translate-Pivot | 3.37 | 6.74 | 17.25 | 0.194 | 8.03 |
+| CodeMixESC w/o Register Gate | 7.95 | 12.33 | 19.28 | 0.125 | 6.35 |
+| **CodeMixESC** | **8.14** | **12.69** | **19.32** | **0.101** | 6.51 |
+
 ## Live demo
 
 **[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**: chat as a help-seeker in English or Hinglish
-and watch the eight agents work step by step. The side panel shows your measured Hindi–English mix, the
+and watch the agents work step by step. The side panel shows your measured Hindi–English mix, the
 emotion, cause and intention the agents inferred, the support strategy they voted for and the Register Gate's
 language check. Run it locally with `pip install -r demo/requirements.txt` and
 `streamlit run demo/streamlit_app.py` (needs a free `GEMINI_API_KEY` in `.env`).
@@ -97,7 +99,7 @@ language check. Run it locally with `pip install -r demo/requirements.txt` and
 ```bash
 pip install -r requirements.txt
 python scripts/setup_data.py          # base code and ESConv
-python -m pytest -q tests             # 110 tests, no API key needed
+python -m pytest -q tests             # 111 tests, no API key needed
 python scripts/run_all.py --dry_run   # the whole experiment plan with stand-ins
 ```
 
