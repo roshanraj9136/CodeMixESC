@@ -35,6 +35,9 @@ Start-Process -WindowStyle Hidden -FilePath .venv\Scripts\python.exe `
 ```
 
 ## 3. Quality check (20% manual sample + LLM rater)
+Status of the released data: only the `llm` and `report` steps below were run (LLM rater on all
+conversations); the manual sample and the `fix` step were not, and `flagged.json` lists the
+conversations below 3 that were left unchanged.
 ```powershell
 .venv\Scripts\python.exe scripts\quality_check.py sample     # writes data/esconv_hien/qc/sheet_*.csv and view_*.html
 # open view_light.html / view_heavy.html, fill sheet_light.csv / sheet_heavy.csv (1-5);

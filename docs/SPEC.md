@@ -52,8 +52,10 @@ the judge are unchanged.
 - **ESConv-HiEn** (new, `data/esconv_hien/test_{light,heavy}.json`): the 100 test conversations
   rewritten turn by turn into Roman-script Hinglish by an LLM (one call per conversation),
   strategy labels copied. Light: CMI 0.1–0.3; Heavy: CMI 0.3–0.5; utterances out of band are
-  regenerated. A random ~20% sample is checked manually (naturalness, meaning preservation, 1–5);
-  conversations below 3 are rewritten and checked again. Each dialog turn keeps `content`
+  regenerated. Planned quality check: a random ~20% sample rated manually (naturalness, meaning
+  preservation, 1–5) and conversations below 3 rewritten and checked again. **Status of the released
+  data:** only the LLM rater (`gemma-4-31b-it`) scored all conversations; the manual sample and the
+  rewrite step were not run, and the report states the LLM-only result. Each dialog turn keeps `content`
   (Hinglish), `content_en`, `cmi`, `labse_sim`, `in_band`, ...
 - **Dev set**: 12 training conversations (`data/esconv_hien/dev_conv_ids.json`), rewritten the
   same way (`dev_{light,heavy}.json`), for tuning δ and selecting the retriever checkpoint.
