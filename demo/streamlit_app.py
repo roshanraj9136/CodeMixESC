@@ -28,7 +28,7 @@ RETRIEVER_REPO = "roshan9136/codemix-retriever"
 BANK_EMB_FILE = "esconv_bank_embeddings.npy"  # precomputed case-bank vectors in the model repo
 ESCONV_URL = "https://raw.githubusercontent.com/MindIntLab-HFUT/MultiAgentESC/main/dataset/ESConv.json"
 GITHUB = "https://github.com/roshanraj9136/CodeMixESC"
-ARCH_IMG = "https://raw.githubusercontent.com/roshanraj9136/CodeMixESC/master/report/figures/architecture_slide.png"
+ARCH_IMG = os.path.join(ROOT, "report", "figures", "architecture_slide.svg")
 DELTA = 0.15  # tuned on the development set (results/tuning/delta.json)
 MAX_TURNS_PER_DAY = 400
 
@@ -261,7 +261,8 @@ def insight_panel(rec, retriever, working=False):
         with st.container(border=True):
             st.markdown("##### :material/rule: Register Gate · language check")
             mix_bar("Target", g.get("hi_frac_target", 0))
-            mix_bar("Reply", g.get("hi_frac_after") if g.get("accepted") else g.get("hi_frac_before", 0))
+            reply_label = "Reply (kept original)" if g.get("triggered") and not g.get("accepted") else "Reply"
+            mix_bar(reply_label, g.get("hi_frac_after") if g.get("accepted") else g.get("hi_frac_before", 0))
             if not g.get("triggered"):
                 st.badge("Matched on the first try", icon=":material/check_circle:", color="green")
             elif g.get("accepted"):
@@ -270,11 +271,13 @@ def insight_panel(rec, retriever, working=False):
             else:
                 st.badge("Rewrite was not closer, original kept", icon=":material/info:", color="gray")
     with st.expander(f":material/manufacturing: Behind the scenes · {rec.get('n_calls', 0)} LLM calls "
-                     f"({rec.get('latency', 0):.0f} s of model time, partly in parallel)"):
+                     f"({rec.get('latency', 0):.0f} s summed API time)"):
         ids = rec.get("retrieved") or []
         if ids:
-            st.markdown("**Similar past cases** found by the cross-lingual retriever (3 of 10, English case bank):")
-            for i in ids[:3]:
+            shown = min(3, len(ids))
+            st.markdown(f"**Similar past cases** found by the cross-lingual retriever "
+                        f"(showing {shown} of {len(ids)}, English case bank):")
+            for i in ids[:shown]:
                 b = retriever.bank[i]
                 st.markdown(f"- “{esc(b['post'][:140])}” → *[{esc(b['strategy'])}]* {esc(b['response'][:120])}")
         if rec.get("strategies"):
@@ -330,7 +333,7 @@ with head:
     st.title("CodeMixESC")
     st.markdown("##### Emotional support that understands how you really talk — English, Hindi, or both.")
     with st.container(horizontal=True):
-        st.badge("8 cooperating AI agents", icon=":material/groups:", color="orange")
+        st.badge("3-stage multi-agent pipeline", icon=":material/groups:", color="orange")
         st.badge("Understands Hinglish", icon=":material/translate:", color="blue")
         st.badge("Replies in your own mix", icon=":material/tune:", color="green")
 with side:
@@ -382,7 +385,7 @@ with chat_col:
         picked = SUGGESTIONS.get(choice)
     prompt = st.chat_input("Type in English or Hinglish, e.g. “yaar bahut tension ho rahi hai…”", submit_mode="disable")
     st.caption(":material/health_and_safety: Not a crisis or counselling service. In distress in India? "
-               "Call Tele-MANAS **14416** (24×7).")
+               "Call Tele-MANAS **14416** (24×7). Elsewhere, contact your local emergency or crisis service.")
 
 with info_col:
     st.markdown("#### What CodeMixESC understood")

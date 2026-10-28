@@ -2,9 +2,11 @@
 
 [![tests](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml/badge.svg)](https://github.com/roshanraj9136/CodeMixESC/actions/workflows/tests.yml)
 [![Live demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://codemixesc.streamlit.app)
+[![Project website](https://img.shields.io/badge/project-website-265f9e)](https://codemixesc.vercel.app)
 [![Retriever on Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20model-codemix--retriever-orange)](https://huggingface.co/roshan9136/codemix-retriever)
 
-### ▶ Live demo: **[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**
+### ▶ Live demo: **[codemixesc.streamlit.app](https://codemixesc.streamlit.app)**<br>
+### Project website and verified evidence: **[codemixesc.vercel.app](https://codemixesc.vercel.app)**
 
 **Multi-agent emotional support for code-mixed Hinglish help-seekers, with cross-lingual experience
 retrieval and register-aware response selection.**
@@ -27,7 +29,7 @@ CodeMixESC keeps its three-stage pipeline and adds four components, **without fi
 We also build **ESConv-HiEn**, a parallel Hinglish version of the ESConv test set at two mixing levels with
 the strategy labels kept, for a controlled robustness study.
 
-![CodeMixESC architecture](report/figures/architecture_slide.png)
+![CodeMixESC architecture](report/figures/architecture_slide.svg)
 
 ## Results
 
@@ -56,7 +58,7 @@ CI [24.6, 28.2]) and makes the strategies of the retrieved cases more stable acr
 JSD 0.0015 → 0.00015), at a small cost in problem-type precision (−2 to −4 points).
 
 <!-- RESULTS:START -->
-**Reply quality and register match** (agents `gemma-4-26b-a4b-it`, the same 50 sampled turns for every system; [all tables](results/tables)). ROUGE-L against the human supporter reply; CMI gap = distance between the reply's and the user's code-mixing (lower is better).
+**Reply quality and register match** (agents `gemma-4-26b-a4b-it`, 50 common turns shared by every system; [all tables](results/tables)). ROUGE-L against the human supporter reply; CMI gap = distance between the reply's and the user's code-mixing (lower is better).
 
 | System | ROUGE-L EN | ROUGE-L Light | ROUGE-L Heavy | CMI gap Light | CMI gap Heavy |
 |---|---|---|---|---|---|

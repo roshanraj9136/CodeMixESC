@@ -113,10 +113,13 @@ class ShuffledNoDuplicatesBatchSampler(SetEpochMixin, BatchSampler):
 
 
 class PairTrainer(SentenceTransformerTrainer):
-    def get_batch_sampler(self, dataset, batch_size, drop_last, valid_label_columns=None, generator=None):
+    def get_batch_sampler(self, dataset, batch_size, drop_last, valid_label_columns=None, generator=None, **kwargs):
+        # SentenceTransformers 6 passes ``seed`` explicitly; 3.3.1 (the pinned training
+        # environment) does not.  Forward only keywords supplied by the installed version.
+        seed = kwargs.get("seed", self.args.seed)
         if self.args.batch_sampler == BatchSamplers.NO_DUPLICATES and isinstance(dataset, Dataset):
-            return ShuffledNoDuplicatesBatchSampler(dataset, batch_size, drop_last, seed=self.args.seed)
-        return super().get_batch_sampler(dataset, batch_size, drop_last, valid_label_columns, generator)
+            return ShuffledNoDuplicatesBatchSampler(dataset, batch_size, drop_last, seed=seed)
+        return super().get_batch_sampler(dataset, batch_size, drop_last, valid_label_columns, generator, **kwargs)
 
 
 class EvalAtEnd(TrainerCallback):

@@ -34,8 +34,8 @@ def load_script(name):
 
 def run_script(name, args, env_extra, timeout=600):
     env = dict(os.environ, **OFFLINE, **env_extra)
-    return subprocess.run([sys.executable, os.path.join(ROOT, "scripts", f"{name}.py"), *args], cwd=ROOT, env=env,
-                          capture_output=True, text=True, encoding="utf-8", timeout=timeout)
+    return subprocess.run([sys.executable, "-X", "utf8", os.path.join(ROOT, "scripts", f"{name}.py"), *args],
+                          cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", timeout=timeout)
 
 
 @pytest.fixture(scope="module")

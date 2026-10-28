@@ -719,11 +719,17 @@ def main(argv=None):
 
     out_dir = args.out_dir or (DRY_OUT_DIR if args.dry_run else OUT_DIR)
     os.makedirs(out_dir, exist_ok=True)
-    data = load_esconv()
-    try:
-        dev = set(dev_ids())
-    except FileNotFoundError:
-        raise SystemExit("dev_conv_ids.json not found: it is needed to keep the dev conversations out of training")
+
+    # A PHINC-only run does not need the separately downloaded ESConv corpus.  The dry-run
+    # synthetic PHINC fixture does use ESConv text, as does every run that builds ESConv pairs.
+    needs_esconv = args.n_esconv > 0 or (args.dry_run and not args.phinc and not find_local_phinc())
+    data = load_esconv() if needs_esconv else []
+    dev = set()
+    if args.n_esconv > 0:
+        try:
+            dev = set(dev_ids())
+        except FileNotFoundError:
+            raise SystemExit("dev_conv_ids.json not found: it is needed to keep the dev conversations out of training")
     stats = {"config": dict(vars(args)), "created": time.strftime("%Y-%m-%d %H:%M:%S")}
     stats["config"]["out_dir"] = _portable(out_dir)
 
