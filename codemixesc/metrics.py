@@ -1,5 +1,4 @@
 """Evaluation metrics of CodeMixESC: pure functions, defined here once for every system.
-docs/EVALUATION.md gives the definitions with the reasons behind each choice.
 
 Tokenizer. Every token-based metric uses tokenize(): NFC normalisation, lowercasing, then the
 regex  \\w+|[^\\w\\s]  (a token is a run of word characters, or one other non-space character:

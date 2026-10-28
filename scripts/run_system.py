@@ -1,5 +1,5 @@
 """Runs one system on one version of the test set and writes one JSON record per turn
-(docs/RUN_FORMAT.md) to results/runs/{system}/{version}.jsonl.
+to results/runs/{system}/{version}.jsonl.
 
 The run is resumable: turns already in the output file are skipped, and turns that fail
 (API errors after all retries) go to {version}.errors.jsonl and are retried on the next run.

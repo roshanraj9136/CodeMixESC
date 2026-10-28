@@ -8,8 +8,8 @@ every message to every agent); chat_history[1:] is the list of the n replies. Au
 the speaker's name in a separate field; our backends have none, so earlier replies are
 prefixed with "agent_j: ".
 
-Output parsing follows the base regexes, hardened in the same way for every system, so a
-different LLM's formatting habits cannot silently break the pipeline (docs/IMPLEMENTATION.md):
+Output parsing follows the base regexes with the same fixes for every system, so another
+LLM's formatting habits do not break the pipeline:
 - markdown emphasis and headings are removed first ("**Response:** [...]" defeats the base regex);
 - strategy names may contain '-' (the base [a-zA-Z ]+ can never parse "Self-disclosure");
 - strategy names are canonicalised (case, aliases) so votes for one strategy are counted together;

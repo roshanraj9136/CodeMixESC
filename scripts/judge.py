@@ -1,5 +1,5 @@
 """Pairwise LLM judge and human-evaluation sheets: CodeMixESC against MultiAgentESC and the
-Translate-Pivot (docs/EVALUATION.md).
+Translate-Pivot.
 
 Protocol. For each pair (a, b) and version, a seeded sample of turns on which both systems
 answered is judged. One prompt per comparison shows the dialogue context and the two

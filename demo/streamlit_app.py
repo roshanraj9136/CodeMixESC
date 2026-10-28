@@ -28,8 +28,8 @@ RETRIEVER_REPO = "roshan9136/codemix-retriever"
 BANK_EMB_FILE = "esconv_bank_embeddings.npy"  # precomputed case-bank vectors in the model repo
 ESCONV_URL = "https://raw.githubusercontent.com/MindIntLab-HFUT/MultiAgentESC/main/dataset/ESConv.json"
 GITHUB = "https://github.com/roshanraj9136/CodeMixESC"
-ARCH_IMG = os.path.join(ROOT, "report", "figures", "architecture_slide.svg")
-DELTA = 0.15  # tuned on the development set (results/tuning/delta.json)
+ARCH_IMG = os.path.join(ROOT, "demo", "architecture.svg")
+DELTA = 0.15  # tuned on the development set with scripts/tune_delta.py
 MAX_TURNS_PER_DAY = 400
 
 st.set_page_config(page_title="CodeMixESC · Hinglish emotional support", page_icon=":material/favorite:",
@@ -321,7 +321,7 @@ with st.sidebar:
     st.markdown("### CodeMixESC")
     st.markdown("A course project (IIT Bhilai) extending **MultiAgentESC** (EMNLP 2025) to code-mixed "
                 "Hinglish help-seekers.")
-    st.markdown(f"[:material/code: Code, data and results]({GITHUB})  \n"
+    st.markdown(f"[:material/code: Source code]({GITHUB})  \n"
                 f"[:material/neurology: Fine-tuned retriever](https://huggingface.co/{RETRIEVER_REPO})")
     early_rule = st.toggle("Base-paper rule: first turns use one agent", value=False,
                            help="MultiAgentESC answers the first turns of a dialogue with a single zero-shot "

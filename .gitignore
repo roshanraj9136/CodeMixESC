@@ -1,31 +1,23 @@
+# local environments, secrets and caches
 .env
+.streamlit/secrets.toml
 .venv/
+.venv-demo/
 __pycache__/
 *.pyc
+.pytest_cache/
 cache/
-external/
-scratch/
-data/raw/
-models/*/checkpoint-*
-*.log
-data/esconv/ESConv.json
-models/
 logs/
-report/*.aux
-report/*.bbl
-report/*.blg
-report/*.fdb_latexmk
-report/*.fls
-report/*.log
-report/*.out
-report/*.synctex.gz
-report/main.pdf
-# derived from ESConv / PHINC text (academic-use data, not redistributed); stats.json is fine
-data/pairs/*.jsonl
-# local trial builds and unfinished dataset builds (the finished test_{light,heavy}.json are committed)
-data/esconv_hien/*trial*
-data/esconv_hien/*.partial.json
-report/figures/*.aux
-report/figures/*.log
-report/figures/arch_preview*
-.venv-demo/
+*.log
+scratch/
+
+# local files that are not part of the code repository
+external/
+models/
+results/
+report/
+docs/
+data/*
+!data/esconv_hien/
+data/esconv_hien/*
+!data/esconv_hien/dev_conv_ids.json

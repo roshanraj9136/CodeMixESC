@@ -7,7 +7,7 @@ first, then the shortest contexts):
              answer is within the CMI gap the gate allows
   gate       the Register Gate fired and its rewrite was kept (pre-gate vs final response)
   strategy   CodeMixESC and MultiAgentESC chose different strategies and CodeMixESC's matches gold
-  failure    CodeMixESC's final answer still misses the seeker's register (honest error analysis)
+  failure    CodeMixESC's final answer still misses the seeker's register (error analysis)
 
     python scripts/case_studies.py [--per_category 2] [--profiler hingbert|lexicon]
 """

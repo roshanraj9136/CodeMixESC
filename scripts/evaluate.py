@@ -1,5 +1,5 @@
-"""Evaluates every available run (results/runs/{system}/{version}.jsonl) and writes the paper's
-tables and figures. Metric definitions: codemixesc/metrics.py and docs/EVALUATION.md.
+"""Evaluates every available run (results/runs/{system}/{version}.jsonl) and writes the report's
+tables and figures. Metric definitions: codemixesc/metrics.py.
 
 Each record is joined with its test sample by uid; reference, dialogue context and gold
 strategy come from the test data, not from the run file. Every run is scored on three sets
@@ -139,7 +139,7 @@ def load_run(path):
 
 
 def derive_nogate(recs):
-    """cmx_nogate from codemixesc records (docs/RUN_FORMAT.md): response := pre_gate_response,
+    """cmx_nogate from codemixesc records: response := pre_gate_response,
     n_calls -= gate.calls, latency -= gate.latency. Whether the gate's call was a cache hit is
     not recorded, so n_real_calls is not derivable and set to None."""
     out, fallback = {}, 0

@@ -1,5 +1,5 @@
 """The evaluated systems. System(name, ...).respond(sample, version) returns one run record
-(docs/RUN_FORMAT.md) for a turn sample of codemixesc.esconv.
+(a dict per turn) for a turn sample of codemixesc.esconv.
 
     zero_shot    single call, base zero-shot prompt
     fewshot_cot  single call, strategy definitions + 4 worked examples + step-by-step instruction
