@@ -1,5 +1,5 @@
-"""Retrieval robustness metrics and query sets for the cross-lingual retriever (SPEC: Metrics,
-"Retrieval robustness").
+"""Retrieval robustness metrics and query sets for the cross-lingual retriever (proposal,
+Section VI, "Retrieval robustness").
 
 A retriever is robust to code-mixing when a Hinglish post retrieves the same ESConv cases as its
 parallel English original. All metrics use k = 10, the number of cases get_strategy() retrieves:

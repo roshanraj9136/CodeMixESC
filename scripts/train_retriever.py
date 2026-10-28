@@ -1,4 +1,4 @@
-"""Fine-tune the cross-lingual retriever (SPEC: Method 2).
+"""Fine-tune the cross-lingual retriever (proposal, Section III).
 
 paraphrase-multilingual-mpnet-base-v2 is trained with the in-batch Multiple Negatives Ranking
 loss on Hinglish -> English pairs (anchor = Hinglish, positive = its English original, the other

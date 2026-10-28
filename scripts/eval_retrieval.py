@@ -1,4 +1,4 @@
-"""Retrieval robustness of the experience retriever (SPEC: Metrics, "Retrieval robustness").
+"""Retrieval robustness of the experience retriever (proposal, Section VI, "Retrieval robustness").
 
 Queries are the `post` of every supporter turn (exactly what get_strategy() sends to the
 retriever): all 1,210 test turns and the fixed sampled_uids(200) subset the multi-agent systems
@@ -55,7 +55,7 @@ P10 = [("p@10", v, 100, 1, True, "P@10", "") for v in VERSIONS]
 SELF = [("overlap_self@10", v, 100, 1, True, "Overlap@10", "self") for v in ("light", "heavy")]
 VSROB = [("overlap_roberta_en@10", v, 100, 1, True, "Overlap@10", "vs. RoBERTa-EN") for v in VERSIONS]
 JSD = [("jsd_strategy", v, 100, 2, False, "Strategy JSD", "") for v in ("light", "heavy")]
-MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF, P10 + SELF + VSROB + JSD  # main: the two SPEC metrics
+MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF, P10 + SELF + VSROB + JSD  # main: the two metrics of the proposal
 # Estimated width (characters + column gaps) above which a table spans both columns (table*). Measured
 # in IEEEtran: ~4.5pt per estimated character and a 252pt column, so a table estimated wider than
 # ~70 characters would have to shrink below 80% of the column.

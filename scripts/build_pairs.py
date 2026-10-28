@@ -1,4 +1,4 @@
-"""Build the Hinglish -> English training pairs of the cross-lingual retriever (SPEC: Method 2).
+"""Build the Hinglish -> English training pairs of the cross-lingual retriever (proposal, Section III).
 
 Sources
   PHINC   Srivastava & Singh (2020), 13,738 Hinglish tweets with manual English translations
