@@ -1,20 +1,10 @@
-"""CodeMixESC live demo (Streamlit).
-
-Write as a help-seeker in English or Roman-script Hinglish. CodeMixESC's multi-agent pipeline
-answers in your own Hindi-English mix, and the panel on the right shows what the agents
-understood: your language mix, emotion, cause and intention, the support strategy they chose
-and the Register Gate's language check. "Behind the scenes" lists the retrieved cases, the
-candidate replies and the vote.
-
-Local run (from the repository root):
-    streamlit run demo/streamlit_app.py
-Needs GEMINI_API_KEY (a free AI Studio key) in .streamlit/secrets.toml, the environment or .env.
-"""
 import hashlib
 import html
 import os
+import re
 import shutil
 import sys
+import threading
 import time
 import urllib.request
 
@@ -25,23 +15,24 @@ sys.path.insert(0, ROOT)
 
 MODEL = "gemma-4-26b-a4b-it"
 RETRIEVER_REPO = "roshan9136/codemix-retriever"
-BANK_EMB_FILE = "esconv_bank_embeddings.npy"  # precomputed case-bank vectors in the model repo
+BANK_EMB_FILE = "esconv_bank_embeddings.npy"
 ESCONV_URL = "https://raw.githubusercontent.com/MindIntLab-HFUT/MultiAgentESC/main/dataset/ESConv.json"
 GITHUB = "https://github.com/roshanraj9136/CodeMixESC"
+HF_MODEL = f"https://huggingface.co/{RETRIEVER_REPO}"
 ARCH_IMG = os.path.join(ROOT, "demo", "architecture.svg")
-DELTA = 0.15  # tuned on the development set with scripts/tune_delta.py
+LOGO_IMG = os.path.join(ROOT, "demo", "logo.svg")
+DELTA = 0.15
 MAX_TURNS_PER_DAY = 400
 
-st.set_page_config(page_title="CodeMixESC · Hinglish emotional support", page_icon=":material/favorite:",
+st.set_page_config(page_title="CodeMixESC - Hinglish emotional support",
                    layout="wide", initial_sidebar_state="collapsed")
 
 
-# ------------------------------------------------------------------ backend
 def api_key():
     try:
         if "GEMINI_API_KEY" in st.secrets:
             return st.secrets["GEMINI_API_KEY"]
-    except Exception:  # no secrets file
+    except Exception:
         pass
     if os.environ.get("GEMINI_API_KEY"):
         return os.environ["GEMINI_API_KEY"]
@@ -53,11 +44,8 @@ def api_key():
     return None
 
 
-@st.cache_resource(show_spinner="Waking up the agents: loading the language identifier and the retriever (first visit only)…")
+@st.cache_resource(show_spinner="Loading the language identifier and the retriever (first visit only)...")
 def load_pipeline():
-    """ESConv (downloaded from the base paper's repository, not redistributed), the fine-tuned
-    retriever and its precomputed case-bank embeddings (Hugging Face Hub), the profiler and the
-    LLM client; shared by all sessions."""
     os.environ.setdefault("CODEMIX_DEVICE", "cpu")
     from codemixesc.esconv import ESCONV_PATH, case_bank
     if not os.path.exists(ESCONV_PATH):
@@ -68,7 +56,6 @@ def load_pipeline():
     if not os.path.exists(os.path.join(local, "modules.json")):
         from huggingface_hub import snapshot_download
         snapshot_download(RETRIEVER_REPO, local_dir=local)
-    # the precomputed vectors under the name Retriever._bank_embeddings() looks for
     bank_sig = hashlib.md5("\n".join(b["post"] for b in case_bank()).encode("utf-8")).hexdigest()[:10]
     dst = os.path.join(RT.EMB_DIR, f"mpnet-ft-{RT.model_signature(local)}-{bank_sig}.npy")
     src = os.path.join(local, BANK_EMB_FILE)
@@ -90,9 +77,6 @@ def usage_counter():
 
 
 class ProgressLLM:
-    """Delegates to the shared LLM client and records when each agent's call starts and ends, so
-    the page can show the agents at work while the turn is computed in a worker thread."""
-
     def __init__(self, llm, events):
         self.llm, self.events = llm, events
 
@@ -108,25 +92,21 @@ class ProgressLLM:
         return self.chat([{"role": "user", "content": prompt}], system=system, **kw)[0]
 
 
-# agent call tag (trailing digits removed) -> (stage label, icon), in pipeline order
-STAGES = {"decide": ("Decision maker: is the dialogue complex?", ":material/alt_route:"),
-          "single": ("One agent writes the reply", ":material/person:"),
-          "emotion": ("Emotion agent", ":material/mood:"),
-          "cause": ("Cause agent", ":material/event:"),
-          "intention": ("Intention agent", ":material/flag:"),
-          "deliberate": ("Strategy deliberation (3 agents, group chat)", ":material/groups:"),
-          "generate": ("Writing one reply per strategy", ":material/edit_note:"),
-          "debate": ("Debate between the candidate replies", ":material/forum:"),
-          "reflect": ("Reflection and vote", ":material/how_to_vote:"),
-          "judge": ("Judge breaks a tie", ":material/gavel:"),
-          "refine": ("Refiner polishes the winner", ":material/auto_fix_high:"),
-          "gate": ("Register Gate rewrites the reply in your mix", ":material/rule:")}
+STAGES = {"decide": "Decision maker: is the dialogue complex?",
+          "single": "One agent writes the reply",
+          "emotion": "Emotion agent",
+          "cause": "Cause agent",
+          "intention": "Intention agent",
+          "deliberate": "Strategy deliberation (3 agents)",
+          "generate": "Writing one reply per strategy",
+          "debate": "Debate between the candidate replies",
+          "reflect": "Reflection and vote",
+          "judge": "Judge breaks a tie",
+          "refine": "Refiner polishes the winner",
+          "gate": "Register Gate rewrites the reply in your mix"}
 
 
-def timeline_md(events, t0, done=False):
-    """Markdown lines for the stages seen so far: finished ones with their time, the running
-    one shimmering. The retrieval step (no LLM call) is shown when deliberation starts."""
-    import re
+def stage_lines(events, t0, done=False):
     order, first, last, open_n = [], {}, {}, {}
     for kind, tag, t in list(events):
         stage = re.sub(r"\d+$", "", tag)
@@ -138,34 +118,31 @@ def timeline_md(events, t0, done=False):
         open_n[stage] = open_n.get(stage, 0) + (1 if kind == "start" else -1)
         if kind == "end":
             last[stage] = t
-    lines = [":green[:material/check_circle:] **Code-Mix Profiler** measured your language mix"]
+    lines = ["Code-Mix Profiler measured your language mix"]
     for stage in order:
         if stage == "deliberate":
-            lines.append(":green[:material/check_circle:] **Cross-lingual retriever** found 10 similar past cases")
-        label, icon = STAGES[stage]
+            lines.append("Cross-lingual retriever found 10 similar past cases")
+        label = STAGES[stage]
         if open_n.get(stage, 0) > 0 and not done:
-            lines.append(f"{icon} :shimmer[**{label}** …]")
+            lines.append(f"{label} ...")
         else:
             secs = last.get(stage, first[stage]) - first[stage]
-            lines.append(f":green[:material/check_circle:] **{label}** :gray[{secs:.0f} s]")
+            lines.append(f"{label} ({secs:.0f} s)")
     if not done and (not order or open_n.get(order[-1], 0) <= 0):
-        lines.append(f":material/hourglass_top: :shimmer[thinking… {time.time() - t0:.0f} s]")
-    return "  \n".join(lines)
+        lines.append(f"thinking... {time.time() - t0:.0f} s")
+    return lines
 
 
 def make_sample(dialog, early_rule):
     from codemixesc.esconv import json2natural
-    count = len(dialog) + 1  # dialog index after this supporter turn, as in the base main.py
+    count = len(dialog) + 1
     return {"uid": f"demo-{len(dialog)}", "conv_id": -1, "turn": len(dialog), "strategy": "", "reference": "",
             "context_msgs": [{"role": m["role"], "content": m["content"]} for m in dialog],
             "context": json2natural(dialog), "post": dialog[-1]["content"],
             "early": early_rule and count <= 5}
 
 
-def respond_live(dialog, early_rule, live):
-    """Runs one CodeMixESC turn in a worker thread and redraws the stage timeline in `live`
-    (an st.empty) until it finishes. Returns the turn record."""
-    import threading
+def respond_live(dialog, early_rule, status):
     from codemixesc.systems import SYSTEMS, System
     base, retriever = load_pipeline()
     events, out = [], {}
@@ -175,30 +152,51 @@ def respond_live(dialog, early_rule, live):
     def work():
         try:
             out["rec"] = system.respond(make_sample(dialog, early_rule), "demo")
-        except Exception as e:  # reported in the page
+        except Exception as e:
             out["err"] = e
 
     t0 = time.time()
     worker = threading.Thread(target=work, daemon=True)
     worker.start()
+    shown = 0
     while worker.is_alive():
-        live.markdown(timeline_md(events, t0))
+        lines = stage_lines(events, t0)
+        for line in lines[shown:]:
+            status.write(line)
+        shown = len(lines)
         worker.join(0.4)
-    steps = timeline_md(events, t0, done=True)
-    live.markdown(steps)
+    lines = stage_lines(events, t0, done=True)
+    for line in lines[shown:]:
+        status.write(line)
     if "err" in out:
         raise out["err"]
-    return out["rec"], steps
+    return out["rec"], lines
 
 
 def esc(t):
     return html.escape(str(t)).replace("\n", " ").replace("$", "\\$")
 
 
-STRATEGY_ICON = {"Question": ":material/help:", "Restatement or Paraphrasing": ":material/repeat:",
-                 "Reflection of feelings": ":material/favorite:", "Self-disclosure": ":material/person:",
-                 "Affirmation and Reassurance": ":material/thumb_up:", "Providing Suggestions": ":material/lightbulb:",
-                 "Information": ":material/info:", "Others": ":material/chat:"}
+def mix_bar_svg(hindi_share):
+    h = max(0.0, min(1.0, float(hindi_share)))
+    width = 320
+    hi_w = round(width * h)
+    en_w = width - hi_w
+    hi_label = f"{round(100 * h)}% Hindi" if hi_w >= 70 else ""
+    en_label = f"{round(100 * (1 - h))}% English" if en_w >= 80 else ""
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 {width} 30" '
+        f'preserveAspectRatio="none" role="img" aria-label="Language mix: {round(100 * h)} percent Hindi">'
+        f'<rect x="0" y="0" width="{width}" height="30" rx="6" fill="#F4F6FA"/>'
+        f'<rect x="0" y="0" width="{hi_w}" height="30" rx="6" fill="#C2410C"/>'
+        f'<rect x="{hi_w}" y="0" width="{en_w}" height="30" rx="6" fill="#2F5D9A"/>'
+        f'<text x="10" y="20" font-family="Inter, Segoe UI, sans-serif" font-size="13" fill="#FFFFFF">{hi_label}</text>'
+        f'<text x="{width - 10}" y="20" text-anchor="end" font-family="Inter, Segoe UI, sans-serif" '
+        f'font-size="13" fill="#FFFFFF">{en_label}</text>'
+        f'</svg>'
+    )
+
+
 STRATEGY_PLAIN = {
     "Question": "asks a gentle, open question so you can say more",
     "Restatement or Paraphrasing": "says back what you said, more simply, so you can see it clearly",
@@ -207,205 +205,181 @@ STRATEGY_PLAIN = {
     "Affirmation and Reassurance": "points out your strengths and gives encouragement",
     "Providing Suggestions": "offers an idea to try, without pushing",
     "Information": "gives useful information or facts",
-    "Others": "keeps the conversation warm (greetings, thanks, small talk)",
+    "Others": "keeps the conversation warm with greetings, thanks or small talk",
 }
 
 
-# ------------------------------------------------------------------ insight panel
-def mix_bar(label, hindi_share):
-    h = max(0.0, min(1.0, float(hindi_share)))
-    st.progress(h, text=f"{label}: **{100 * h:.0f}% Hindi** · {100 * (1 - h):.0f}% English")
+def bar(hindi_share):
+    st.markdown(mix_bar_svg(hindi_share), unsafe_allow_html=True)
 
 
-def insight_panel(rec, retriever, working=False):
+def insight_panel(rec, retriever):
     from codemixesc.profiler import is_plain_english
     R, g = rec.get("R") or {}, rec.get("gate") or {}
-    with st.container(border=True):
-        st.markdown("##### :material/translate: Your language mix")
-        if R:
-            mix_bar("You", R["hi_frac"])
-            with st.container(horizontal=True):
-                if is_plain_english(R):
-                    st.badge("Plain English", icon=":material/language:", color="gray")
-                else:
-                    st.badge(f"Code-mixed Hinglish · CMI {R['cmi']:.2f}", icon=":material/merge_type:", color="orange")
-                st.badge(f"{R.get('script', 'Roman')} script", icon=":material/keyboard:", color="blue")
-            st.caption("Measured word by word with HingBERT-LID; CMI = how mixed the two languages are (0 = one "
-                       "language, 0.5 = half-half).")
-    if working:
-        with st.container(border=True):
-            st.markdown("##### :material/psychology: The agents are at work")
-            st.markdown(":shimmer[Reading your message, recalling similar cases, debating the best reply…]")
-            st.caption("Watch each step live under your message. This panel fills in when the reply is ready.")
-        return
+    st.markdown("**Your language mix**")
+    if R:
+        bar(R["hi_frac"])
+        if is_plain_english(R):
+            st.write("Plain English, Roman script.")
+        else:
+            st.write(f"Code-mixed Hinglish, CMI {R['cmi']:.2f}, {R.get('script', 'Roman')} script.")
+        st.caption("Measured word by word with HingBERT-LID. CMI is how mixed the two languages are "
+                   "(0 is one language, 0.5 is half and half).")
     a = rec.get("analysis") or {}
     if rec.get("path") != "single" and a:
-        with st.container(border=True):
-            st.markdown("##### :material/psychology: What the agents understood")
-            st.markdown(f":material/mood: **Feeling** — {esc(a.get('emotion'))}")
-            st.markdown(f":material/event: **Because** — {esc(a.get('cause'))}")
-            st.markdown(f":material/flag: **What you want** — {esc(a.get('intention'))}")
+        st.markdown("**What it understood**")
+        st.write(f"Feeling: {esc(a.get('emotion'))}")
+        st.write(f"Because: {esc(a.get('cause'))}")
+        st.write(f"What you want: {esc(a.get('intention'))}")
     strat = rec.get("pred_strategy")
-    with st.container(border=True):
-        st.markdown("##### :material/volunteer_activism: Support strategy")
-        if strat and strat in STRATEGY_PLAIN:
-            st.badge(strat, icon=STRATEGY_ICON.get(strat), color="violet")
-            st.caption(f"The reply {STRATEGY_PLAIN[strat]}.")
-            cands = rec.get("candidates") or []
-            if len(cands) > 1:
-                st.caption(f"{len(cands)} candidate replies were written (one per strategy) and the agents debated "
-                           f"and voted for this one.")
-        else:
-            st.caption("Early or simple turn: one agent answered directly (as in MultiAgentESC).")
+    st.markdown("**Support strategy**")
+    if strat and strat in STRATEGY_PLAIN:
+        st.write(f"{strat}: {STRATEGY_PLAIN[strat]}.")
+        cands = rec.get("candidates") or []
+        if len(cands) > 1:
+            st.caption(f"{len(cands)} replies were written, one per strategy, and the agents debated and "
+                       f"voted for this one.")
+    else:
+        st.write("Early or simple turn: one agent answered directly, as in MultiAgentESC.")
     if g:
-        with st.container(border=True):
-            st.markdown("##### :material/rule: Register Gate · language check")
-            mix_bar("Target", g.get("hi_frac_target", 0))
-            reply_label = "Reply (kept original)" if g.get("triggered") and not g.get("accepted") else "Reply"
-            mix_bar(reply_label, g.get("hi_frac_after") if g.get("accepted") else g.get("hi_frac_before", 0))
-            if not g.get("triggered"):
-                st.badge("Matched on the first try", icon=":material/check_circle:", color="green")
-            elif g.get("accepted"):
-                st.badge(f"Rewritten to match (was {100 * g['hi_frac_before']:.0f}% Hindi)",
-                         icon=":material/autorenew:", color="orange")
-            else:
-                st.badge("Rewrite was not closer, original kept", icon=":material/info:", color="gray")
-    with st.expander(f":material/manufacturing: Behind the scenes · {rec.get('n_calls', 0)} LLM calls "
-                     f"({rec.get('latency', 0):.0f} s summed API time)"):
+        st.markdown("**Register Gate**")
+        st.caption("Target mix")
+        bar(g.get("hi_frac_target", 0))
+        reply_label = "Reply (kept original)" if g.get("triggered") and not g.get("accepted") else "Reply mix"
+        st.caption(reply_label)
+        bar(g.get("hi_frac_after") if g.get("accepted") else g.get("hi_frac_before", 0))
+        if not g.get("triggered"):
+            st.write("Matched on the first try.")
+        elif g.get("accepted"):
+            st.write(f"Rewritten to match (was {100 * g['hi_frac_before']:.0f}% Hindi).")
+        else:
+            st.write("The rewrite was not closer, so the original was kept.")
+    with st.expander(f"Behind the scenes: {rec.get('n_calls', 0)} LLM calls, "
+                     f"{rec.get('latency', 0):.0f} s of API time"):
         ids = rec.get("retrieved") or []
-        if ids:
+        if ids and retriever is not None:
             shown = min(3, len(ids))
-            st.markdown(f"**Similar past cases** found by the cross-lingual retriever "
-                        f"(showing {shown} of {len(ids)}, English case bank):")
+            st.write(f"Similar past cases from the English case bank (showing {shown} of {len(ids)}):")
             for i in ids[:shown]:
                 b = retriever.bank[i]
-                st.markdown(f"- “{esc(b['post'][:140])}” → *[{esc(b['strategy'])}]* {esc(b['response'][:120])}")
+                st.write(f"- \"{esc(b['post'][:140])}\" -> [{esc(b['strategy'])}] {esc(b['response'][:120])}")
         if rec.get("strategies"):
-            st.markdown("**Strategies proposed** by the 3-agent group chat: "
-                        + ", ".join(f"`{s}`" for s in rec["strategies"]))
+            st.write("Strategies proposed by the 3 agents: " + ", ".join(rec["strategies"]))
         for s, r in rec.get("candidates") or []:
-            st.markdown(f"- *[{esc(s)}]* {esc(r)}")
+            st.write(f"- [{esc(s)}] {esc(r)}")
         v = rec.get("vote") or {}
         if v.get("strategies"):
-            st.markdown(f"**Vote winner:** {esc(', '.join(v['strategies']))}"
-                        + (" (tie broken by the judge)" if rec.get("judge") else ""))
-        st.caption(f"Agents: `{MODEL}` via the Gemini API (free tier), temperature 0.")
+            st.write("Vote winner: " + esc(", ".join(v["strategies"]))
+                     + (" (tie broken by the judge)" if rec.get("judge") else ""))
+        st.caption(f"Agents: {MODEL} through the Gemini API, temperature 0.")
 
 
 def empty_panel():
-    with st.container(border=True):
-        st.markdown("##### :material/auto_awesome: How it works")
-        steps = [(":material/translate:", "Measures your language mix", "word-by-word Hindi/English tagging"),
-                 (":material/psychology:", "Understands you", "agents for feeling, cause and intention"),
-                 (":material/travel_explore:", "Recalls similar cases", "retriever trained on Hinglish–English pairs"),
-                 (":material/forum:", "Debates the best reply", "one reply per strategy, then a vote"),
-                 (":material/rule:", "Checks the language", "the Register Gate matches your Hinglish")]
-        for icon, head, sub in steps:
-            st.markdown(f"{icon} **{head}**  \n:gray[{sub}]")
-    st.caption("Send a message, and this panel will show what the agents understood.")
+    st.markdown("**Nothing here yet**")
+    st.write("Send a message and this panel will fill in: your language mix, the feeling, the cause and "
+             "intention, the chosen strategy and the Register Gate result.")
 
 
-# ------------------------------------------------------------------ page
 key = api_key()
 if key:
     os.environ["GEMINI_API_KEY"] = key
 if "dialog" not in st.session_state:
-    st.session_state.dialog = []  # {"role", "content", "rec" (assistant turns: the pipeline record)}
-# a run interrupted between the question and the reply (e.g. an app update) leaves a trailing
-# user message: it is answered again in this run
+    st.session_state.dialog = []
 pending = None
 if st.session_state.dialog and st.session_state.dialog[-1]["role"] == "user":
     pending = st.session_state.dialog.pop()["content"]
 
-with st.sidebar:
-    st.markdown("### CodeMixESC")
-    st.markdown("A course project (IIT Bhilai) extending **MultiAgentESC** (EMNLP 2025) to code-mixed "
-                "Hinglish help-seekers.")
-    st.markdown(f"[:material/code: Source code]({GITHUB})  \n"
-                f"[:material/neurology: Fine-tuned retriever](https://huggingface.co/{RETRIEVER_REPO})")
-    early_rule = st.toggle("Base-paper rule: first turns use one agent", value=False,
-                           help="MultiAgentESC answers the first turns of a dialogue with a single zero-shot "
-                                "agent. Off = the full pipeline from the first message.")
-    st.caption("Roshan Raj · 12341830")
-
-head, side = st.columns([5, 2], vertical_alignment="center")
-with head:
+head_a, head_b = st.columns([1, 11], vertical_alignment="center")
+with head_a:
+    st.image(LOGO_IMG, width=46)
+with head_b:
     st.title("CodeMixESC")
-    st.markdown("##### Emotional support that understands how you really talk — English, Hindi, or both.")
-    with st.container(horizontal=True):
-        st.badge("3-stage multi-agent pipeline", icon=":material/groups:", color="orange")
-        st.badge("Understands Hinglish", icon=":material/translate:", color="blue")
-        st.badge("Replies in your own mix", icon=":material/tune:", color="green")
-with side:
-    with st.container(horizontal=True, horizontal_alignment="right"):
-        with st.popover("How it works", icon=":material/account_tree:"):
-            st.image(ARCH_IMG, alt="CodeMixESC architecture: profiler, three agent stages, cross-lingual "
-                                   "retriever and Register Gate")
-            st.caption("Orange = new in CodeMixESC, dashed = modified, blue = MultiAgentESC.")
-        if st.button("New chat", icon=":material/refresh:"):
-            st.session_state.dialog = []
-            st.rerun()
+st.write("Emotional support that answers in your own Hindi-English mix. Write in English or Roman-script "
+         "Hinglish, and the panel on the right shows what the agents understood.")
+
+top_l, top_r = st.columns([5, 2], vertical_alignment="center")
+with top_l:
+    st.caption("A course project (IIT Bhilai) extending MultiAgentESC (EMNLP 2025) to code-mixed Hinglish "
+               "help-seekers.")
+with top_r:
+    early_rule = st.toggle("First turns use one agent", value=False,
+                           help="MultiAgentESC answers the first turns with a single agent. Off means the full "
+                                "pipeline from the first message.")
+    new_chat = st.button("New chat")
+if new_chat:
+    st.session_state.dialog = []
+    st.rerun()
 
 if not key:
-    st.error("GEMINI_API_KEY is not configured for this app.", icon=":material/key_off:")
+    st.error("GEMINI_API_KEY is not configured for this app.")
     st.stop()
 
 chat_col, info_col = st.columns([3, 2], gap="large")
 SUGGESTIONS = {
-    ":material/school: Exam result stress": "yaar exams ka result aaya hai aur bahut tension ho rahi hai, "
-                                            "ghar pe kaise bataun samajh nahi aa raha",
-    ":material/work: No job yet": "Mujhe lagta hai main kabhi job nahi dhoond paunga, sab friends settle ho gaye "
-                                  "aur main abhi bhi wahi hoon",
-    ":material/group: Friend stopped talking": "meri best friend ne mujhse baat karna band kar diya, "
-                                               "I don't even know what I did wrong",
-    ":material/language: In English": "I lost my job last month and honestly I feel useless",
+    "Exam result stress": "yaar exams ka result aaya hai aur bahut tension ho rahi hai, ghar pe kaise bataun "
+                          "samajh nahi aa raha",
+    "No job yet": "Mujhe lagta hai main kabhi job nahi dhoond paunga, sab friends settle ho gaye aur main abhi "
+                  "bhi wahi hoon",
+    "Friend stopped talking": "meri best friend ne mujhse baat karna band kar diya, I don't even know what I "
+                              "did wrong",
+    "In English": "I lost my job last month and honestly I feel useless",
 }
 
 with chat_col:
     box = st.container(height=330, border=True)
     with box:
         if not st.session_state.dialog:
-            with st.chat_message("assistant", avatar=":material/favorite:"):
-                st.markdown("Hi, I'm here to listen. Tell me what's on your mind — in English, Hindi or Hinglish, "
-                            "whatever feels natural. *(Research prototype, not a crisis service.)*")
-        for i, msg in enumerate(st.session_state.dialog):
-            avatar = ":material/favorite:" if msg["role"] == "assistant" else ":material/person:"
-            with st.chat_message(msg["role"], avatar=avatar):
+            with st.chat_message("assistant"):
+                st.markdown("Hi, I'm here to listen. Tell me what's on your mind, in English, Hindi or Hinglish, "
+                            "whatever feels natural. This is a research prototype, not a crisis service.")
+        for msg in st.session_state.dialog:
+            with st.chat_message(msg["role"]):
                 rec = msg.get("rec")
                 if msg.get("steps") and rec:
-                    with st.expander(f"Answered in {msg['secs']:.0f} s · {rec['n_calls']} LLM calls · see every step",
-                                     icon=":material/check_circle:", type="compact"):
-                        st.markdown(msg["steps"])
+                    with st.expander(f"Answered in {msg['secs']:.0f} s, {rec['n_calls']} LLM calls, see every step"):
+                        for line in msg["steps"]:
+                            st.write(line)
                 st.markdown(esc(msg["content"]))
                 if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
-                    st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
+                    st.caption(rec["pred_strategy"])
     picked = None
     if not st.session_state.dialog:
-        choice = st.pills("Try an example", list(SUGGESTIONS), label_visibility="collapsed")
-        picked = SUGGESTIONS.get(choice)
-    prompt = st.chat_input("Type in English or Hinglish, e.g. “yaar bahut tension ho rahi hai…”", submit_mode="disable")
-    st.caption(":material/health_and_safety: Not a crisis or counselling service. In distress in India? "
-               "Call Tele-MANAS **14416** (24×7). Elsewhere, contact your local emergency or crisis service.")
+        st.caption("Try an example:")
+        cols = st.columns(len(SUGGESTIONS))
+        for col, (label, text) in zip(cols, SUGGESTIONS.items()):
+            if col.button(label):
+                picked = text
+    prompt = st.chat_input("Type in English or Hinglish, e.g. yaar bahut tension ho rahi hai...")
+    st.caption("Not a crisis or counselling service. In distress in India? Call Tele-MANAS 14416 (24x7). "
+               "Elsewhere, contact your local emergency or crisis service.")
 
 with info_col:
-    st.markdown("#### What CodeMixESC understood")
+    st.markdown("### What it understood")
     panel = st.empty()
 
+with st.expander("How it works"):
+    if os.path.exists(ARCH_IMG):
+        st.image(ARCH_IMG)
+    st.caption("Orange is new in CodeMixESC, dashed is modified, blue is MultiAgentESC.")
+    st.write("1. The Code-Mix Profiler measures your language mix word by word.")
+    st.write("2. Agents read the message for feeling, cause and intention.")
+    st.write("3. The cross-lingual retriever recalls similar past cases.")
+    st.write("4. One reply is written per strategy, then the agents debate and vote.")
+    st.write("5. The Register Gate rewrites the winner to match your Hinglish.")
 
-def draw_panel(rec=None, R=None):
-    """The right-hand panel: the full insight for a finished turn, the language mix alone while
-    the agents work, or the how-it-works card before the first message."""
+st.caption(f"[Source code]({GITHUB}) ? [Fine-tuned retriever]({HF_MODEL}) ? Roshan Raj ? 12341830")
+
+
+def draw_panel(rec=None):
     with panel.container():
         if rec:
             insight_panel(rec, load_pipeline()[1])
-        elif R:
-            insight_panel({"R": R, "path": "working"}, None, working=True)
         else:
             empty_panel()
 
 
 prompt = (prompt or picked or pending or "").strip()
-if not prompt:  # with a new message the panel is drawn once R is known (no stale cards in between)
+if not prompt:
     draw_panel(next((m.get("rec") for m in reversed(st.session_state.dialog) if m.get("rec")), None))
 if prompt:
     counter = usage_counter()
@@ -413,31 +387,27 @@ if prompt:
         counter.update(day=time.strftime("%Y-%m-%d"), n=0)
     st.session_state.dialog.append({"role": "user", "content": prompt})
     with box:
-        with st.chat_message("user", avatar=":material/person:"):
+        with st.chat_message("user"):
             st.markdown(esc(prompt))
-        with st.chat_message("assistant", avatar=":material/favorite:"):
+        with st.chat_message("assistant"):
             steps, t0 = None, time.time()
             if counter["n"] >= MAX_TURNS_PER_DAY:
                 rec, reply = None, "The demo reached today's free-tier limit; please try again tomorrow."
             else:
                 counter["n"] += 1
-                system, _ = load_pipeline()
-                R = system.profiler.profile([m["content"] for m in st.session_state.dialog if m["role"] == "user"])
-                draw_panel(R=R)
-                with st.status(":shimmer[The agents are working on your reply…]", type="compact",
-                               expanded=True) as status:
+                with st.status("The agents are working on your reply...", expanded=True) as status:
                     t0 = time.time()
                     try:
-                        rec, steps = respond_live(st.session_state.dialog, early_rule, st.empty())
+                        rec, steps = respond_live(st.session_state.dialog, early_rule, status)
                         reply = rec["response"]
-                        status.update(label=f"Answered in {time.time() - t0:.0f} s · {rec['n_calls']} LLM calls "
-                                            "· see every step", state="complete", expanded=False)
-                    except Exception as e:  # keep the session usable
+                        status.update(label=f"Answered in {time.time() - t0:.0f} s, {rec['n_calls']} LLM calls",
+                                      state="complete", expanded=False)
+                    except Exception as e:
                         rec, reply = None, "Sorry, the model is busy right now. Please send your message again."
                         status.update(label=f"Model busy ({type(e).__name__})", state="error")
             st.markdown(esc(reply))
             if rec and rec.get("pred_strategy") in STRATEGY_PLAIN:
-                st.caption(f"{STRATEGY_ICON[rec['pred_strategy']]} {rec['pred_strategy']}")
+                st.caption(rec["pred_strategy"])
     st.session_state.dialog.append({"role": "assistant", "content": reply, "rec": rec, "steps": steps,
                                     "secs": time.time() - t0})
-    st.rerun()  # redraw the page from the stored turn: no stale elements, examples hidden
+    st.rerun()
