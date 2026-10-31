@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import html
 import os
@@ -289,11 +290,12 @@ pending = None
 if st.session_state.dialog and st.session_state.dialog[-1]["role"] == "user":
     pending = st.session_state.dialog.pop()["content"]
 
-head_a, head_b = st.columns([1, 11], vertical_alignment="center")
-with head_a:
-    st.image(LOGO_IMG, width=46)
-with head_b:
-    st.title("CodeMixESC")
+with open(LOGO_IMG, "rb") as f:
+    logo = base64.b64encode(f.read()).decode()
+st.markdown(f'<div style="display:flex;align-items:center;gap:14px;margin:0.4rem 0 0.6rem">'
+            f'<img src="data:image/svg+xml;base64,{logo}" width="46" height="46" alt="">'
+            f'<span style="font-size:2.3rem;font-weight:700;line-height:1">CodeMixESC</span></div>',
+            unsafe_allow_html=True)
 st.write("Emotional support that answers in your own Hindi-English mix. Write in English or Roman-script "
          "Hinglish, and the panel on the right shows what the agents understood.")
 
@@ -301,7 +303,7 @@ top_l, top_r = st.columns([5, 2], vertical_alignment="center")
 with top_l:
     st.caption("A course project (IIT Bhilai) extending MultiAgentESC (EMNLP 2025) to code-mixed Hinglish "
                "help-seekers.")
-with top_r:
+with top_r, st.container(horizontal=True, horizontal_alignment="right", vertical_alignment="center"):
     early_rule = st.toggle("First turns use one agent", value=False,
                            help="MultiAgentESC answers the first turns with a single agent. Off means the full "
                                 "pipeline from the first message.")
@@ -345,10 +347,10 @@ with chat_col:
     picked = None
     if not st.session_state.dialog:
         st.caption("Try an example:")
-        cols = st.columns(len(SUGGESTIONS))
-        for col, (label, text) in zip(cols, SUGGESTIONS.items()):
-            if col.button(label):
-                picked = text
+        with st.container(horizontal=True):
+            for label, text in SUGGESTIONS.items():
+                if st.button(label):
+                    picked = text
     prompt = st.chat_input("Type in English or Hinglish, e.g. yaar bahut tension ho rahi hai...")
     st.caption("Not a crisis or counselling service. In distress in India? Call Tele-MANAS 14416 (24x7). "
                "Elsewhere, contact your local emergency or crisis service.")
@@ -367,7 +369,7 @@ with st.expander("How it works"):
     st.write("4. One reply is written per strategy, then the agents debate and vote.")
     st.write("5. The Register Gate rewrites the winner to match your Hinglish.")
 
-st.caption(f"[Source code]({GITHUB}) ? [Fine-tuned retriever]({HF_MODEL}) ? Roshan Raj ? 12341830")
+st.caption(f"[Source code]({GITHUB}) · [Fine-tuned retriever]({HF_MODEL}) · Roshan Raj · 12341830")
 
 
 def draw_panel(rec=None):
