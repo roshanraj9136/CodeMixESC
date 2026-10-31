@@ -1,12 +1,3 @@
-"""Statistics of ESConv-HiEn for the report (dataset table and CMI histogram).
-
-The CMI of every utterance is recomputed with the profiler as committed (not taken from the
-values stored at build time). The English originals are profiled too: the share of their
-words that HingBERT-LID tags as Hindi is the profiler's false-positive rate, which decides how
-"plain English" (profiler.PLAIN_ENGLISH_CMI) must be set.
-
-    python scripts/dataset_stats.py [--split test|dev] [--profiler hingbert|lexicon]
-"""
 import argparse
 import json
 import os
@@ -14,10 +5,10 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, all_samples, dev_samples, load_dev, load_version, seeker_utterances  # noqa: E402
-from codemixesc.profiler import is_plain_english, script_of  # noqa: E402
+from codemixesc.esconv import ROOT, all_samples, dev_samples, load_dev, load_version, seeker_utterances
+from codemixesc.profiler import is_plain_english, script_of
 
-BANDS = {"light": (0.10, 0.30), "heavy": (0.30, 0.50)}  # as in scripts/build_hien.py
+BANDS = {"light": (0.10, 0.30), "heavy": (0.30, 0.50)}
 MIN_WORDS_FOR_BAND = 5
 
 
@@ -40,18 +31,18 @@ def level_stats(convs, level, prof, samples):
            "scripts": dict(Counter(script_of(x) for x in texts))}
     if level in BANDS:
         lo, hi = BANDS[level]
-        x = (lambda s: s["hi_frac"]) if level == "light" else (lambda s: s["cmi"])  # as build_hien.band_distance
+        x = (lambda s: s["hi_frac"]) if level == "light" else (lambda s: s["cmi"])
         out["in_band"] = mean(lo - 1e-9 <= x(s) <= hi + 1e-9 for s in checked)
         out["band_checked"] = len(checked)
         sims = [t["labse_sim"] for t in utts if "labse_sim" in t]
         out["labse_sim"] = mean(sims)
         out["regenerated"] = mean(t.get("regenerated", 0) > 0 for t in utts)
         out["words_per_utt_en"] = mean(len(t.get("content_en", "").split()) for t in utts)
-    else:  # English originals: every word tagged HI is a false positive of the LID model
+    else:
         n_hi, n_lang = sum(s["hi"] for s in st), sum(s["n_lang"] for s in st)
         out["false_hindi_rate"] = n_hi / max(1, n_lang)
         out["false_hindi_rate_strong"] = sum(s["hi_strong"] for s in st) / max(1, n_lang)
-    # what the agents see: the pooled seeker profile R at every turn
+
     Rs = [prof.profile(seeker_utterances(s)) for s in samples]
     out["turn_cmi_s"] = mean(R["cmi"] for R in Rs)
     out["turn_plain_english"] = mean(is_plain_english(R) for R in Rs)
@@ -60,7 +51,7 @@ def level_stats(convs, level, prof, samples):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Statistics of ESConv-HiEn for the report.")
     ap.add_argument("--split", default="test", choices=["test", "dev"])
     ap.add_argument("--profiler", default="hingbert", choices=["hingbert", "lexicon"])
     ap.add_argument("--out_dir", default=os.path.join(ROOT, "results"))

@@ -1,5 +1,3 @@
-"""Multi-agent pipeline: fidelity to the base code (prompts, turn extraction, AutoGen group
-chat), output parsers, vote, Register Gate, and every system end to end with stand-ins."""
 import ast
 import json
 import os
@@ -25,7 +23,6 @@ R_HEAVY = {"cmi": 0.45, "cmi_last": 0.4, "hi_frac": 0.55, "dominant": "Hindi", "
 R_DEV = {"cmi": 0.1, "cmi_last": 0.1, "hi_frac": 0.9, "dominant": "Hindi", "script": "Devanagari"}
 
 
-# ------------------------------------------------------------------ fidelity to the base code
 @needs_base
 def test_base_prompts_verbatim():
     import importlib.util
@@ -58,7 +55,6 @@ def test_base_prompts_verbatim():
 
 
 def _base_loop(sample):
-    """Direct port of the sample loop of external/MultiAgentESC/main.py (LLM calls removed)."""
     def json2natural(history):
         out = ""
         for u in history:
@@ -115,7 +111,6 @@ def test_turn_samples_match_base_main_loop():
 
 
 class Recorder:
-    """LLM stand-in that records every call and answers from a script."""
 
     def __init__(self, answers=None, default="Response: ok"):
         self.calls, self.answers, self.default = [], list(answers or []), default
@@ -130,7 +125,7 @@ def test_group_chat_replicates_autogen_round_robin():
     log = A.CallLog(rec)
     replies = A.group_chat(log, "PROMPT", ["sys0", "sys1", "sys2"], tag="deliberate")
     assert replies == ["Strategy: [Question]\nReasoning: a", "Strategy: [Others]\nReasoning: b", "c"]
-    for i, call in enumerate(rec.calls):  # agent i sees the prompt and the i earlier replies
+    for i, call in enumerate(rec.calls):
         assert call["system"] == f"sys{i}" and call["tag"] == f"deliberate{i}"
         assert [m["content"] for m in call["messages"]] == ["PROMPT"] + [f"agent_{j}: {replies[j]}" for j in range(i)]
         assert all(m["role"] == "user" for m in call["messages"])
@@ -138,7 +133,6 @@ def test_group_chat_replicates_autogen_round_robin():
     assert s["n_calls"] == 3 and s["calls_by_tag"] == {"deliberate": 3} and s["latency"] == pytest.approx(1.5)
 
 
-# ------------------------------------------------------------------ prompts
 @pytest.mark.parametrize("R", [R_EN, R_LIGHT, R_HEAVY, R_DEV])
 def test_register_prompts_format(R):
     kw = dict(context="C", emo_and_reason="E{x}", cau_and_reason="Ca", int_and_reason="I", strategy="Question",
@@ -160,7 +154,6 @@ def test_register_prompts_format(R):
     assert "[strategy]" not in P.gate_prompt("ctx", R, "resp", None, "x")
 
 
-# ------------------------------------------------------------------ parsers
 @pytest.mark.parametrize("text,expected", [
     ("Response: [Question] How are you feeling now?\nReasoning: open", ("Question", "How are you feeling now?")),
     ("**Response:** [Self-disclosure] I once felt the same.\n**Reasoning:** x", ("Self-disclosure", "I once felt the same.")),
@@ -202,35 +195,33 @@ def test_vote():
     assert A.vote(["garbage", "Response: [strategy] [response]"], cands) == (["None"], ["None"])
 
 
-# ------------------------------------------------------------------ Register Gate
 def test_register_gate():
     prof = LexiconProfiler()
     english = "I understand how hard this must be for you right now."
     hinglish = "Main samajh sakta hoon yaar, yeh sach mein bahut mushkil hai abhi."
-    # within delta: no call
+
     log = A.CallLog(Recorder())
     out, info = A.register_gate(log, prof, "ctx", R_EN, "Question", english, 0.2)
     assert out == english and not info["triggered"] and info["calls"] == 0 and len(log.calls) == 0
-    # English answer to a heavy Hinglish seeker: one call, closer rewrite accepted
+
     log = A.CallLog(Recorder(answers=[f"Response: [Question] {hinglish}"]))
     out, info = A.register_gate(log, prof, "ctx", R_HEAVY, "Question", english, 0.2)
     assert info["triggered"] and info["accepted"] and out == hinglish and info["calls"] == 1 and len(log.calls) == 1
     assert "too little Hindi" in log.llm.calls[0]["messages"][0]["content"]
-    # a rewrite that is not closer is rejected; the original is kept
+
     log = A.CallLog(Recorder(answers=["Response: [Question] Still plain English here, sorry."]))
     out, info = A.register_gate(log, prof, "ctx", R_HEAVY, "Question", english, 0.2)
     assert info["triggered"] and not info["accepted"] and out == english
-    # unparseable answer: original kept
+
     log = A.CallLog(Recorder(answers=["Response: [strategy] [rewritten response]"]))
     out, info = A.register_gate(log, prof, "ctx", R_HEAVY, "None", english, 0.2)
     assert info["triggered"] and not info["accepted"] and out == english
-    # script mismatch triggers even when the CMI gap is small
+
     log = A.CallLog(Recorder(answers=["Response: [Question] Main samajh sakta hoon."]))
     out, info = A.register_gate(log, prof, "ctx", R_LIGHT, "Question", "मुझे पता है, यह मुश्किल है", 0.9)
     assert info["triggered"] and info["accepted"] and info["script_before"] == "Devanagari"
 
 
-# ------------------------------------------------------------------ systems end to end
 @pytest.fixture(scope="module")
 def stand_ins(tmp_path_factory):
     os.environ["CODEMIX_HIEN_DIR"] = write_fake_hien(str(tmp_path_factory.mktemp("hien")), n_test=100)
@@ -270,9 +261,9 @@ def test_system_end_to_end(stand_ins, name, version):
         assert r["n_calls"] == sum(r["calls_by_tag"].values())
         if r["early"] and SYSTEMS[name]["kind"] in ("multi", "pivot"):
             assert "decide" not in r["calls_by_tag"] and r["path"] == "single"
-        if r["path"] in ("single", "fallback") and name != "fewshot_cot":  # few-shot CoT names a strategy
+        if r["path"] in ("single", "fallback") and name != "fewshot_cot":
             assert r["pred_strategy"] == "None"
-        if name == "pivot":  # no back-translation for a seeker treated as writing English
+        if name == "pivot":
             assert r["calls_by_tag"]["translate_in"] >= 1
             assert r["calls_by_tag"].get("translate_out", 0) == (0 if is_plain_english(r["R"]) else 1)
         if r["gate"]:

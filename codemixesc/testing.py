@@ -1,12 +1,3 @@
-"""Stand-ins for the heavy components, used by the unit tests and by `--dry_run`.
-
-They exercise every code path of the pipeline without model downloads or API calls:
-- LexiconProfiler: the real Profiler logic (tokenisation, chunking, CMI, register profile)
-  with HingBERT-LID replaced by a Hinglish word list.
-- HashRetriever: the real Retriever logic over a tiny bag-of-words encoder.
-- FakeLLM: deterministic, format-following answers to every prompt of the pipeline.
-Nothing here is used to produce reported results.
-"""
 import hashlib
 import json
 import random
@@ -32,13 +23,9 @@ ye yeh zaroor zarur zindagi
 """.split())
 
 
-# English homographs (is, the, main, hi, par, log, ...) are left out on purpose.
-
-
 class LexiconProfiler(Profiler):
-    """Profiler with the HingBERT-LID call replaced by a word list (tests and dry runs only)."""
 
-    def __init__(self, batch_size=64):  # deliberately skips Profiler.__init__ (no model download)
+    def __init__(self, batch_size=64):
         self.batch_size = batch_size
         self._memo = {}
         self._lock = threading.Lock()
@@ -48,7 +35,6 @@ class LexiconProfiler(Profiler):
 
 
 class HashEncoder:
-    """Bag-of-words hashing encoder with the SentenceTransformer.encode() signature."""
 
     def __init__(self, dim=256):
         self.dim = dim
@@ -65,7 +51,6 @@ class HashEncoder:
 
 
 class HashRetriever:
-    """codemixesc.retriever.Retriever over the HashEncoder (no model download)."""
 
     def __new__(cls, bank=None, exclude_conv=()):
         from .esconv import case_bank
@@ -81,7 +66,6 @@ _FILLERS = ["yaar", "bahut", "sach mein", "pata nahi", "kya karun", "theek hai",
 
 
 def fake_hinglish(text, level, seed=0):
-    """Deterministic pseudo-Hinglish (Hindi fillers inserted between words) for dry runs."""
     rnd = random.Random(f"{level}-{seed}-{text}")
     rate = {"light": 0.15, "heavy": 0.6}[level]
     out = []
@@ -93,8 +77,6 @@ def fake_hinglish(text, level, seed=0):
 
 
 def write_fake_hien(out_dir, levels=("light", "heavy"), n_test=100):
-    """Writes test_{level}.json / dev_{level}.json / dev_conv_ids.json in the ESConv-HiEn format
-    with pseudo-Hinglish text, so every script can be dry-run without the real dataset."""
     import copy
     import json
     import os
@@ -119,16 +101,12 @@ def write_fake_hien(out_dir, levels=("light", "heavy"), n_test=100):
 
 
 class FakeLLM:
-    """Deterministic stand-in for codemixesc.llm.LLM. It answers every step of the pipeline in
-    the format the step asks for (sometimes with markdown, as real models do), choosing among
-    the options found in the prompt, so all control-flow branches get exercised."""
 
     def __init__(self, model="fake", fail_tags=None):
         import os
         self.model = model
         self.n_calls = 0
-        # steps whose calls fail like a blocked/empty answer (tests of the retry logic); also
-        # settable for a subprocess through CODEMIX_FAKE_FAIL="decide,single"
+
         env = os.environ.get("CODEMIX_FAKE_FAIL", "")
         self.fail_tags = set(fail_tags if fail_tags is not None else [t for t in env.split(",") if t])
 
@@ -193,7 +171,7 @@ class FakeLLM:
         return f"**Response:** [{s}] {r}\n**Reasoning:** I still prefer it."
 
     def _reflect(self, prompt, system, h, agent, say):
-        if h % 7 == 0:  # occasional disagreement -> tie -> judge
+        if h % 7 == 0:
             s, r = self._supported(system)
         else:
             disc = prompt.split("### Discussion content", 1)[-1].split("You should carefully analyze", 1)[0]

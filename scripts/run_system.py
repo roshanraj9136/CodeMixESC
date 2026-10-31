@@ -1,16 +1,3 @@
-"""Runs one system on one version of the test set and writes one JSON record per turn
-to results/runs/{system}/{version}.jsonl.
-
-The run is resumable: turns already in the output file are skipped, and turns that fail
-(API errors after all retries) go to {version}.errors.jsonl and are retried on the next run.
-Because every LLM call is cached, re-running or running an ablation that shares stages
-with an earlier run costs nothing for the shared part.
-
-Examples:
-    python scripts/run_system.py --system codemixesc --version heavy
-    python scripts/run_system.py --system zero_shot --version light          # all 1,210 turns
-    python scripts/run_system.py --system maesc --version en --dry_run --limit 20
-"""
 import argparse
 import concurrent.futures as cf
 import json
@@ -22,15 +9,14 @@ import time
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, all_samples, dev_ids, dev_samples, sampled_uids  # noqa: E402
-from codemixesc.systems import SYSTEMS, System, needs  # noqa: E402
+from codemixesc.esconv import ROOT, all_samples, dev_ids, dev_samples, sampled_uids
+from codemixesc.systems import SYSTEMS, System, needs
 
-DEFAULT_MODEL = "gemma-4-26b-a4b-it"  # ~10x faster than gemma-4-31b-it on the free tier; the judge uses 31b
+DEFAULT_MODEL = "gemma-4-26b-a4b-it"
 DELTA_PATH = os.path.join(ROOT, "results", "tuning", "delta.json")
 
 
 def default_gate():
-    """(delta, gate metric) from scripts/tune_delta.py; the proposal's initial 0.2 until it has run."""
     if os.path.exists(DELTA_PATH):
         tuned = json.load(open(DELTA_PATH, encoding="utf-8"))
         return float(tuned["delta"]), tuned.get("gate_metric", "hi_frac")
@@ -50,7 +36,6 @@ def git_commit():
 
 
 def build_components(spec, model, dry_run, exclude_conv=()):
-    """LLM, retriever and profiler for a system spec (stand-ins with dry_run)."""
     encoder, wants_profiler = needs(spec)
     if dry_run:
         from codemixesc.testing import FakeLLM, HashRetriever, LexiconProfiler
@@ -70,8 +55,6 @@ def build_components(spec, model, dry_run, exclude_conv=()):
 
 
 def load_done(path):
-    """Records already written, newest per uid. A line cut off by a crash is skipped (the turn
-    is simply run again)."""
     done = {}
     if os.path.exists(path):
         for line in open(path, encoding="utf-8"):
@@ -87,8 +70,6 @@ def load_done(path):
 
 
 def write_sorted(path, done):
-    """Rewrites the records in turn order, atomically (resumed and parallel runs append out of
-    order; a crash during the rewrite must not lose the file)."""
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         for uid in sorted(done, key=uid_key):
@@ -104,7 +85,7 @@ def uid_key(uid):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Run one system on one version of the test set and write one record per turn.")
     ap.add_argument("--system", required=True, help=", ".join(SYSTEMS))
     ap.add_argument("--version", required=True, choices=["en", "light", "heavy"])
     ap.add_argument("--split", default="test", choices=["test", "dev"])
@@ -118,7 +99,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="only the first N turns (smoke tests)")
     ap.add_argument("--out_dir", default=None)
     ap.add_argument("--dry_run", action="store_true", help="FakeLLM + stand-in profiler/retriever; writes to scratch/")
-    # custom variants (e.g. extra ablations) on top of a named system
+
     ap.add_argument("--name", help="name of a custom variant (output folder)")
     ap.add_argument("--encoder", choices=["roberta", "labse", "mpnet", "mpnet-ft"])
     ap.add_argument("--no_register", action="store_true")
@@ -142,7 +123,7 @@ def main():
         sys.exit("a modified system needs --name so it does not overwrite the named system's results")
     tuned_delta, tuned_metric = default_gate()
     if spec.get("gate") and not args.gate_metric and tuned_metric != "hi_frac":
-        spec["gate_metric"] = tuned_metric  # use the distance delta was tuned for
+        spec["gate_metric"] = tuned_metric
     if args.delta is not None and args.delta != tuned_delta and not args.name:
         sys.exit("a delta other than the tuned one makes a different system: give it a --name")
     if spec["kind"] == "pivot" and args.version == "en":
@@ -160,7 +141,7 @@ def main():
     meta_path = os.path.join(out_dir, name, f"{tag}.meta.json")
 
     if args.split == "dev":
-        samples, exclude = dev_samples(args.version), set(dev_ids())  # a dev query must not retrieve its own conversation
+        samples, exclude = dev_samples(args.version), set(dev_ids())
     else:
         samples, exclude = all_samples(args.version), ()
         single = os.environ.get("CODEMIX_BASELINE_SUBSET", "all")
@@ -177,14 +158,14 @@ def main():
             "started": datetime.now(timezone.utc).isoformat()}
 
     done = load_done(out_path)
-    if done and os.path.exists(meta_path):  # resuming: the earlier records must come from the same system
+    if done and os.path.exists(meta_path):
         prev = json.load(open(meta_path, encoding="utf-8"))
         diff = [k for k in CONFIG_KEYS if k in prev and prev[k] != meta[k]]
         if diff:
             sys.exit(f"{out_path} holds records of a different configuration ({', '.join(diff)} changed); "
                      "use --name for the new variant, or delete the old run")
-    write_sorted(out_path, done)  # also drops a line cut off by a crash before appending
-    # turns whose LLM calls failed (empty or blocked answers are never cached) are run again
+    write_sorted(out_path, done)
+
     todo = [s for s in samples if s["uid"] not in done or done[s["uid"]].get("n_failed_calls")]
     retry = sum(1 for s in samples if s["uid"] in done and done[s["uid"]].get("n_failed_calls"))
     print(f"[run] {name} on {tag}: {len(samples)} turns, {len(done)} done ({retry} with failed calls, retried), "
@@ -200,7 +181,7 @@ def main():
     def job(sample):
         try:
             return sample, system.respond(sample, args.version), None
-        except Exception as e:  # keep going; the turn is retried on the next run
+        except Exception as e:
             return sample, None, e
 
     ex = cf.ThreadPoolExecutor(max(1, args.workers))
@@ -227,7 +208,7 @@ def main():
                         eta = el / n_ok * (len(todo) - n_ok - n_err)
                         print(f"[run] {n_ok}/{len(todo)} done, {n_err} failed, {calls / n_ok:.1f} calls/turn, "
                               f"{el / 60:.1f} min elapsed, ETA {eta / 60:.1f} min", flush=True)
-        except KeyboardInterrupt:  # stop queued turns from making API calls; keep what is done
+        except KeyboardInterrupt:
             interrupted = True
             print("[run] interrupted: cancelling the remaining turns", flush=True)
             ex.shutdown(wait=False, cancel_futures=True)
@@ -244,7 +225,7 @@ def main():
     print(f"[run] wrote {out_path}: {len(done)} records, {missing} missing, {failed_calls} with failed LLM calls "
           f"(re-run to retry them)", flush=True)
     if interrupted:
-        os._exit(130)  # do not wait for the API calls still in flight
+        os._exit(130)
     sys.exit(1 if missing else (2 if failed_calls else 0))
 
 

@@ -1,14 +1,9 @@
-"""Renders the CodeMixESC prompts for an example Hinglish seeker into report/generated/, so the
-report's prompt appendix always shows exactly what the code sends.
-
-    python scripts/export_prompts.py
-"""
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc import prompts as P  # noqa: E402
-from codemixesc.esconv import ROOT  # noqa: E402
+from codemixesc import prompts as P
+from codemixesc.esconv import ROOT
 
 R = {"cmi": 0.38, "cmi_last": 0.41, "hi_frac": 0.62, "dominant": "Hindi", "script": "Roman", "n_lang": 40,
      "n_hi_strong": 21}

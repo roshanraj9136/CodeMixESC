@@ -1,15 +1,3 @@
-"""The evaluated systems. System(name, ...).respond(sample, version) returns one run record
-(a dict per turn) for a turn sample of codemixesc.esconv.
-
-    zero_shot    single call, base zero-shot prompt
-    fewshot_cot  single call, strategy definitions + 4 worked examples + step-by-step instruction
-    maesc        MultiAgentESC: English roberta retriever, register-blind prompts
-    pivot        Hinglish->English translation, MultiAgentESC, English->seeker's register (+2 calls)
-    codemixesc   profiler + cross-lingual retriever + register-aware prompts + Register Gate
-    cmx_noft     codemixesc with the multilingual retriever before fine-tuning
-    cmx_noxl     codemixesc with the base paper's English retriever
-    (cmx_nogate is codemixesc's pre-gate response; it needs no run of its own)
-"""
 import random
 import re
 
@@ -31,7 +19,6 @@ FEWSHOT_TARGETS = ["Question", "Reflection of feelings", "Affirmation and Reassu
 
 
 def needs(name_or_spec):
-    """Which heavy components a system needs: (retriever encoder or None, profiler?)."""
     spec = SYSTEMS[name_or_spec] if isinstance(name_or_spec, str) else name_or_spec
     enc = spec.get("encoder") if spec["kind"] in ("multi", "pivot") else None
     return enc, bool(spec.get("register") or spec.get("gate") or spec["kind"] == "pivot")
@@ -45,16 +32,12 @@ def dev_conv_ids():
 
 
 def fewshot_examples(dataset=None):
-    """Worked examples for the few-shot CoT baseline, drawn from the conversations that the base
-    main.py's get_cases() selects (dataset shuffled with seed 42, conversations 400-420), never
-    from test or dev conversations. The chain of thought uses the conversation's annotations
-    (emotion_type, situation, problem_type); one example per strategy in FEWSHOT_TARGETS."""
     data = dataset or load_esconv()
     order = list(range(len(data)))
-    random.Random(42).shuffle(order)  # same permutation as random.seed(42); random.shuffle(samples)
+    random.Random(42).shuffle(order)
     banned = set(range(100)) | dev_conv_ids()
     picked = {}
-    for ci in order[400:420] + order[420:] + order[:400]:  # widen only if a strategy is missing
+    for ci in order[400:420] + order[420:] + order[:400]:
         if ci in banned:
             continue
         conv = data[ci]
@@ -86,7 +69,6 @@ class System:
             raise ValueError(f"{name} needs the Code-Mix Profiler")
         self._fewshot = fewshot_examples() if self.kind == "fewshot_cot" else None
 
-    # ------------------------------------------------------------------ public
     def respond(self, sample, version):
         log = A.CallLog(self.llm)
         rec = {"uid": sample["uid"], "conv_id": sample["conv_id"], "turn": sample["turn"], "version": version,
@@ -112,21 +94,17 @@ class System:
         rec.update(log.summary())
         return rec
 
-    # ------------------------------------------------------------------ baselines
     def _fewshot_turn(self, log, sample):
         prompt = P.FEWSHOT_COT.format(strategy_definitions=P.strategy_definitions_text(), examples=self._fewshot,
                                       context=sample["context"])
         raw = log.ask(prompt, max_tokens=A.ANALYSIS_MAX_TOKENS, tag="fewshot")
         strategy = A.parse_strategies(raw)
-        # a rambling or cut-off chain of thought without a Response line has no answer
+
         resp = A.clean_response(A.parse_single(raw)) if re.search(r"Response\s*:", A.plain(raw)) else "None"
         return {"path": "single", "complex": None, "pred_strategy": strategy[0] if strategy else "None", "raw": raw,
                 "pre_gate_response": resp, "response": resp, "gate": None}
 
-    # ------------------------------------------------------------------ MultiAgentESC / CodeMixESC
     def _multiagent_turn(self, log, sample, R_prompt, R_gate):
-        """main.py's per-turn control flow. R_prompt is the register profile shown to the agents
-        (None = original register-blind prompts); R_gate drives the Register Gate."""
         out = {}
         context, post = sample["context"], sample["post"]
         if sample["early"]:
@@ -148,7 +126,7 @@ class System:
                 cands.append([s, r])
             out["candidates"] = cands
             valid = [(s, r) for s, r in cands if A.usable(r)]
-            if not valid:  # main.py: no valid strategy -> single zero-shot agent
+            if not valid:
                 response, _ = A.single_agent_response(log, context, R_prompt, tag="fallback")
                 out["path"] = "fallback"
             else:
@@ -182,8 +160,6 @@ class System:
         return out
 
     def _pivot_turn(self, log, sample, R):
-        """Translate-pivot: the whole context is translated into English (1 call), MultiAgentESC
-        answers in English, and the answer is translated into the seeker's register (1 call)."""
         msgs_en, complete = A.translate_context(log, sample["context_msgs"])
         en = dict(sample, context_msgs=msgs_en, context=json2natural(msgs_en), post=msgs_en[-1]["content"])
         out = self._multiagent_turn(log, en, None, None)

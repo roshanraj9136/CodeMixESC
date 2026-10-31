@@ -1,5 +1,3 @@
-"""LLM client: caching, retries, empty-answer handling, backends and the rate limiter, with the
-HTTP layer mocked (no network, no key)."""
 import io
 import json
 import time
@@ -52,15 +50,15 @@ def test_gemini_call_cache_and_request_shape(client):
     text, meta = llm.chat(msgs, system="SYS", max_tokens=50, tag="t")
     assert text == "Response: hi" and not meta["cached"] and meta["calls"] == 1 and meta["in"] == 11
     body = calls[0]["body"]
-    # system prepended to the first user turn; consecutive user messages merged; roles user/model
+
     assert body["contents"] == [{"role": "user", "parts": [{"text": "SYS\n\na\n\nb"}]},
                                 {"role": "model", "parts": [{"text": "c"}]}]
     assert body["generationConfig"] == {"temperature": 0.0, "maxOutputTokens": 50, "thinkingConfig": {"thinkingLevel": "minimal"}}
     assert "gemma-4-26b-a4b-it:generateContent?key=test-key" in calls[0]["url"]
-    text2, meta2 = llm.chat(msgs, system="SYS", max_tokens=50, tag="t")  # identical -> cache, no HTTP
+    text2, meta2 = llm.chat(msgs, system="SYS", max_tokens=50, tag="t")
     assert text2 == text and meta2["cached"] and meta2["calls"] == 0 and len(calls) == 1
     calls = client([gemini("other"), gemini('{"a": 1}')])
-    assert llm.chat(msgs, system="SYS", max_tokens=51)[0] == "other"  # any parameter change is a new key
+    assert llm.chat(msgs, system="SYS", max_tokens=51)[0] == "other"
     assert llm.chat(msgs, system="SYS", max_tokens=50, json_mode=True)[0] == '{"a": 1}'
     assert calls[-1]["body"]["generationConfig"]["responseMimeType"] == "application/json"
 
@@ -86,8 +84,8 @@ def test_blocked_answer_retried_before_caching(client):
     assert text == "finally" and meta["calls"] == 3 and len(calls) == 3
     calls = client([gemini("", finish="SAFETY")] * 3 + [gemini("later ok")])
     text, meta = llm.chat([{"role": "user", "content": "q2"}])
-    assert text == "" and meta["calls"] == 3 and meta["failed"]  # gives up after 3 tries ...
-    text, meta = llm.chat([{"role": "user", "content": "q2"}])  # ... but never caches the failure
+    assert text == "" and meta["calls"] == 3 and meta["failed"]
+    text, meta = llm.chat([{"role": "user", "content": "q2"}])
     assert text == "later ok" and not meta["cached"]
     assert llm.chat([{"role": "user", "content": "q2"}])[1]["cached"]
 
@@ -121,8 +119,8 @@ def test_pacific_time_dst():
     pdt = L._pacific_now(datetime(2026, 10, 3, 12, 0, tzinfo=timezone.utc))
     pst = L._pacific_now(datetime(2026, 11, 15, 12, 0, tzinfo=timezone.utc))
     assert pdt.hour == 5 and pst.hour == 4
-    assert L._pacific_now(datetime(2026, 11, 1, 8, 59, tzinfo=timezone.utc)).hour == 1  # still PDT
-    assert L._pacific_now(datetime(2026, 11, 1, 9, 0, tzinfo=timezone.utc)).hour == 1   # 01:00 PST again
+    assert L._pacific_now(datetime(2026, 11, 1, 8, 59, tzinfo=timezone.utc)).hour == 1
+    assert L._pacific_now(datetime(2026, 11, 1, 9, 0, tzinfo=timezone.utc)).hour == 1
 
 
 def test_openai_compatible_backend(client):
@@ -152,11 +150,11 @@ def test_limiter_enforces_rpm(tmp_path, monkeypatch):
     for _ in range(3):
         lim.acquire(10)
     assert waits == []
-    lim.acquire(10)  # the 4th request in the same minute has to wait for the window to slide
+    lim.acquire(10)
     assert sum(waits) >= 59 and lim.used_today() == 4
     big = L._Limiter("big", rpm=100, tpm=1000, rpd=100)
-    t = big.acquire(5000)  # a prompt larger than the whole TPM budget still goes out (no deadlock)
-    big.settle(t, 300)     # the reported token count replaces the estimate
+    t = big.acquire(5000)
+    big.settle(t, 300)
     assert big.db.execute("SELECT SUM(tok) FROM win WHERE model='big'").fetchone()[0] == 300
     capped = L._Limiter("capped", rpm=100, tpm=10 ** 9, rpd=1)
     capped.acquire(1)

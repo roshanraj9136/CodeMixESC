@@ -1,19 +1,3 @@
-"""Tunes the Register Gate threshold delta on the development set (proposal: initially 0.2,
-tuned on a dev set).
-
-CodeMixESC is run on dev turns without the gate. The gate is then applied once per turn
-with the smallest delta of the grid. Whether a rewrite is accepted does not depend on delta
-(it is kept only if its register is closer to the seeker's), so every delta of the grid can
-be scored exactly without further LLM calls: for delta d, a turn is gated iff its register
-distance (profiler.register_distance) exceeds d or the script differs.
-
-Selection rule (cheapest threshold that gets essentially the best register match without
-hurting quality): among the deltas whose pooled mean distance is within --tol of the best one
-and whose chrF is at least the ungated chrF minus --max_chrf_drop, take the largest.
-
-    python scripts/tune_delta.py                 # light + heavy dev conversations
-    python scripts/tune_delta.py --dry_run
-"""
 import argparse
 import concurrent.futures as cf
 import json
@@ -22,9 +6,9 @@ import random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc import agents as A  # noqa: E402
-from codemixesc.esconv import ROOT, dev_ids, dev_samples  # noqa: E402
-from codemixesc.systems import SYSTEMS, System  # noqa: E402
+from codemixesc import agents as A
+from codemixesc.esconv import ROOT, dev_ids, dev_samples
+from codemixesc.systems import SYSTEMS, System
 
 GRID = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35]
 
@@ -59,8 +43,6 @@ def run_level(level, args, llm, retriever, profiler):
 
 
 def score(rows, d):
-    """Outcome of delta d (None = no gate): (final responses, per-turn gate distances, per-turn
-    CMI gaps, number of gate calls)."""
     finals, dists, gaps, calls = [], [], [], 0
     for r in rows:
         fire = d is not None and (r["dist_pre"] > d or r["bad_script"])
@@ -73,7 +55,7 @@ def score(rows, d):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Tune the Register Gate threshold delta on the development set.")
     ap.add_argument("--levels", default="light,heavy")
     ap.add_argument("--grid", default=",".join(str(g) for g in GRID))
     ap.add_argument("--max_turns", type=int, default=80, help="dev turns per level (seeded sample; 0 = all)")
@@ -102,12 +84,12 @@ def main():
         if args.encoder == "mpnet-ft" and not os.path.exists(os.path.join(ENCODERS["mpnet-ft"], "config.json")):
             sys.exit("models/codemix-retriever is missing: train the retriever first (or pass --encoder mpnet)")
         llm, profiler = LLM(args.model, thinking="minimal"), Profiler()
-        retriever = Retriever(args.encoder, exclude_conv=set(dev_ids()))  # never retrieve the query's own conversation
+        retriever = Retriever(args.encoder, exclude_conv=set(dev_ids()))
 
     rows = {lv: run_level(lv, args, llm, retriever, profiler) for lv in levels}
     pooled = [r for lv in levels for r in rows[lv]]
     table = []
-    for d in [None] + args.grid:  # None = no gate
+    for d in [None] + args.grid:
         entry = {"delta": d}
         for name, rr in [(lv, rows[lv]) for lv in levels] + [("all", pooled)]:
             finals, dists, gaps, calls = score(rr, d)
@@ -118,7 +100,7 @@ def main():
     best = min(e["all"]["distance"] for e in table[1:])
     ok = [e for e in table[1:] if e["all"]["distance"] <= best + args.tol
           and e["all"]["chrf"] >= base["chrf"] - args.max_chrf_drop]
-    # if every delta costs chrF, take the least harmful one (ties: the larger delta, fewer calls)
+
     chosen = max(ok, key=lambda e: e["delta"]) if ok else max(table[1:], key=lambda e: (e["all"]["chrf"], e["delta"]))
 
     out_dir = args.out or os.path.join(ROOT, "scratch" if args.dry_run else "results", "tuning")

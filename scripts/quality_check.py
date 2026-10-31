@@ -1,16 +1,3 @@
-"""Quality check of ESConv-HiEn (proposal, Section IV, step 3): a random ~20% of the test
-conversations is rated for naturalness and meaning preservation on a 1-5 scale by the author
-(and bilingual peers where available); conversations scoring below 3 are rewritten and
-checked again. An LLM rater (gemma-4-31b-it) rates every conversation as a complement, and its
-agreement with the human ratings is reported.
-
-    python scripts/quality_check.py sample              # pick the 20% sample, write sheets + HTML views
-    python scripts/quality_check.py llm                 # LLM ratings for all conversations
-    (fill data/esconv_hien/qc/sheet_{level}.csv; several raters: copy the sheet, one file each)
-    python scripts/quality_check.py report --sheets data/esconv_hien/qc/sheet_light.csv ...
-    python scripts/quality_check.py fix                 # rewrite flagged conversations with feedback
-    python scripts/quality_check.py llm --only_fixed    # check the rewritten conversations again
-"""
 import argparse
 import csv
 import glob
@@ -23,7 +10,7 @@ import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, hien_dir  # noqa: E402
+from codemixesc.esconv import ROOT, hien_dir
 
 LEVELS = ("light", "heavy")
 JUDGE_MODEL = "gemma-4-31b-it"
@@ -67,7 +54,6 @@ def conv_key(conv, i):
     return int(conv.get("esconv_index", i))
 
 
-# ------------------------------------------------------------------ sample + sheets
 def cmd_sample(args):
     n = len(load_level(LEVELS[0]))
     ids = sorted(random.Random(args.seed).sample(range(n), round(args.frac * n)))
@@ -104,7 +90,6 @@ def write_view(level, convs, ids, path):
         f.write(f"<!doctype html><meta charset='utf-8'><title>ESConv-HiEn {level}</title>{style}" + "\n".join(rows))
 
 
-# ------------------------------------------------------------------ LLM rater
 def parse_rating(text):
     m = re.search(r"\{.*\}", text or "", re.S)
     if not m:
@@ -134,7 +119,7 @@ def rate_conv(llm, conv, level):
 
 def cmd_llm(args):
     if args.dry_run:
-        def llm(prompt, **kw):  # deterministic stand-in rater
+        def llm(prompt, **kw):
             return '{"naturalness": %d, "meaning": 4, "problem_turns": [1], "comment": "stiff"}' % (2 + len(prompt) % 4)
     else:
         from codemixesc.llm import LLM
@@ -165,9 +150,7 @@ def cmd_llm(args):
                   f"{sum(min(r['naturalness'], r['meaning']) < THRESHOLD for r in got)} below {THRESHOLD}")
 
 
-# ------------------------------------------------------------------ report
 def read_sheets(paths):
-    """{level:conv_id: {"naturalness": mean over raters, "meaning": ..., "n_raters": k}}"""
     acc = {}
     for p in paths:
         with open(p, encoding="utf-8-sig") as f:
@@ -182,7 +165,6 @@ def read_sheets(paths):
 
 
 def weighted_kappa(a, b, k=5):
-    """Quadratic-weighted Cohen's kappa for ratings in 1..k."""
     import numpy as np
     a, b = np.asarray(a, int) - 1, np.asarray(b, int) - 1
     obs = np.zeros((k, k))
@@ -209,10 +191,10 @@ def cmd_report(args):
             row[f"llm_{dim}"] = sum(v[dim] for v in L.values()) / len(L) if L else float("nan")
             row[f"human_{dim}"] = sum(v[dim] for v in H.values()) / len(H) if H else float("nan")
             hv, lv = [H[k][dim] for k in both], [L[k][dim] for k in both]
-            if len(both) >= 3 and len(set(hv)) > 1 and len(set(lv)) > 1:  # correlations need variance
+            if len(both) >= 3 and len(set(hv)) > 1 and len(set(lv)) > 1:
                 row[f"spearman_{dim}"] = float(spearmanr(hv, lv).correlation)
                 row[f"kappa_{dim}"] = weighted_kappa([round(x) for x in hv], lv)
-        for k in set(L) | set(H):  # human ratings take precedence where they exist
+        for k in set(L) | set(H):
             r = H.get(k) or L.get(k)
             if min(r["naturalness"], r["meaning"]) < THRESHOLD:
                 flagged[k] = {"naturalness": r["naturalness"], "meaning": r["meaning"],
@@ -253,7 +235,6 @@ def cmd_report(args):
     print(f"[qc] {len(flagged)} conversations below {THRESHOLD} -> {os.path.join(qc_dir(), 'flagged.json')}")
 
 
-# ------------------------------------------------------------------ fix
 def cmd_fix(args):
     flagged = json.load(open(os.path.join(qc_dir(), "flagged.json"), encoding="utf-8"))
     if not flagged:
@@ -296,7 +277,7 @@ def cmd_fix(args):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Quality check of ESConv-HiEn for naturalness and meaning preservation.")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("sample")
     p.add_argument("--frac", type=float, default=0.2)

@@ -1,21 +1,3 @@
-"""The agents of MultiAgentESC on the cached LLM client, plus the CodeMixESC Register Gate.
-
-Every step mirrors the function of the same name in external/MultiAgentESC/multiagent.py
-(same prompts, token limits and control flow). AutoGen's round-robin GroupChat with
-max_round = n_agents + 1 is replicated by group_chat(): the admin posts the prompt, then
-agent i speaks once and sees the prompt and the replies of agents 0..i-1 (AutoGen broadcasts
-every message to every agent); chat_history[1:] is the list of the n replies. AutoGen passes
-the speaker's name in a separate field; our backends have none, so earlier replies are
-prefixed with "agent_j: ".
-
-Output parsing follows the base regexes with the same fixes for every system, so another
-LLM's formatting habits do not break the pipeline:
-- markdown emphasis and headings are removed first ("**Response:** [...]" defeats the base regex);
-- strategy names may contain '-' (the base [a-zA-Z ]+ can never parse "Self-disclosure");
-- strategy names are canonicalised (case, aliases) so votes for one strategy are counted together;
-- the strategy set keeps first-mention order (the base list(set(...)) depends on PYTHONHASHSEED);
-- when an output cannot be parsed, the last valid response is kept instead of the string "None".
-"""
 import json
 import re
 from collections import Counter
@@ -23,7 +5,7 @@ from collections import Counter
 from . import prompts as P
 from .profiler import register_distance, target_cmi, target_hi_frac
 
-GEN_MAX_TOKENS = 160  # base: 100. The 30-word limit is in the prompt; Roman Hindi needs more sub-word tokens.
+GEN_MAX_TOKENS = 160
 ANALYSIS_MAX_TOKENS = 400
 DECIDE_MAX_TOKENS = 100
 
@@ -48,10 +30,7 @@ _ALIASES = {
 _ALIAS_KEYS = sorted(_ALIASES, key=len, reverse=True)
 
 
-# ------------------------------------------------------------------ call accounting
 class CallLog:
-    """Wraps an LLM for one turn and records every logical call (cached or not), so that LLM
-    calls and latency per turn can be reported. Latency is the API time of the original call."""
 
     def __init__(self, llm):
         self.llm = llm
@@ -75,23 +54,20 @@ class CallLog:
                 "calls_by_tag": dict(Counter(re.sub(r"\d+$", "", c["tag"]) for c in self.calls))}
 
 
-# ------------------------------------------------------------------ parsing helpers
 def strip_think(text):
     text = text or ""
     return text.split("</think>", 1)[1].strip() if "</think>" in text else text
 
 
 def plain(text):
-    """Removes reasoning blocks and markdown decoration before regex parsing."""
     text = strip_think(text)
     text = text.replace("**", "").replace("__", "").replace("`", "")
-    text = re.sub(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])", r"\1", text)  # *emphasis*
+    text = re.sub(r"(?<![\w*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![\w*])", r"\1", text)
     text = re.sub(r"^[ \t]*#+[ \t]*", "", text, flags=re.M)
     return text.strip()
 
 
 def canonical_strategy(name):
-    """Maps an LLM's spelling of a strategy to one of the 8 ESConv names, or None."""
     if not name:
         return None
     s = re.sub(r"\s+", " ", str(name).strip().strip("[]()*:.\"'`").replace("&", "and").replace("_", " ")).lower()
@@ -102,8 +78,6 @@ def canonical_strategy(name):
 
 
 def parse_strategies(text):
-    """Strategies named on 'Strategy:' lines, canonical, in first-mention order
-    (base: clean_strategy(re.findall(r'Strategy:\\s*\\[?([a-zA-Z ]+)\\]?', ...)))."""
     found = []
     for m in re.finditer(r"Strategy\s*:\s*[\[(\"'“]?\s*(" + _STRAT + ")", plain(text)):
         c = canonical_strategy(m.group(1))
@@ -113,7 +87,6 @@ def parse_strategies(text):
 
 
 def _unwrap(text):
-    """Removes one pair of quotes/brackets around the whole text (not around a part of it)."""
     t = (text or "").strip()
     for a, b in (('"', '"'), ("'", "'"), ("“", "”"), ("[", "]"), ("(", ")")):
         if len(t) > 1 and t.startswith(a) and t.endswith(b):
@@ -128,11 +101,10 @@ def _cut_reasoning(text):
 
 
 def _split_tag(text):
-    """'[Question] How ...' / 'Question: How ...' / '(Question) How ...' -> ('Question', 'How ...')."""
     t = (text or "").strip()
     m = re.match(r"^[\[(]\s*(" + _STRAT + r")\s*[\])]\s*[:\-–]?\s*(.*)$", t, re.S)
     if m and (canonical_strategy(m.group(1)) or (m.group(2).strip() and len(m.group(1).split()) <= 4)):
-        return canonical_strategy(m.group(1)), m.group(2).strip()  # a non-standard tag is dropped too
+        return canonical_strategy(m.group(1)), m.group(2).strip()
     m = re.match(r"^(" + _STRAT + r")\s*[:\-–]\s+(.*)$", t, re.S)
     if m and canonical_strategy(m.group(1)) and len(m.group(1).split()) <= 4:
         return canonical_strategy(m.group(1)), m.group(2).strip()
@@ -140,8 +112,6 @@ def _split_tag(text):
 
 
 def parse_tagged(text):
-    """'Response: [strategy] response' -> (strategy or None, response or None).
-    Base regex: Response:\\s*\\[([a-zA-Z ]+)\\](.*) on one line."""
     t = plain(text)
     m = re.search(r"Response\s*:\s*(.*)", t)
     if not m:
@@ -152,8 +122,6 @@ def parse_tagged(text):
 
 
 def parse_single(text):
-    """Zero-shot answer (base: re.findall(r'Response:\\s*(.*)', response)[0]); falls back to the
-    first content line when the label is missing, instead of returning "None"."""
     t = plain(text)
     m = re.search(r"Response\s*:\s*(.*)", t)
     if m:
@@ -164,14 +132,11 @@ def parse_single(text):
 
 
 def parse_label(text, label, default):
-    """First 'Label: value' (base: only the first line, default 'Negative' / 'Not mention')."""
     m = re.search(label + r"\s*:\s*(.+)", plain(text))
     return m.group(1).strip() if m else default
 
 
 def parse_yes_no(text):
-    """Decision maker. Base: '"yes" in response.lower()', which also fires on 'eyes' or
-    'yesterday' inside the explanation; we read the first YES/NO token and fall back to it."""
     t = plain(text)
     m = re.search(r"1\.\s*\[?\s*(YES|NO)\b", t, re.I) or re.search(r"\b(YES|NO)\b", t, re.I)
     return m.group(1).upper() == "YES" if m else "yes" in t.lower()
@@ -182,13 +147,11 @@ _PLACEHOLDERS = {"", "none", "response", "[response]", "[strategy] [response]", 
                  "[rewritten response]", "translated reply", "[translated reply]"}
 
 
-# "original response", "[Original/refined response]", "The original response is appropriate ..."
 _META_RE = re.compile(r"^\W*(the\s+)?(original|origianl|refined)(\s*(/|or)\s*(original|origianl|refined))?\s+"
                       r"(response|version)\b", re.I)
 
 
 def usable(response):
-    """False for empty answers and for echoes of the answer template or of the instructions."""
     t = (response or "").strip()
     return bool(t) and t.lower() not in _PLACEHOLDERS and not _META_RE.match(t)
 
@@ -198,9 +161,6 @@ _TRAILING_NOTE = re.compile(r"\s*[(\[](?:translation|translated|english|in engli
 
 
 def clean_response(text):
-    """Final clean-up applied to the output of every system alike: labels, a leading strategy
-    tag, wrapping quotes/brackets and a trailing '(Translation: ...)' / '(25 words)' note.
-    Idempotent (repeated until nothing changes)."""
     t = re.sub(r"\s+", " ", (text or "")).strip()
     while True:
         prev = t
@@ -218,7 +178,6 @@ def _overlap(a, b):
 
 
 def match_candidate(strategy, response, candidates):
-    """The candidate (strategy, response) an agent's answer refers to, or None."""
     names = [s for s, _ in candidates]
     if strategy in names:
         return candidates[names.index(strategy)]
@@ -229,7 +188,6 @@ def match_candidate(strategy, response, candidates):
     return None
 
 
-# ------------------------------------------------------------------ AutoGen GroupChat replica
 def group_chat(log, prompt, personas, max_tokens=ANALYSIS_MAX_TOKENS, tag="group"):
     replies = []
     for i, persona in enumerate(personas):
@@ -239,7 +197,6 @@ def group_chat(log, prompt, personas, max_tokens=ANALYSIS_MAX_TOKENS, tag="group
     return replies
 
 
-# ------------------------------------------------------------------ Stage 1: dialogue analysis
 def is_complex(log, context):
     raw = log.ask(P.BEHAVIOR_CONTROL.format(context=context), max_tokens=DECIDE_MAX_TOKENS, tag="decide")
     return parse_yes_no(raw), raw
@@ -252,7 +209,6 @@ def single_agent_response(log, context, R=None, tag="single"):
 
 
 def analyse(log, context, R=None):
-    """Emotion -> cause -> intention agents (each sees the previous analyses), as in main.py."""
     tpl = (lambda t: t) if R is None else (lambda t: P.analysis_prompt(t, R))
     emo = strip_think(log.ask(tpl(P.GET_EMOTION).format(context=context), tag="emotion"))
     cau = strip_think(log.ask(tpl(P.GET_CAUSE).format(emo_and_reason=emo, context=context), tag="cause"))
@@ -263,7 +219,6 @@ def analyse(log, context, R=None):
             "emo_and_reason": emo, "cau_and_reason": cau, "int_and_reason": inten}
 
 
-# ------------------------------------------------------------------ Stage 2: strategy deliberation
 def get_strategy(log, retriever, context, an, post, n=10, agent_num=3):
     pairs, idx = retriever.pairs(post, k=n)
     examples = "\n\n".join(f"{p}\n{r}" for p, r in pairs)
@@ -275,7 +230,6 @@ def get_strategy(log, retriever, context, an, post, n=10, agent_num=3):
 
 
 def examples_for(pairs, strategy):
-    """Retrieved cases of one strategy, '<post\\n[strategy] response>' blocks (main.py)."""
     out = ""
     for post, tagged in pairs:
         if tagged.split("]", 1)[0].strip("[").strip() == strategy:
@@ -283,14 +237,13 @@ def examples_for(pairs, strategy):
     return out.strip()
 
 
-# ------------------------------------------------------------------ Stage 3: response generation
 def response_with_strategy(log, context, an, strategy, examples, R=None):
     tpl = P.RESPONSE_WITH_STRATEGY if R is None else P.response_with_strategy_register(R)
     raw = log.ask(tpl.format(context=context, emo_and_reason=an["emo_and_reason"], cau_and_reason=an["cau_and_reason"],
                              int_and_reason=an["int_and_reason"], strategy=strategy, examples=examples),
                   max_tokens=GEN_MAX_TOKENS, tag="generate")
     _, resp = parse_tagged(raw)
-    if not resp:  # base fallback: text after the strategy name, else "None"
+    if not resp:
         t = plain(raw)
         resp = _unwrap(t.split(strategy, 1)[1].lstrip("]):- ").strip()) if strategy in t else None
     return resp or "None", raw
@@ -311,8 +264,6 @@ def reflect(log, context, an, debate_history, responses, R=None):
 
 
 def vote(results, candidates):
-    """Majority vote over the reflection round (base vote()). Each answer counts for the
-    candidate it names; the text the first voter gave for a strategy is kept, as in the base."""
     count, s2r = {}, {}
     for result in results:
         head = re.split(r"\n\s*Reasoning", plain(result), maxsplit=1)[0]
@@ -330,34 +281,27 @@ def vote(results, candidates):
 
 
 def judge(log, context, pool):
-    """Tie-breaking judge (unchanged prompt). pool: list of (strategy, response)."""
     template = "\n\n".join(f"[{s}] {r}" for s, r in pool)
     raw = log.ask(P.JUDGE.format(context=context, template_responses=template), tag="judge")
     strategy, response = parse_tagged(raw)
     cand = match_candidate(strategy, response, pool)
-    if cand is None:  # unparseable verdict: first tied candidate instead of the base's "None"
+    if cand is None:
         return pool[0][0], pool[0][1], raw
     return cand[0], response if usable(response) else cand[1], raw
 
 
 def self_reflection(log, context, pred_strategy, response, R=None):
-    """Refiner. Its strategy tag is discarded as in main.py; an unparseable answer keeps the input."""
     tpl = P.SELF_REFLECTION if R is None else P.self_reflection_register(R)
     raw = log.ask(tpl.format(context=context, pred_strategy=pred_strategy, response=response), tag="refine")
     _, refined = parse_tagged(raw)
     return (refined if usable(refined) else response), raw
 
 
-# ------------------------------------------------------------------ CodeMixESC Register Gate
 def script_mismatch(R, reg):
     return int(reg["script"] not in ("None", R["script"]) and R["script"] != "None")
 
 
 def register_gate(log, profiler, context, R, strategy, response, delta, metric="hi_frac"):
-    """Register Gate: if the response's register is more than delta away from the seeker's
-    (profiler.register_distance) or its script differs, refine once more with an explicit
-    register instruction (at most one extra call). The rewrite is kept only if its register is
-    closer to the seeker's, so the gate can never make the register match worse."""
     before = profiler.register_of(response)
     dist = register_distance(R, before, metric)
     bad_script = script_mismatch(R, before)
@@ -367,8 +311,8 @@ def register_gate(log, profiler, context, R, strategy, response, delta, metric="
             "hi_frac_before": before["hi_frac"], "script_before": before["script"], "distance_before": dist,
             "cmi_after": before["cmi"], "hi_frac_after": before["hi_frac"], "script_after": before["script"],
             "distance_after": dist, "calls": 0, "latency": 0.0}
-    if (dist <= delta and not bad_script) or unusable:  # a failed answer stays failed: the gate
-        return response, info                             # must not answer turns the pipeline could not
+    if (dist <= delta and not bad_script) or unusable:
+        return response, info
     strategy = strategy if strategy in P.STRATEGIES else None
     raw = log.ask(P.gate_prompt(context, R, response, strategy, P.describe_mismatch(R, before)),
                   max_tokens=GEN_MAX_TOKENS, tag="gate")
@@ -389,9 +333,7 @@ def register_gate(log, profiler, context, R, strategy, response, delta, metric="
     return response, info
 
 
-# ------------------------------------------------------------------ translate-pivot baseline
 def parse_turns(text, n):
-    """{"turns": [{"id": i, "text": ...}]} (or a bare list) -> {id: text}."""
     t = strip_think(text).strip()
     m = re.search(r"\{.*\}|\[.*\]", t, re.S)
     if not m:
@@ -414,8 +356,6 @@ def parse_turns(text, n):
 
 
 def translate_context(log, msgs, attempts=3):
-    """Hinglish -> English translation of the whole dialogue context in one call (first extra
-    call of the pivot). Untranslatable turns are kept as they are."""
     got = {}
     for attempt in range(attempts):
         raw = log.ask(P.translate_in_prompt(msgs, attempt), max_tokens=8192, tag="translate_in")
@@ -426,7 +366,6 @@ def translate_context(log, msgs, attempts=3):
 
 
 def translate_response(log, response, R):
-    """English -> the seeker's register (second extra call of the pivot)."""
     raw = log.ask(P.TRANSLATE_OUT.format(register_instruction=P.register_instruction(R), response=response),
                   max_tokens=GEN_MAX_TOKENS, tag="translate_out")
     out = parse_single(raw)

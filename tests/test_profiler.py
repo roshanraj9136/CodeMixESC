@@ -1,6 +1,3 @@
-"""Code-Mix Profiler: CMI definition, tokenisation, script detection, label mapping, and the
-real tagging code (word alignment, chunking) on a tiny local BERT whose predictions are forced
-through its classifier bias (huggingface.co is not needed)."""
 import os
 
 import pytest
@@ -12,9 +9,9 @@ from codemixesc.testing import LexiconProfiler
 
 def test_cmi_definition():
     assert P.cmi_from_tags([]) == 0.0
-    assert P.cmi_from_tags(["X", "X"]) == 0.0  # n == u
-    assert P.cmi_from_tags(["EN", "EN", "X"]) == 0.0  # monolingual
-    assert P.cmi_from_tags(["EN", "HI"]) == pytest.approx(0.5)  # balanced mix is the maximum
+    assert P.cmi_from_tags(["X", "X"]) == 0.0
+    assert P.cmi_from_tags(["EN", "EN", "X"]) == 0.0
+    assert P.cmi_from_tags(["EN", "HI"]) == pytest.approx(0.5)
     assert P.cmi_from_tags(["EN", "HI", "HI", "X"]) == pytest.approx(1 - 2 / 3)
     assert P.cmi_from_tags(["HI"] * 3 + ["EN"]) == pytest.approx(0.25)
 
@@ -45,7 +42,7 @@ def test_lexicon_profiler_profile_and_register():
     assert P.describe_register(E)[0].startswith("plain English")
     assert P.describe_register(R)[0].startswith("Hindi-dominant Hinglish")
     assert prof.profile([])["cmi"] == 0.0
-    # long texts are chunked, never truncated: every word keeps its own tag
+
     long = " ".join(["mujhe bahut dukh hai and I feel lost"] * 60)
     st = prof.stats(long)
     assert st["n_lang"] == 480 and st["hi"] == 240
@@ -78,17 +75,16 @@ def test_real_profiler_alignment_and_other_label(tmp_path):
     tags = hi.tags(words)
     assert [t for _, t in hi.tag_many([words])[0]] == tags
     assert tags == ["HI", "HI", "HI", "X", "X", "X", "HI", "X", "X", "HI"]
-    long = " ".join(["word"] * 350)  # 350 words -> 4 chunks, all labelled by the model
+    long = " ".join(["word"] * 350)
     assert hi.tags(long) == ["HI"] * 350
     other = P.Profiler(device="cpu", model_name=_tiny_lid(str(tmp_path / "other"), [0.0, 0.0, 10.0]))
-    assert other.stats("I am fine")["n_lang"] == 0 and other.cmi("I am fine") == 0.0  # OTHER -> X
+    assert other.stats("I am fine")["n_lang"] == 0 and other.cmi("I am fine") == 0.0
     en = P.Profiler(device="cpu", model_name=_tiny_lid(str(tmp_path / "en"), [10.0, 0.0, 0.0]))
     R = en.profile(["I am fine", "मुझे डर"])
     assert R["dominant"] == "English" and R["script"] == "Mixed" and R["cmi"] == pytest.approx(1 - 3 / 5)
 
 
 class _FalsePositives(LexiconProfiler):
-    """Simulates HingBERT-LID tagging English homographs (hi, me, to, he, do) as Hindi."""
 
     def _label_chunks(self, chunks):
         return [["HI" if w.lower() in {"hi", "me", "to", "he", "do", "us"} or w.lower() in
@@ -102,6 +98,6 @@ def test_plain_english_robust_to_homograph_false_positives():
     assert P.is_plain_english(R) and P.target_cmi(R) == 0.0
     H = prof.profile(["yaar bahut tension hai", "mujhe kya karun pata nahi"])
     assert not P.is_plain_english(H) and P.target_cmi(H) == H["cmi"]
-    one = prof.profile(["I am so tired yaar"])  # a single Hindi word is not enough evidence
+    one = prof.profile(["I am so tired yaar"])
     assert P.is_plain_english(one)
     assert P.tokenize("don’t you’re café") == ["don’t", "you’re", "café"]

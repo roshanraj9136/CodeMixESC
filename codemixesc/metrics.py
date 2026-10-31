@@ -1,20 +1,3 @@
-"""Evaluation metrics of CodeMixESC: pure functions, defined here once for every system.
-
-Tokenizer. Every token-based metric uses tokenize(): NFC normalisation, lowercasing, then the
-regex  \\w+|[^\\w\\s]  (a token is a run of word characters, or one other non-space character:
-punctuation, symbol, emoji). It runs on the `regex` package (an nltk dependency), whose \\w
-follows Unicode (letters, combining marks, digits); Python's `re` does not count combining
-marks as word characters and would cut a Devanagari word such as हिंदी at every vowel sign.
-Word tokens are the tokens that contain a letter or a digit.
-
-Scales. Distinct-n, BLEU-n, F1, ROUGE-L, chrF and BERTScore are x100. CMI gaps keep the CMI
-scale [0, 0.5] and Hindi-fraction gaps the [0, 1] scale. Script consistency, strategy
-agreement and strategy match are percentages. JSD is in bits, [0, 1].
-
-A turn without a response (failed turn, or the placeholder "None" of run records) is scored
-as the empty string by the quality metrics, so a failure can never raise a system's score;
-register and length statistics describe produced text and skip such turns.
-"""
 import math
 import os
 import unicodedata
@@ -27,14 +10,13 @@ from .esconv import STRATEGIES
 
 TOKEN_PATTERN = r"\w+|[^\w\s]"
 TOKEN_RE = regex.compile(TOKEN_PATTERN)
-_ALNUM_RE = regex.compile(r"[^\W_]")  # a letter or digit; Unicode-aware like TOKEN_RE
+_ALNUM_RE = regex.compile(r"[^\W_]")
 ARTICLES = frozenset({"a", "an", "the"})
-LABELS = STRATEGIES + ["None"]  # strategy categories of the stability analysis
-MISSING = "None"  # what run records hold when a system produced no response
+LABELS = STRATEGIES + ["None"]
+MISSING = "None"
 BERTSCORE_MODEL = "bert-base-multilingual-cased"
 
 
-# ------------------------------------------------------------------ text
 def tokenize(text):
     return TOKEN_RE.findall(unicodedata.normalize("NFC", text or "").lower())
 
@@ -44,23 +26,18 @@ def is_word(token):
 
 
 def word_tokens(text):
-    """Tokens without punctuation, symbols and emojis."""
     return [t for t in tokenize(text) if is_word(t)]
 
 
 def is_missing(response):
-    """True for a turn without a response: null, empty, or the placeholder 'None'."""
     return response is None or not str(response).strip() or str(response).strip() == MISSING
 
 
 def hypothesis(response):
-    """The text that is scored; a missing response is the empty string."""
     return "" if is_missing(response) else str(response).strip()
 
 
 def word_count(text):
-    """Words as the prompts' 30-word limit counts them: whitespace-separated chunks that
-    contain at least one letter or digit (a lone '-' or emoji is not a word)."""
     return sum(1 for w in (text or "").split() if _ALNUM_RE.search(w))
 
 
@@ -70,32 +47,20 @@ def mean(values):
 
 
 def pct(flags):
-    """Percentage of true values (None entries are skipped); None without values."""
     vals = [bool(f) for f in flags if f is not None]
     return 100.0 * sum(vals) / len(vals) if vals else None
 
 
-# ------------------------------------------------------------------ response quality
 def ngrams(tokens, n):
     return [tuple(tokens[i:i + n]) for i in range(len(tokens) - n + 1)]
 
 
 def distinct_n(token_lists, n):
-    """Corpus-level Distinct-n (Li et al., 2016), x100: distinct n-grams / all n-grams, both
-    counted over all responses together (n-grams never cross a response boundary)."""
     grams = [g for toks in token_lists for g in ngrams(toks, n)]
     return 100.0 * len(set(grams)) / len(grams) if grams else 0.0
 
 
 def corpus_bleu(hyp_tokens, ref_tokens, n):
-    """Cumulative corpus BLEU-n (Papineni et al., 2002), x100: NLTK's corpus_bleu with uniform
-    weights 1/n over the 1..n-gram precisions and one reference per hypothesis.
-
-    Smoothing: NLTK method 3 (NIST geometric sequence smoothing). It changes only an n-gram
-    order without a single match, whose precision becomes 1 / (2^k * #hypothesis n-grams) with
-    k = 1, 2, ... for successive empty orders. A full test set therefore gets exactly the
-    unsmoothed BLEU, while a small corpus without any 3-gram match keeps a non-zero BLEU-3.
-    The score is 0 only when not a single unigram matches."""
     from nltk.translate.bleu_score import SmoothingFunction
     from nltk.translate.bleu_score import corpus_bleu as nltk_corpus_bleu
     if not hyp_tokens:
@@ -105,13 +70,10 @@ def corpus_bleu(hyp_tokens, ref_tokens, n):
 
 
 def f1_tokens(text):
-    """ParlAI's answer normalisation on our tokenizer: lowercase, no punctuation, no articles."""
     return [t for t in word_tokens(text) if t not in ARTICLES]
 
 
 def unigram_f1(hyp, ref):
-    """ParlAI-style unigram F1 (Miller et al., 2017), x100: harmonic mean of the precision and
-    recall of the hypothesis words against the reference words, as bags (clipped counts)."""
     h, r = f1_tokens(hyp), f1_tokens(ref)
     same = sum((Counter(h) & Counter(r)).values())
     if same == 0:
@@ -121,7 +83,6 @@ def unigram_f1(hyp, ref):
 
 
 def lcs_length(a, b):
-    """Length of the longest common subsequence of two token lists (two-row DP)."""
     if len(a) < len(b):
         a, b = b, a
     prev = [0] * (len(b) + 1)
@@ -134,10 +95,6 @@ def lcs_length(a, b):
 
 
 def rouge_l(hyp, ref):
-    """ROUGE-L (Lin, 2004), x100: F-measure with beta = 1 (rouge_score's fmeasure) of the
-    longest common subsequence of the word tokens, without stemming. rouge_score keeps only
-    [a-z0-9] and silently deletes Devanagari and accented words; on ASCII text both give the
-    same score (tests/test_metrics.py)."""
     h, r = word_tokens(hyp), word_tokens(ref)
     if not h or not r:
         return 0.0
@@ -155,35 +112,24 @@ def _chrf():
     global _CHRF
     if _CHRF is None:
         from sacrebleu.metrics import CHRF
-        _CHRF = CHRF()  # chrF: character 6-grams, beta = 2, case-sensitive, whitespace ignored
+        _CHRF = CHRF()
     return _CHRF
 
 
 def chrf_corpus(hyps, refs):
-    """Corpus chrF (Popovic, 2015) with sacrebleu's default settings, 0-100: character n-gram
-    statistics are summed over the corpus before the F-score is taken. Character n-grams give
-    partial credit to the many spellings of Romanised Hindi (nahi / nahin / nhi)."""
     return _chrf().corpus_score(list(hyps), [list(refs)]).score
 
 
 def chrf_sentence(hyp, ref):
-    """Sentence-level chrF, 0-100 (the per-turn score used by the paired bootstrap)."""
     return _chrf().sentence_score(hyp, [ref]).score
 
 
 def chrf_signature():
-    _chrf().sentence_score("a", ["a"])  # sacrebleu needs one evaluation before it can sign
+    _chrf().sentence_score("a", ["a"])
     return str(_chrf().get_signature())
 
 
 class BERTScore:
-    """Multilingual BERTScore F1 (Zhang et al., 2020), x100.
-
-    Encoder bert-base-multilingual-cased at bert_score's default layer for it (9), no idf
-    weighting and no baseline rescaling (bert_score ships no baseline for Hinglish), so
-    absolute values sit in a narrow high band: compare systems, not absolute numbers. An empty
-    hypothesis scores 0 without running the model. Imports and downloads happen only here,
-    so every other metric works without torch models."""
 
     def __init__(self, model_type=BERTSCORE_MODEL, device=None, batch_size=64):
         import torch
@@ -204,16 +150,7 @@ class BERTScore:
         return out
 
 
-# ------------------------------------------------------------------ register match
 def register_match(profiler, seeker_utterances, response):
-    """Register match of one response to its seeker: the quantities the Register Gate checks.
-
-    CMI_s = profiler.profile(seeker utterances so far)['cmi'] is the seeker's pooled CMI, the
-    profile R the system's gate uses; CMI_r = profiler.stats(response)['cmi']. The CMI is
-    symmetric in the two languages (80 % and 20 % Hindi words give the same CMI), so the
-    Hindi-fraction gap |hi_frac_r - hi_frac_s| is reported as well: only it notices a reply
-    that flips the dominant language. script_match is None when the seeker has written no
-    letters yet (no target script); a response without letters does not match."""
     from .profiler import script_of
     R = profiler.profile(seeker_utterances)
     st = profiler.stats(response)
@@ -228,9 +165,6 @@ def register_match(profiler, seeker_utterances, response):
 
 
 def register_summary(rows):
-    """Means over the turns with a response (rows from register_match). script_consistency is
-    the % of turns whose response script equals the seeker's, over the turns where the seeker's
-    script is defined."""
     rows = [r for r in rows if r is not None]
     return {
         "n_register": len(rows),
@@ -246,21 +180,16 @@ def register_summary(rows):
     }
 
 
-# ------------------------------------------------------------------ strategies
 _CANON = {s.lower(): s for s in STRATEGIES}
 _STRATEGY_RE = regex.compile("|".join(regex.escape(s) for s in sorted(STRATEGIES, key=len, reverse=True)),
                              regex.IGNORECASE)
 
 
 def normalize_strategy(pred):
-    """One of the 8 ESConv strategy names (case-insensitive) or 'None' (no strategy predicted,
-    or a name outside the label set)."""
     return _CANON.get(str(pred if pred is not None else "").strip().lower(), "None")
 
 
 def gold_strategies(gold):
-    """Gold strategies of a turn. Two merged supporter utterances are labelled 'A and B'; names
-    are matched whole, so 'Affirmation and Reassurance' is never split at its 'and'."""
     return {_CANON[m.lower()] for m in _STRATEGY_RE.findall(gold or "")}
 
 
@@ -270,10 +199,6 @@ def strategy_counts(preds, labels=LABELS):
 
 
 def jsd(p, q):
-    """Jensen-Shannon divergence in bits, (KL(P||M) + KL(Q||M)) / 2 with M = (P + Q) / 2 and
-    base-2 logarithms: 0 for identical and 1 for disjoint distributions. p, q are counts or
-    probabilities over the same categories; None if either is empty. (scipy's jensenshannon
-    returns the square root of this, the JS distance.)"""
     p, q = np.asarray(p, dtype=float), np.asarray(q, dtype=float)
     if p.sum() <= 0 or q.sum() <= 0:
         return None
@@ -288,13 +213,6 @@ def jsd(p, q):
 
 
 def strategy_stability(pred_a, pred_b):
-    """Strategy stability of a system between two versions of the same turns (EN vs Hinglish).
-
-    pred_a, pred_b: {uid: predicted strategy}; only their shared uids are compared.
-    jsd: JSD between the two distributions over the 8 strategies + 'None' ("with None").
-    jsd_strategies: JSD over the 8 strategies on the turns where both versions predicted a
-    strategy ("strategies only"; same turns on both sides).
-    agreement, agreement_strategies: % of those turns with the same prediction."""
     uids = sorted(set(pred_a) & set(pred_b))
     a = [normalize_strategy(pred_a[u]) for u in uids]
     b = [normalize_strategy(pred_b[u]) for u in uids]
@@ -313,23 +231,11 @@ def strategy_stability(pred_a, pred_b):
 
 
 def strategy_match(preds, golds):
-    """(% of turns whose predicted strategy is one of the gold strategies, 'None' counting as a
-    miss; the same % over the turns with a predicted strategy). preds are normalised names,
-    golds sets from gold_strategies()."""
     pairs = list(zip(preds, golds))
     return pct(p in g for p, g in pairs), pct(p in g for p, g in pairs if p != "None")
 
 
-# ------------------------------------------------------------------ statistics
 def paired_bootstrap(a, b, n_boot=2000, seed=42, ci=0.95):
-    """Paired bootstrap over turns (Efron & Tibshirani, 1993; Koehn, 2004) for the difference
-    d = mean(a) - mean(b), where a[i] and b[i] are two systems' scores on the same turn i.
-
-    Turns are resampled with replacement n_boot times (numpy default_rng(seed): reproducible).
-    The CI is the percentile interval of the resampled differences d*. The two-sided p-value is
-    p = min(1, 2 * (1 + min(#{d* <= 0}, #{d* >= 0})) / (n_boot + 1)), Koehn's "one system is
-    better in x % of the resamples" made two-sided; it agrees with the CI (p < 1 - ci exactly
-    when the CI excludes 0, up to the +1 correction that keeps p > 0)."""
     a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
     if a.shape != b.shape:
         raise ValueError("paired scores must have the same length")
@@ -348,8 +254,6 @@ def paired_bootstrap(a, b, n_boot=2000, seed=42, ci=0.95):
 
 
 def cohen_kappa(a, b):
-    """Cohen's kappa of two equally long label sequences; None when undefined (no items, or a
-    chance agreement of 1 because both raters used one and the same label throughout)."""
     if len(a) != len(b):
         raise ValueError("label sequences must have the same length")
     n = len(a)
@@ -364,8 +268,6 @@ def cohen_kappa(a, b):
 
 
 def sign_test(wins, losses):
-    """Two-sided exact sign test of wins against losses, ties left out: the probability under
-    Binomial(n, 1/2) of a split at least as uneven as the observed one."""
     n = wins + losses
     if n == 0:
         return 1.0

@@ -1,12 +1,3 @@
-"""Summary of the real LLM calls logged in cache/llm_calls.jsonl, per model and pipeline step:
-calls, finish reasons, empty and truncated answers, input/output/thinking tokens, latency.
-
-Run it after a short pilot (e.g. run_system.py --limit 10) before the long experiments: a step
-whose answers are often truncated (MAX_TOKENS) or empty needs a larger token budget, and a
-large "think" column means the model spends the output budget on reasoning tokens.
-
-    python scripts/llm_usage.py [--since HOURS] [--model gemma-4-26b-a4b-it]
-"""
 import argparse
 import json
 import os
@@ -19,7 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Summary of the LLM calls logged in cache/llm_calls.jsonl.")
     ap.add_argument("--log", default=os.path.join(ROOT, "cache", "llm_calls.jsonl"))
     ap.add_argument("--since", type=float, default=0, help="only calls of the last N hours")
     ap.add_argument("--model")

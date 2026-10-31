@@ -1,24 +1,14 @@
-"""Talk to CodeMixESC (or any other system) in the terminal: type as a help-seeker, in
-English or Hinglish, and the full multi-agent pipeline answers. --debug shows the seeker's
-register profile, the path, the chosen strategy, the Register Gate and the LLM calls.
-
-    python scripts/chat.py                       # CodeMixESC
-    python scripts/chat.py --system maesc --debug
-    python scripts/chat.py --dry_run             # stand-ins, no API key or models needed
-
-Not a crisis service: the system is a research prototype and does not replace professional help.
-"""
 import argparse
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import json2natural  # noqa: E402
-from codemixesc.systems import SYSTEMS, System  # noqa: E402
+from codemixesc.esconv import json2natural
+from codemixesc.systems import SYSTEMS, System
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Talk to CodeMixESC or another system in the terminal as a help-seeker.")
     ap.add_argument("--system", default="codemixesc", choices=[s for s in SYSTEMS if s != "pivot"] + ["pivot"])
     ap.add_argument("--model", default="gemma-4-26b-a4b-it")
     ap.add_argument("--delta", type=float, default=None)
@@ -44,7 +34,7 @@ def main():
         if not text:
             break
         history.append({"role": "user", "content": text})
-        count = len(history) + 1  # dialog index after this supporter turn, as in main.py
+        count = len(history) + 1
         sample = {"uid": f"chat-{len(history)}", "conv_id": -1, "turn": len(history), "strategy": "", "reference": "",
                   "context_msgs": list(history), "context": json2natural(history), "post": history[-1]["content"],
                   "early": count <= 5}

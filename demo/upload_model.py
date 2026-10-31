@@ -1,8 +1,3 @@
-"""Publishes the fine-tuned retriever to the Hugging Face Hub, together with the precomputed
-embeddings of the ESConv case bank (vectors only, no text) that the live demo loads.
-
-    python demo/upload_model.py          # after `hf auth login` (write token)
-"""
 import glob
 import os
 import shutil
@@ -11,7 +6,7 @@ import tempfile
 from huggingface_hub import HfApi
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BANK_SIG = "cd1b5da23d"  # md5 prefix of the full ESConv case bank's posts (Retriever._bank_embeddings)
+BANK_SIG = "cd1b5da23d"
 
 MODEL_CARD = """---
 language: [en, hi]

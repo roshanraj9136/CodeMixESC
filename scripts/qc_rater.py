@@ -1,10 +1,3 @@
-"""Manual quality check of ESConv-HiEn, one conversation at a time (English and Hinglish side by
-side, two 1-5 ratings). Reads the sample of scripts/quality_check.py and writes the ratings into
-the same sheets, so `quality_check.py report` works unchanged.
-
-    python scripts/quality_check.py sample        # once: picks the 20% sample, writes the sheets
-    streamlit run scripts/qc_rater.py
-"""
 import csv
 import json
 import os
@@ -14,7 +7,7 @@ import streamlit as st
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from codemixesc.esconv import hien_dir  # noqa: E402
+from codemixesc.esconv import hien_dir
 
 QC = os.path.join(hien_dir(), "qc")
 HEADER = ["level", "conv_id", "n_turns", "naturalness (1-5)", "meaning (1-5)", "comments"]

@@ -1,19 +1,3 @@
-"""Retrieval robustness metrics and query sets for the cross-lingual retriever (proposal,
-Section VI, "Retrieval robustness").
-
-A retriever is robust to code-mixing when a Hinglish post retrieves the same ESConv cases as its
-parallel English original. All metrics use k = 10, the number of cases get_strategy() retrieves:
-- Overlap@k: |top-k(Hinglish) ∩ top-k(English)| / k. Order-free, because get_strategy() shows
-  all k cases to the agents at once.
-- Problem-type Precision@k: share of retrieved cases whose conversation has the query
-  conversation's problem_type, i.e. whether the retrieved experience is on topic at all.
-- Strategy JSD: Jensen-Shannon divergence (base 2, so in [0, 1]) between the strategy histograms
-  of the cases retrieved for the Hinglish and for the English posts. The deliberation agents
-  pick strategies from these examples, so a shift here is a retrieval-side cause of strategy
-  instability.
-Confidence intervals come from a cluster bootstrap over conversations: the turns of one
-conversation share a topic and a seeker, so resampling single turns would understate uncertainty.
-"""
 import os
 import re
 from collections import Counter
@@ -28,27 +12,20 @@ _WORD_RE = re.compile(r"\w+")
 
 
 def text_key(text):
-    """Normalised form used for duplicate detection everywhere (pair building, batching, val
-    metrics): lowercase word tokens, so 'Happy birthday!' and 'happy  birthday' coincide."""
     return " ".join(_WORD_RE.findall((text or "").lower()))
 
 
-# ---------------------------------------------------------------------------- ranking metrics
 def _rows(x):
     a = np.asarray(x)
     return (a[None, :], True) if a.ndim == 1 else (a, False)
 
 
 def topk_from_embeddings(q_emb, bank_emb, k=K):
-    """Top-k bank indices per query for L2-normalised embeddings, ranked exactly like
-    Retriever.topk_many (cosine = dot product, stable sort so ties keep bank order)."""
     sims = np.asarray(q_emb, dtype=np.float32) @ np.asarray(bank_emb, dtype=np.float32).T
     return np.argsort(-sims, axis=1, kind="stable")[:, :k]
 
 
 def overlap_at_k(a, b, k=K):
-    """|top-k(a) ∩ top-k(b)| / k for two ranked lists of case indices.
-    1-D inputs give a float; 2-D inputs (one row per query) give one value per row."""
     A, single = _rows(a)
     B, _ = _rows(b)
     if A.shape[0] != B.shape[0]:
@@ -60,8 +37,6 @@ def overlap_at_k(a, b, k=K):
 
 
 def problem_type_precision_at_k(retrieved_idx, query_problem_types, bank, k=K):
-    """Share of the top-k retrieved cases whose problem_type equals the query's.
-    retrieved_idx: (n, >=k) bank indices (or one 1-D list with a single problem type)."""
     R, single = _rows(retrieved_idx)
     if R.shape[1] < k:
         raise ValueError(f"need at least k={k} retrieved cases per query")
@@ -75,8 +50,6 @@ def problem_type_precision_at_k(retrieved_idx, query_problem_types, bank, k=K):
 
 
 def chance_precision(query_problem_types, bank):
-    """Expected Precision@k of a retriever that ignores the query: the share of the bank that
-    has the query's problem type (ESConv is dominated by a few types, so this is far from 0)."""
     counts = Counter(b["problem_type"] for b in bank)
     return np.array([counts.get(p, 0) / len(bank) for p in query_problem_types], dtype=float)
 
@@ -86,7 +59,6 @@ def strategy_labels(bank):
 
 
 def strategy_histograms(retrieved_idx, bank, k=K, labels=None):
-    """Strategy counts of the top-k retrieved cases, one row per query (columns = labels)."""
     labels = labels or strategy_labels(bank)
     pos = {s: i for i, s in enumerate(labels)}
     bank_lab = np.array([pos[b["strategy"]] for b in bank])
@@ -97,7 +69,6 @@ def strategy_histograms(retrieved_idx, bank, k=K, labels=None):
 
 
 def jsd(p, q, base=2):
-    """Jensen-Shannon divergence of two (unnormalised) histograms; base 2 gives [0, 1]."""
     p, q = np.asarray(p, dtype=float), np.asarray(q, dtype=float)
     if p.sum() <= 0 or q.sum() <= 0:
         raise ValueError("empty histogram")
@@ -112,8 +83,6 @@ def jsd(p, q, base=2):
 
 
 def strategy_jsd(idx_a, idx_b, bank, k=K):
-    """(pooled JSD over all queries, per-query JSD array) between the strategy histograms of two
-    retrieval runs over the same queries (e.g. Hinglish posts vs their English originals)."""
     labels = strategy_labels(bank)
     Ha, Hb = strategy_histograms(idx_a, bank, k, labels), strategy_histograms(idx_b, bank, k, labels)
     Ha, Hb = np.atleast_2d(Ha), np.atleast_2d(Hb)
@@ -121,10 +90,6 @@ def strategy_jsd(idx_a, idx_b, bank, k=K):
 
 
 def pair_retrieval_metrics(hi_emb, en_emb, en_texts, k=K):
-    """Hinglish -> English retrieval over held-out parallel pairs: accuracy@1 and MRR@k.
-    Candidates are the distinct English sentences (by text_key), so two pairs that share a
-    translation do not count as each other's errors. Ties count against the query (a collapsed
-    model that embeds everything alike must not score perfectly)."""
     keys, first, gold = {}, [], []
     for i, t in enumerate(en_texts):
         kk = text_key(t)
@@ -135,19 +100,11 @@ def pair_retrieval_metrics(hi_emb, en_emb, en_texts, k=K):
     sims = np.asarray(hi_emb, dtype=np.float32) @ np.asarray(en_emb, dtype=np.float32)[first].T
     gold = np.array(gold)
     gold_score = sims[np.arange(len(gold)), gold]
-    rank = (sims >= gold_score[:, None]).sum(axis=1)  # includes the gold candidate itself
+    rank = (sims >= gold_score[:, None]).sum(axis=1)
     return float(np.mean(rank == 1)), float(np.mean(np.where(rank <= k, 1.0 / rank, 0.0)))
 
 
-# ---------------------------------------------------------------------------- bootstrap
 def bootstrap_ci(values, groups=None, n_boot=2000, alpha=0.05, seed=42, stat=None):
-    """Percentile bootstrap confidence interval.
-
-    values: (n,) per-query values or (n, d) per-query vectors (e.g. strategy histograms).
-    groups: cluster label per query (conversation id); whole clusters are resampled.
-    stat:   f(column_sums, count) -> float, evaluated on the (resampled) column sums of `values`;
-            default = mean of a 1-D `values`. Ratio-of-sums statistics such as a pooled JSD fit.
-    Returns {value (statistic on the full sample), lo, hi, n, n_groups}."""
     v = np.asarray(values, dtype=float)
     if v.ndim == 1:
         v = v[:, None]
@@ -171,11 +128,7 @@ def bootstrap_ci(values, groups=None, n_boot=2000, alpha=0.05, seed=42, stat=Non
     return {"value": float(value), "lo": float(lo), "hi": float(hi), "n": int(n), "n_groups": G}
 
 
-# ---------------------------------------------------------------------------- query sets
 def split_conversations(split, version):
-    """[(conv_id, conversation)] of split 'test' or 'dev' and version 'en' | 'light' | 'heavy'.
-    Test conversations keep their position 0-99 as conv_id (like all_samples() and
-    sampled_uids()); dev conversations keep their ESConv index."""
     if split == "test":
         return list(enumerate(load_version(version)))
     if split == "dev":
@@ -184,7 +137,6 @@ def split_conversations(split, version):
 
 
 def available_versions(split, versions=("en", "light", "heavy")):
-    """The requested versions whose files exist (the English test set always exists)."""
     out = []
     for v in versions:
         if split == "test" and v == "en":
@@ -197,24 +149,15 @@ def available_versions(split, versions=("en", "light", "heavy")):
 
 
 def split_bank(split):
-    """The case bank a split retrieves from: all of dataset[100:] for test, and without the dev
-    conversations for dev (a dev query must not retrieve cases from its own conversation)."""
     return case_bank(exclude_conv=set(dev_ids()) if split == "dev" else ())
 
 
 def build_queries(split="test", version="en"):
-    """Turn-level retrieval queries: one per supporter turn, from codemixesc.esconv.turn_samples.
-
-    post     = the sample's `post` (history[-1]['content']), exactly what the pipeline sends to
-               the retriever; Hinglish for the light/heavy versions.
-    post_en  = the parallel English post, i.e. content_en of the same dialog turn (the versions
-               are parallel turn by turn); equal to post for version 'en'.
-    problem_type, conv_id, turn, uid, early as in the turn sample."""
     data, out = None, []
     for cid, conv in split_conversations(split, version):
         dialog = conv["dialog"]
         for s in turn_samples(conv, cid):
-            prev = dialog[s["turn"] - 1]  # history[-1] is always the dialog turn just before the sample
+            prev = dialog[s["turn"] - 1]
             if prev["content"].strip() != s["post"]:
                 raise AssertionError(f"{split}/{version} conv {cid}: post is not dialog turn {s['turn'] - 1}")
             if version == "en":
@@ -224,7 +167,7 @@ def build_queries(split="test", version="en"):
             else:
                 raise KeyError(f"{split}/{version} conv {cid} turn {s['turn'] - 1} has no content_en")
             pt = s["problem_type"]
-            if pt is None:  # rewritten files copy it, but fall back to the source conversation
+            if pt is None:
                 data = data or load_esconv()
                 pt = data[cid]["problem_type"]
             out.append({"uid": s["uid"], "conv_id": cid, "turn": s["turn"], "post": s["post"],

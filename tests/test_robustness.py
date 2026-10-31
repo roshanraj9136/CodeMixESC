@@ -1,7 +1,3 @@
-"""Regression tests for the failure modes found in the pipeline review: embedding caches per
-bank, resuming runs (failed calls, cut-off lines, changed configuration, smoke runs), the
-Register Gate on failed answers and English homographs, template echoes, incomplete
-translations, and the exactness of delta tuning."""
 import json
 import os
 import random
@@ -35,10 +31,10 @@ def test_bank_embeddings_cached_per_bank(tmp_path, monkeypatch):
     full = [{"post": f"post number {i}", "response": "r", "strategy": "Question", "conv": i} for i in range(6)]
     dev = [b for b in full if b["conv"] not in (2, 3)]
     a = _retriever("enc", full, tmp_path, monkeypatch)
-    b = _retriever("enc", dev, tmp_path, monkeypatch)  # e.g. the dev bank without the dev conversations
+    b = _retriever("enc", dev, tmp_path, monkeypatch)
     assert a.emb.shape[0] == 6 and b.emb.shape[0] == 4 and len(os.listdir(tmp_path)) == 2
     assert np.allclose(b.emb, a.emb[[0, 1, 4, 5]])
-    for f in os.listdir(tmp_path):  # stale files of the wrong size are never used
+    for f in os.listdir(tmp_path):
         np.save(os.path.join(tmp_path, f), np.zeros((99, 256), dtype=np.float32))
     assert np.allclose(_retriever("enc", full, tmp_path, monkeypatch).emb, a.emb)
     assert np.allclose(_retriever("enc", dev, tmp_path, monkeypatch).emb, b.emb)
@@ -63,10 +59,10 @@ def test_gate_ignores_homographs_for_english_seekers(metric):
     R = prof.profile(["Hi, I lost my job and I want to talk to someone."])
     assert P.is_plain_english(R)
     reply = "I'm sorry to hear that. Do you want to talk to me about it?"
-    assert prof.register_of(reply)["hi_frac"] > 0.3  # raw share counts the homographs ...
+    assert prof.register_of(reply)["hi_frac"] > 0.3
     log = A.CallLog(FakeLLM())
     out, info = A.register_gate(log, prof, "ctx", R, "Question", reply, 0.2, metric)
-    assert info["distance_before"] == 0.0 and not info["triggered"] and out == reply  # ... the gate does not
+    assert info["distance_before"] == 0.0 and not info["triggered"] and out == reply
 
 
 def test_template_and_instruction_echoes_are_not_responses():
@@ -90,7 +86,6 @@ def test_translate_context_incomplete_keeps_originals():
 
 @needs_data
 def test_delta_tuning_scores_every_delta_exactly(tmp_path, monkeypatch):
-    """score(rows, d) from one gate call per turn equals running the real gate at each d."""
     monkeypatch.setenv("CODEMIX_HIEN_DIR", write_fake_hien(str(tmp_path / "hien"), n_test=1))
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
     import tune_delta as T
@@ -128,11 +123,11 @@ def test_run_system_resume_retries_failures_and_survives_cut_lines(tmp_path):
     out = tmp_path / "runs"
     common = ["--system", "maesc", "--version", "en", "--subset", "all", "--limit", "8", "--workers", "2"]
     r1 = _run(common, {"CODEMIX_FAKE_FAIL": "single,decide"}, out)
-    assert r1.returncode == 2, r1.stdout + r1.stderr  # every turn has a failed call
+    assert r1.returncode == 2, r1.stdout + r1.stderr
     recs = [json.loads(x) for x in open(out / "maesc" / "en.jsonl")]
     assert len(recs) == 8 and all(r["n_failed_calls"] for r in recs)
     with open(out / "maesc" / "en.jsonl", "a") as f:
-        f.write('{"uid": "0-99", "cut off')  # a crash in the middle of a write
+        f.write('{"uid": "0-99", "cut off')
     r2 = _run(common, {"CODEMIX_FAKE_FAIL": ""}, out)
     assert r2.returncode == 0, r2.stdout + r2.stderr
     recs = [json.loads(x) for x in open(out / "maesc" / "en.jsonl")]
@@ -141,10 +136,10 @@ def test_run_system_resume_retries_failures_and_survives_cut_lines(tmp_path):
     assert meta["limit"] == 8 and meta["n_with_failed_calls"] == 0
     sys.path.insert(0, os.path.join(ROOT, "scripts"))
     import run_all
-    assert not run_all.finished(str(out), "maesc", "en")  # a --limit smoke run is never "finished"
+    assert not run_all.finished(str(out), "maesc", "en")
     cmx = ["--system", "codemixesc", "--version", "en", "--limit", "4", "--workers", "2"]
     assert _run(cmx, None, out).returncode == 0
-    r3 = _run(cmx + ["--delta", "0.33", "--name", "codemixesc"], None, out)  # same folder, other delta
+    r3 = _run(cmx + ["--delta", "0.33", "--name", "codemixesc"], None, out)
     assert r3.returncode != 0 and "different configuration" in (r3.stdout + r3.stderr)
 
 

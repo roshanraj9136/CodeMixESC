@@ -1,14 +1,3 @@
-"""Build ESConv-HiEn: the parallel Roman-script Hinglish version of the ESConv test set
-(Light and Heavy mixing), plus the small development set.
-
-Step 1  one LLM call per conversation rewrites every turn (names/spellings stay consistent,
-        strategy labels are copied from the source turns).
-Step 2  the CMI of every utterance is measured with HingBERT-LID; utterances outside the
-        target band (and rewrites whose meaning drifted, by LaBSE similarity) are regenerated.
-Step 3  (separate script quality_check.py) a 20% sample is rated for naturalness and meaning.
-
-Usage: python scripts/build_hien.py --split test   (or --split dev)
-"""
 import argparse
 import concurrent.futures as cf
 import json
@@ -18,15 +7,15 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import hien_dir, load_esconv, split  # noqa: E402
-from codemixesc.llm import LLM  # noqa: E402
-from codemixesc.profiler import Profiler, script_of  # noqa: E402
+from codemixesc.esconv import hien_dir, load_esconv, split
+from codemixesc.llm import LLM
+from codemixesc.profiler import Profiler, script_of
 
 BANDS = {"light": (0.10, 0.30), "heavy": (0.30, 0.50)}
-MIN_WORDS_FOR_BAND = 5  # a 1-4 word utterance ("ok thanks") cannot hit a CMI band reliably
-MIN_SIM = 0.55          # LaBSE similarity below this (and clearly below the conversation's median) = meaning drift
-DRIFT_MARGIN = 0.15     # ... "clearly below": by this much, so the check calibrates itself per conversation
-EPS = 1e-9              # 1/10 minority words gives CMI 0.09999999999999998, which must count as 0.10
+MIN_WORDS_FOR_BAND = 5
+MIN_SIM = 0.55
+DRIFT_MARGIN = 0.15
+EPS = 1e-9
 GEN_MODEL = "gemini-3.5-flash-lite"
 
 LEVEL_DESC = {
@@ -75,7 +64,6 @@ Return JSON of the form {{"turns": [{{"id": <id>, "text": "..."}}, ...]}} contai
 
 
 def parse_turns(text):
-    """{"turns": [{"id", "text"}, ...]}, or the bare list the model sometimes returns instead."""
     text = text.strip()
     try:
         obj = json.loads(text)
@@ -89,9 +77,6 @@ def parse_turns(text):
 
 
 def band_distance(stat, level):
-    """How far an utterance is from its level. Light is measured on the Hindi share (CMI 0.1-0.3
-    with English as the main language, as LEVEL_DESC asks; CMI alone is symmetric and would accept
-    a 77%-Hindi turn), Heavy on the CMI (0.3-0.5, either language may lead)."""
     if stat["n_lang"] < MIN_WORDS_FOR_BAND:
         return 0.0
     lo, hi = BANDS[level]
@@ -100,7 +85,6 @@ def band_distance(stat, level):
 
 
 def drift_threshold(sims):
-    """Similarity below which a turn of this conversation counts as meaning drift."""
     srt = sorted(sims)
     median = srt[len(srt) // 2] if srt else 1.0
     return min(MIN_SIM, median - DRIFT_MARGIN)
@@ -128,7 +112,6 @@ def diagnose(stat, level, sim=None, sim_threshold=None):
 
 
 def badness(stat, script, level, sim, sim_threshold):
-    """Lexicographic: wrong script, then distance from the band, then meaning drift."""
     drift = max(0.0, sim_threshold - sim) if stat["n_lang"] >= MIN_WORDS_FOR_BAND else 0.0
     return (int(script not in ("Roman", "None")), round(band_distance(stat, level), 6), round(drift, 6))
 
@@ -139,7 +122,7 @@ class Builder:
         from codemixesc.retriever import device
         self.llm = LLM(model, thinking=None)
         self.prof = Profiler()
-        self.labse = SentenceTransformer("sentence-transformers/LaBSE", device=device())  # honours CODEMIX_DEVICE
+        self.labse = SentenceTransformer("sentence-transformers/LaBSE", device=device())
         import threading
         self.lock = threading.Lock()
 
@@ -153,7 +136,6 @@ class Builder:
         return (a * b).sum(1).astype(float).tolist() if len(en) else []
 
     def rewrite(self, conv, level, extra=""):
-        """extra: reviewer feedback appended to the prompt (quality_check.py); empty = original prompt."""
         dialog = conv["dialog"]
         items = []
         for i, t in enumerate(dialog):
@@ -198,7 +180,7 @@ class Builder:
                 + (f", strategy {conv['dialog'][i]['annotation'].get('strategy')}" if conv['dialog'][i]['speaker'] == 'supporter' else "")
                 + f")\nEnglish: {en[i]}\nCurrent: {hi[i]}\nProblem: {'; '.join(p)}"
                 for i, p in bad.items())
-            # from round 2 on the prompt must differ, or the cache would return round 1's answer again
+
             revision = f"\n\n(Revision round {rnd + 1}.)" if rnd else ""
             out = self.llm(FIX_PROMPT.format(level_desc=LEVEL_DESC[level], conv_text=conv_text, items=items) + revision,
                            max_tokens=8000, json_mode=True, temperature=0.4, tag=f"hien-fix-{level}")
@@ -210,7 +192,7 @@ class Builder:
             new_sims = dict(zip(cand, self.sims([en[i] for i in cand], list(cand.values())))) if cand else {}
             for i, txt in cand.items():
                 new = self.prof.stats(txt)
-                # keep the new version only if it is better and does not lose the meaning
+
                 if new_sims[i] >= min(sims[i], MIN_SIM) and \
                         badness(new, script_of(txt), level, new_sims[i], thr) < badness(stats[i], script_of(hi[i]), level, sims[i], thr):
                     hi[i] = txt
@@ -266,7 +248,7 @@ def main():
             ci, conv = convs[k]
             try:
                 r = b.build_conv(conv, level)
-            except Exception as e:  # one bad conversation must not discard the others
+            except Exception as e:
                 return k, {"esconv_index": ci, "error": repr(e)[:500]}
             r["esconv_index"] = ci
             return k, r
@@ -280,7 +262,7 @@ def main():
                     print(f"[{level}] {n}/{len(convs)} conversations done", flush=True)
         failed = [r["esconv_index"] for r in results if "error" in r]
         path = os.path.join(out_dir, f"{args.split}_{level}{args.out_suffix}.json")
-        if failed:  # never write a test file with holes; re-run to retry (finished calls are cached)
+        if failed:
             path = path.replace(".json", ".partial.json")
             print(f"[{level}] {len(failed)} conversations failed: {failed}; re-run to retry", flush=True)
         json.dump(results, open(path, "w", encoding="utf-8"), ensure_ascii=False, indent=1)

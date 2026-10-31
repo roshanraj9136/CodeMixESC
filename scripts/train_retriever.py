@@ -1,37 +1,3 @@
-"""Fine-tune the cross-lingual retriever (proposal, Section III).
-
-paraphrase-multilingual-mpnet-base-v2 is trained with the in-batch Multiple Negatives Ranking
-loss on Hinglish -> English pairs (anchor = Hinglish, positive = its English original, the other
-English sentences of the batch are the negatives):
-    L = -1/B sum_i log( exp(cos(h_i, e_i)/tau) / sum_j exp(cos(h_i, e_j)/tau) ),  scale = 1/tau.
-Only the query side changes: the English ESConv case bank is re-encoded once and never translated.
-
-Memory. The model has ~278M parameters, ~192M of them in the XLM-R word-embedding matrix
-(250k tokens x 768). Full AdamW fine-tuning keeps fp32 weights, gradients and two Adam moments,
-16 bytes per parameter = ~4.4 GB before activations, so it cannot fit a 4 GB RTX 3050 Ti.
---freeze_embeddings auto freezes the word embeddings when the GPU has < 10 GB (or there is no
-GPU): 86M trainable parameters, ~2.1 GB static. Freezing also keeps the rows of the many tokens
-that never occur in the pairs (other languages and scripts) aligned with the rows that do.
-fp16 autocast (CUDA), max_seq_length 128, --gradient_checkpointing and --cached
-(CachedMultipleNegativesRankingLoss: the same loss and the same in-batch negatives, computed in
-mini-batches) bound the activations.
-
-Batching. In-batch negatives must not contain the anchor's own translation, so batches are built
-without duplicate texts (BatchSamplers.NO_DUPLICATES). The NoDuplicatesBatchSampler of
-sentence-transformers 3.3.1 keeps its shuffled indices in a set, which iterates small integers
-in ascending order, so every epoch would see the same batches in file order; the sampler below
-keeps the shuffle (re-seeded per epoch) and also compares normalised texts.
-
-Checkpoint selection (never on test). Every ~1/4 epoch the model retrieves from the case bank
-WITHOUT the dev conversations for every Hinglish post of ESConv-HiEn dev (light + heavy):
-primary = mean(Overlap@10 with its own top-10 for the parallel English post, problem-type
-Precision@10). Hinglish->English accuracy@1 / MRR@10 on data/pairs/val.jsonl are logged too and
-become the primary metric (with a warning) when the dev files are missing.
-
-Outputs: models/codemix-retriever (SentenceTransformer format; ENCODERS["mpnet-ft"]) and
-results/retrieval/train_log.json.
-Usage: python scripts/train_retriever.py            (smoke test: --base_model <tiny> --max_steps 4)
-"""
 import argparse
 import gc
 import json
@@ -46,27 +12,26 @@ import warnings
 
 import numpy as np
 
-# CODEMIX_DEVICE=cpu on a machine with a GPU: hide the GPU before torch loads, otherwise the HF
-# Trainer still moves the model to cuda:0 while the evaluator feeds CPU tensors.
+
 if os.environ.get("CODEMIX_DEVICE") == "cpu":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # "" would unset the variable on Windows
-import torch  # noqa: E402
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+import torch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT  # noqa: E402
-from codemixesc.retrieval_eval import (available_versions, build_queries, overlap_at_k,  # noqa: E402
+from codemixesc.esconv import ROOT
+from codemixesc.retrieval_eval import (available_versions, build_queries, overlap_at_k,
                                        pair_retrieval_metrics, problem_type_precision_at_k, split_bank,
                                        text_key, topk_from_embeddings)
 
-from datasets import Dataset  # noqa: E402
-from sentence_transformers import SentenceTransformer  # noqa: E402
-from sentence_transformers.evaluation import SentenceEvaluator  # noqa: E402
-from sentence_transformers.losses import CachedMultipleNegativesRankingLoss, MultipleNegativesRankingLoss  # noqa: E402
-from sentence_transformers.sampler import SetEpochMixin  # noqa: E402
-from sentence_transformers.trainer import SentenceTransformerTrainer  # noqa: E402
-from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments  # noqa: E402
-from torch.utils.data import BatchSampler  # noqa: E402
-from transformers import TrainerCallback, set_seed  # noqa: E402
+from datasets import Dataset
+from sentence_transformers import SentenceTransformer
+from sentence_transformers.evaluation import SentenceEvaluator
+from sentence_transformers.losses import CachedMultipleNegativesRankingLoss, MultipleNegativesRankingLoss
+from sentence_transformers.sampler import SetEpochMixin
+from sentence_transformers.trainer import SentenceTransformerTrainer
+from sentence_transformers.training_args import BatchSamplers, SentenceTransformerTrainingArguments
+from torch.utils.data import BatchSampler
+from transformers import TrainerCallback, set_seed
 
 BASE_MODEL = "sentence-transformers/paraphrase-multilingual-mpnet-base-v2"
 PAIRS_DIR = os.path.join(ROOT, "data", "pairs")
@@ -77,11 +42,7 @@ FREEZE_BELOW_GB = 10.0
 K = 10
 
 
-# ============================================================================ batching
 class ShuffledNoDuplicatesBatchSampler(SetEpochMixin, BatchSampler):
-    """NO_DUPLICATES batches that are really shuffled: an insertion-ordered dict keeps the random
-    permutation (re-seeded with seed + epoch, so a resumed run sees the same batches), and a
-    pair joins a batch only if none of its normalised texts (text_key) is already in it."""
 
     def __init__(self, dataset, batch_size, drop_last, seed=42):
         super().__init__(dataset, batch_size, drop_last)
@@ -114,8 +75,7 @@ class ShuffledNoDuplicatesBatchSampler(SetEpochMixin, BatchSampler):
 
 class PairTrainer(SentenceTransformerTrainer):
     def get_batch_sampler(self, dataset, batch_size, drop_last, valid_label_columns=None, generator=None, **kwargs):
-        # SentenceTransformers 6 passes ``seed`` explicitly; 3.3.1 (the pinned training
-        # environment) does not.  Forward only keywords supplied by the installed version.
+
         seed = kwargs.get("seed", self.args.seed)
         if self.args.batch_sampler == BatchSamplers.NO_DUPLICATES and isinstance(dataset, Dataset):
             return ShuffledNoDuplicatesBatchSampler(dataset, batch_size, drop_last, seed=seed)
@@ -123,7 +83,6 @@ class PairTrainer(SentenceTransformerTrainer):
 
 
 class EvalAtEnd(TrainerCallback):
-    """Evaluate (and save) at the last step too, so the final weights compete for 'best'."""
 
     def on_step_end(self, args, state, control, **kwargs):
         if state.global_step >= state.max_steps:
@@ -132,10 +91,7 @@ class EvalAtEnd(TrainerCallback):
         return control
 
 
-# ============================================================================ evaluation
 class DevRetrievalEvaluator(SentenceEvaluator):
-    """Checkpoint selection on ESConv-HiEn dev (Hinglish queries, case bank without the dev
-    conversations) and on the held-out Hinglish-English pairs."""
 
     def __init__(self, dev_queries, bank, val_pairs, k=K, batch_size=64, name="cmx"):
         super().__init__()
@@ -162,7 +118,7 @@ class DevRetrievalEvaluator(SentenceEvaluator):
                 pre = "dev" if level is None else f"dev_{level}"
                 m[f"{pre}_overlap@{k}"] = overlap_at_k(R, E, k).mean()
                 m[f"{pre}_p@{k}"] = problem_type_precision_at_k(R, [q["problem_type"] for q in Q], self.bank, k).mean()
-                if level is None:  # collapse diagnostic: distinct cases among all retrieved ones
+                if level is None:
                     m[f"dev_unique@{k}"] = len(np.unique(R)) / R.size
             m["dev_primary"] = (m[f"dev_overlap@{k}"] + m[f"dev_p@{k}"]) / 2
         if self.val:
@@ -179,7 +135,6 @@ class DevRetrievalEvaluator(SentenceEvaluator):
         return metrics
 
 
-# ============================================================================ helpers
 def pick_device():
     return os.environ.get("CODEMIX_DEVICE") or ("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -199,7 +154,6 @@ def load_pairs(path, limit=0, seed=42):
 
 
 def dev_queries(limit=0):
-    """Hinglish dev queries (light + heavy) with their parallel English posts; [] if missing."""
     out = []
     for level in available_versions("dev", ("light", "heavy")):
         q = build_queries("dev", level)
@@ -216,11 +170,10 @@ def git_commit():
 
 
 def portable(path):
-    """Repo-relative path for the logs; the bare file name outside the repo (no user directories)."""
     path = os.path.abspath(path)
     try:
-        rel = os.path.relpath(path, ROOT)  # case-insensitive on Windows
-    except ValueError:  # another drive
+        rel = os.path.relpath(path, ROOT)
+    except ValueError:
         return os.path.basename(path)
     return os.path.basename(path) if rel.startswith("..") else rel.replace(os.sep, "/")
 
@@ -233,7 +186,7 @@ def eval_history(log_history, name="cmx"):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(description="Fine-tune the cross-lingual retriever.")
     ap.add_argument("--base_model", default=BASE_MODEL)
     ap.add_argument("--pairs_dir", default=PAIRS_DIR)
     ap.add_argument("--out_dir", default=OUT_DIR)
@@ -279,7 +232,7 @@ def main(argv=None):
                       "retrieval metrics", stacklevel=1)
         if not val:
             raise SystemExit(f"neither dev files nor {val_path}: nothing to select a checkpoint on")
-    bank = split_bank("dev") if dev else []  # the case bank without the dev conversations
+    bank = split_bank("dev") if dev else []
     if args.bank_limit:
         bank = bank[:args.bank_limit]
     print(f"[train] device {device} ({gpu_gb:.1f} GB), {len(train)} train / {len(val)} val pairs, "
@@ -342,7 +295,7 @@ def main(argv=None):
     gc.collect()
     if on_cuda:
         torch.cuda.empty_cache()
-    final = evaluator.compute(SentenceTransformer(args.out_dir, device=device))  # exactly what the pipeline loads
+    final = evaluator.compute(SentenceTransformer(args.out_dir, device=device))
     print(f"[train] best step {best_step}; saved model: {json.dumps({k: round(v, 4) for k, v in final.items()})}",
           flush=True)
 
@@ -381,7 +334,7 @@ def main(argv=None):
     if not args.keep_checkpoints:
         try:
             shutil.rmtree(args.ckpt_dir)
-        except OSError as e:  # e.g. a file still memory-mapped on Windows
+        except OSError as e:
             print(f"[train] could not remove {args.ckpt_dir} ({e}); delete it by hand", flush=True)
     print(f"[train] done in {train_time / 60:.1f} min; log {portable(args.log)}", flush=True)
     return 0

@@ -1,14 +1,3 @@
-"""Runs the whole experimental plan, one run after another (they share one API quota), most
-important comparisons first so that a quota cut leaves the key results complete. Finished runs
-are skipped; each run's output goes to logs/{system}_{version}.log.
-
-    python scripts/run_all.py                    # everything, then evaluation
-    python scripts/run_all.py --only maesc,codemixesc --versions light,heavy
-    python scripts/run_all.py --dry_run          # whole plan with stand-ins (minutes)
-
-On Windows, start it detached so it survives closing the terminal, e.g.
-    Start-Process -WindowStyle Hidden -FilePath .venv\\Scripts\\python.exe -ArgumentList "-X utf8 scripts\\run_all.py" -RedirectStandardOutput logs\\run_all.out -RedirectStandardError logs\\run_all.err
-"""
 import argparse
 import json
 import os
@@ -18,7 +7,7 @@ import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PLAN = [  # (system, version) in priority order
+PLAN = [
     ("maesc", "light"), ("codemixesc", "light"), ("maesc", "heavy"), ("codemixesc", "heavy"),
     ("pivot", "light"), ("pivot", "heavy"), ("maesc", "en"), ("codemixesc", "en"),
     ("cmx_noft", "light"), ("cmx_noft", "heavy"), ("cmx_noxl", "light"), ("cmx_noxl", "heavy"),
@@ -32,14 +21,14 @@ def finished(out_dir, system, version):
     if not os.path.exists(path):
         return False
     meta = json.load(open(path, encoding="utf-8"))
-    # a --limit smoke run, an interrupted run, or one with failed LLM calls is not finished
+
     return (meta.get("n_missing") == 0 and meta.get("n_done", 0) >= meta.get("n_turns", 1)
             and not meta.get("limit") and meta.get("split", "test") == "test"
             and not meta.get("n_with_failed_calls") and not meta.get("interrupted"))
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Run the whole experimental plan, one run after another.")
     ap.add_argument("--only", help="comma-separated systems")
     ap.add_argument("--versions", default="en,light,heavy")
     ap.add_argument("--workers", type=int, default=4)

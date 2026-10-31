@@ -1,27 +1,3 @@
-"""Retrieval robustness of the experience retriever (proposal, Section VI, "Retrieval robustness").
-
-Queries are the `post` of every supporter turn (exactly what get_strategy() sends to the
-retriever): all 1,210 test turns and the fixed sampled_uids(200) subset the multi-agent systems
-run on, in every available version (en, light, heavy). For each encoder and version:
-  P@10                   problem-type Precision@10 of the retrieved cases
-  Overlap@10 (self)      top-10 of the Hinglish post vs top-10 of its parallel English post,
-                         same encoder (light/heavy only)
-  Overlap@10 vs RoBERTa  top-10 of the post vs the base paper's retriever (all-roberta-large-v1)
-                         on the parallel English post: does the system still see the experience
-                         MultiAgentESC sees in English?
-  Strategy JSD           JSD (base 2) between the strategy histograms of the cases retrieved for
-                         the Hinglish and the English posts, pooled over the queries (a systematic
-                         shift of the strategy evidence; per-query JSD is in the JSON)
-95% CIs: cluster bootstrap over conversations; differences to RoBERTa are paired (same
-resamples). --split dev evaluates ESConv-HiEn dev with the dev conversations removed from the bank.
-
-Outputs: results/retrieval/retrieval_{split}.json, results/tables/retrieval_{split}.md and complete
-booktabs floats that a paper \\input's directly (label tab:<file stem>): retrieval_{split}.tex
-(P@10 and Overlap@10 self, one column), retrieval_{split}_full.tex (+ Overlap@10 vs RoBERTa-EN and
-strategy JSD, table*) and retrieval_test_s200.tex (the 200-turn subset).
-Usage: python scripts/eval_retrieval.py --split test [--encoders roberta,mpnet,mpnet-ft]
-       python scripts/eval_retrieval.py --stub      (hashing encoder, no downloads; tests)
-"""
 import argparse
 import gc
 import json
@@ -36,38 +12,33 @@ import warnings
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc import retriever as retriever_mod  # noqa: E402
-from codemixesc.esconv import ROOT, sampled_uids  # noqa: E402
-from codemixesc.retrieval_eval import (K, available_versions, bootstrap_ci, build_queries,  # noqa: E402
+from codemixesc import retriever as retriever_mod
+from codemixesc.esconv import ROOT, sampled_uids
+from codemixesc.retrieval_eval import (K, available_versions, bootstrap_ci, build_queries,
                                        chance_precision, jsd, overlap_at_k, problem_type_precision_at_k,
                                        split_bank, strategy_histograms, strategy_labels)
-from codemixesc.retriever import ENCODERS, Retriever  # noqa: E402
+from codemixesc.retriever import ENCODERS, Retriever
 
-ALL_ENCODERS = ["roberta", "labse", "mpnet", "mpnet-ft"]  # roberta first: the reference for the others
+ALL_ENCODERS = ["roberta", "labse", "mpnet", "mpnet-ft"]
 DISPLAY = {"roberta": "RoBERTa-L (base)", "labse": "LaBSE", "mpnet": "mMPNet", "mpnet-ft": "mMPNet-FT (ours)"}
 LEGEND = ("RoBERTa-L = all-roberta-large-v1, the English retriever of MultiAgentESC; mMPNet = "
           "paraphrase-multilingual-mpnet-base-v2, FT = our contrastive (MNRL) fine-tuning on Hinglish-English pairs")
 VERSIONS = ["en", "light", "heavy"]
 VNAME = {"en": "EN", "light": "Light", "heavy": "Heavy"}
 STUB_DIMS = {"roberta": 64, "labse": 96, "mpnet": 128, "mpnet-ft": 256}
-# (metric, version, scale, decimals, higher is better, group, subgroup)
+
 P10 = [("p@10", v, 100, 1, True, "P@10", "") for v in VERSIONS]
 SELF = [("overlap_self@10", v, 100, 1, True, "Overlap@10", "self") for v in ("light", "heavy")]
 VSROB = [("overlap_roberta_en@10", v, 100, 1, True, "Overlap@10", "vs. RoBERTa-EN") for v in VERSIONS]
 JSD = [("jsd_strategy", v, 100, 2, False, "Strategy JSD", "") for v in ("light", "heavy")]
-MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF, P10 + SELF + VSROB + JSD  # main: the two metrics of the proposal
-# Estimated width (characters + column gaps) above which a table spans both columns (table*). Measured
-# in IEEEtran: ~4.5pt per estimated character and a 252pt column, so a table estimated wider than
-# ~70 characters would have to shrink below 80% of the column.
+MAIN_COLUMNS, FULL_COLUMNS = P10 + SELF, P10 + SELF + VSROB + JSD
+
+
 WIDE_TABLE = 70
 
 
 def make_retriever(name, bank, stub=False):
-    """A Retriever over `bank` (the full case bank, or the full bank minus some conversations, in
-    case-bank order). The bank embeddings always come from the FULL-bank cache file, the one the
-    test-time pipeline uses, and are subset by row: the dev evaluation never writes a second cache
-    file, and a cached matrix that does not match the bank is recomputed in memory."""
-    if stub:  # the real Retriever ranking code over a hashing encoder; nothing is cached on disk
+    if stub:
         from codemixesc.testing import HashEncoder
         r = Retriever.__new__(Retriever)
         r.name, r.model, r.lock, r.bank = f"stub-{name}", HashEncoder(STUB_DIMS.get(name, 200)), threading.Lock(), bank
@@ -90,7 +61,7 @@ def make_retriever(name, bank, stub=False):
 
 
 def free_models():
-    retriever_mod._MODELS.clear()  # one encoder at a time on a 4 GB GPU
+    retriever_mod._MODELS.clear()
     gc.collect()
     try:
         import torch
@@ -106,7 +77,6 @@ def topk_texts(r, texts, k, chunk=512):
 
 
 def evaluate(tops, queries, subsets, bank, k, n_boot, seed):
-    """results[encoder][version][subset][metric], chance[version][subset], deltas vs roberta."""
     labels = strategy_labels(bank)
     L = len(labels)
 
@@ -160,14 +130,11 @@ def evaluate(tops, queries, subsets, bank, k, n_boot, seed):
     return results, chance, deltas
 
 
-# ============================================================================ tables
 def _get(part, enc, version, sname, metric):
     return part.get(enc, {}).get(version, {}).get(sname, {}).get(metric)
 
 
 def _significant(report, enc, metric, version, sname):
-    """The paired-bootstrap 95% CI of the difference to RoBERTa excludes 0 (not marked in the
-    reference column, where RoBERTa scores 100 by definition)."""
     if metric == "overlap_roberta_en@10" and version == "en":
         return False
     d = _get(report["delta_vs_roberta"], enc, version, sname, metric)
@@ -175,7 +142,6 @@ def _significant(report, enc, metric, version, sname):
 
 
 def _cell(m, scale, dec, tex=False, bold=False, mark=False):
-    """Markdown: 'mean ± half-width'; LaTeX: the mean only (the caption states the largest half-width)."""
     if not m or m.get("value") is None:
         return "--"
     v, hw = m["value"] * scale, (m["hi"] - m["lo"]) / 2 * scale
@@ -187,8 +153,6 @@ def _cell(m, scale, dec, tex=False, bold=False, mark=False):
 
 
 def _best(results, encoders, col, sname):
-    """Encoders tied (at display precision) with the best one; the trivial RoBERTa-vs-itself cell
-    does not compete."""
     metric, version, scale, dec, higher = col[:5]
     vals = {}
     for enc in encoders:
@@ -215,7 +179,6 @@ def _rows(report, encoders, sname, columns, tex):
 
 
 def _runs(labels):
-    """Run-length groups of consecutive equal labels: [(label, span), ...]."""
     out = []
     for lab in labels:
         if out and out[-1][0] == lab:
@@ -267,14 +230,10 @@ def markdown(report, encoders):
 
 
 def _visible_len(tex):
-    """Rough printed length of a LaTeX snippet (a command or symbol counts as one character), as in
-    scripts/evaluate.py."""
     return len(re.sub(r"[${}^]", "", re.sub(r"\\[A-Za-z]+", "x", tex)))
 
 
 def _tex_width(columns, header_rows, body):
-    """Estimated printed width in characters: widest cell per column plus a gap, widened where a
-    spanning group label needs more room than its columns provide."""
     widths = [max(_visible_len(r[i]) for r in body) + 2 for i in range(len(columns) + 1)]
     extra = 0
     for labels in header_rows:
@@ -287,7 +246,6 @@ def _tex_width(columns, header_rows, body):
 
 
 def _header_labels(columns):
-    """Group and subgroup label per column; a group with one subgroup becomes 'group (subgroup)'."""
     groups, subs = [c[5] for c in columns], [c[6] for c in columns]
     col = 0
     for _, span in _runs(list(groups)):
@@ -311,8 +269,6 @@ CAPTION_PARTS = {
 
 
 def latex(report, encoders, sname, columns, name):
-    """A complete booktabs float in the project's convention (see scripts/evaluate.py): table, or
-    table* when the estimated width would shrink it below ~80% of a column."""
     split, n = report["split"], report["subsets"][sname]
     turns = max(n.values()) if n else 0
     groups, subs = _header_labels(columns)
@@ -355,9 +311,7 @@ def latex(report, encoders, sname, columns, name):
         "\\bottomrule", "\\end{tabular}}", f"\\end{{{env}}}", ""])
 
 
-# ============================================================================ main
 def model_id(name):
-    """Hub id, or the repo-relative path of a local model (no local user directories in results)."""
     path = ENCODERS.get(name, name)
     return os.path.relpath(path, ROOT).replace(os.sep, "/") if os.path.isabs(path) else path
 
@@ -377,7 +331,7 @@ def write_text(path, text):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(description="Retrieval robustness of the experience retriever.")
     ap.add_argument("--split", choices=["test", "dev"], default="test")
     ap.add_argument("--encoders", default=",".join(ALL_ENCODERS))
     ap.add_argument("--versions", default=",".join(VERSIONS))
@@ -413,7 +367,7 @@ def main(argv=None):
         try:
             tops[enc] = topk_texts(make_retriever(enc, bank, args.stub), texts, args.k)
             print(f"[retrieval] {enc}: retrieved in {time.time() - t0:.0f}s", flush=True)
-        except Exception as e:  # noqa: BLE001 - a missing/undownloadable model is skipped, not fatal
+        except Exception as e:
             warnings.warn(f"skipping encoder {enc}: {e.__class__.__name__}: {str(e)[:300]}", stacklevel=1)
             skipped[enc] = f"{e.__class__.__name__}: {str(e)[:200]}"
         finally:

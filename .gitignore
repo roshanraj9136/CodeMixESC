@@ -1,4 +1,3 @@
-# local environments, secrets and caches
 .env
 .streamlit/secrets.toml
 .venv/
@@ -11,7 +10,6 @@ logs/
 *.log
 scratch/
 
-# local files that are not part of the code repository
 external/
 models/
 results/

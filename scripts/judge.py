@@ -1,28 +1,3 @@
-"""Pairwise LLM judge and human-evaluation sheets: CodeMixESC against MultiAgentESC and the
-Translate-Pivot.
-
-Protocol. For each pair (a, b) and version, a seeded sample of turns on which both systems
-answered is judged. One prompt per comparison shows the dialogue context and the two
-responses as A and B and asks for a JSON verdict ("A", "B" or "tie") per dimension. Every
-turn is judged in both orders (a shown as A, then a shown as B); per dimension the final
-label is win (both orders prefer a), lose (both prefer b) or tie (anything else), which
-cancels the judge's position bias. Identical responses are a tie without a call.
-Dimensions: the five of ESConv's human evaluation (Liu et al., 2021), asked of single
-responses (Fluency, Identification, Comforting, Suggestion, Overall), plus Language
-Naturalness.
-
-Human evaluation. --export_human writes one sheet for bilingual volunteers (same turns as the
-LLM judge, A/B order randomised per item, system names hidden; the key goes to a separate
-file). --import_human reads the filled copies (one CSV per volunteer), takes the majority label
-per item and reports win/tie/lose, Cohen's kappa with the LLM judge and between volunteers.
-
-Usage:
-    python scripts/judge.py                                 # gemma-4-31b-it, light + heavy, 100 turns each
-    python scripts/judge.py --versions en,light,heavy
-    python scripts/judge.py --dry_run                       # fake judge, writes to scratch/judge_dry_run
-    python scripts/judge.py --export_human --human_n 50
-    python scripts/judge.py --import_human results/human/filled/*.csv
-"""
 import argparse
 import concurrent.futures as cf
 import csv
@@ -37,13 +12,11 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc import metrics as M  # noqa: E402
-from codemixesc.esconv import ROOT  # noqa: E402
+from codemixesc import metrics as M
+from codemixesc.esconv import ROOT
 
 
 def _load_evaluate():
-    """scripts/evaluate.py under a private module name (run loading and table writing are
-    shared; a pip package called `evaluate` must not shadow it)."""
     spec = importlib.util.spec_from_file_location(
         "codemixesc_evaluate_script", os.path.join(os.path.dirname(os.path.abspath(__file__)), "evaluate.py"))
     mod = importlib.util.module_from_spec(spec)
@@ -56,7 +29,7 @@ ev = _load_evaluate()
 
 JUDGE_MODEL = "gemma-4-31b-it"
 DEFAULT_PAIRS = "codemixesc:maesc,codemixesc:pivot"
-DIMENSIONS = [  # key, name, question (ESConv's human-evaluation questions, asked of single responses)
+DIMENSIONS = [
     ("fluency", "Fluency", "Which response is more fluent and understandable?"),
     ("identification", "Identification",
      "Which response explores the user's situation more in depth and is more helpful in identifying the "
@@ -103,7 +76,6 @@ def warn(msg):
     print(f"[judge] WARNING: {msg}", flush=True)
 
 
-# ================================================================== prompt and parsing
 def format_context(sample):
     return "\n".join(f"{'User' if m['role'] == 'user' else 'Assistant'}: {m['content'].strip()}"
                      for m in sample["context_msgs"])
@@ -117,13 +89,10 @@ def build_prompt(sample, response_a, response_b):
 
 
 def verdict(value):
-    """'A', 'B' or 'tie' from a judge's or volunteer's answer; None if unreadable."""
     return _VERDICT.get(re.sub(r"\s+", " ", str(value or "")).strip().strip("\"'.*[]()").lower())
 
 
 def parse_verdicts(text):
-    """{dimension: 'A' | 'B' | 'tie'} from a judge answer (JSON, possibly fenced or with stray
-    text around it); None unless every dimension has a valid verdict."""
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
     found = {}
     m = re.search(r"\{.*\}", text, re.S)
@@ -135,7 +104,7 @@ def parse_verdicts(text):
             obj = None
     if isinstance(obj, dict):
         items = obj.items()
-    else:  # broken JSON: take "key": "verdict" pairs wherever they are
+    else:
         items = re.findall(r'["\']?([A-Za-z][A-Za-z _]*?)["\']?\s*:\s*["\']?([A-Za-z=]+)["\']?', text)
     for k, v in items:
         key = _KEY_ALIASES.get(re.sub(r"\s+", " ", str(k)).strip().lower())
@@ -145,8 +114,6 @@ def parse_verdicts(text):
 
 
 def combine(v_ab, v_ba):
-    """Final label per dimension from the two orders: v_ab has system a shown as A, v_ba has
-    a shown as B. win = both orders prefer a, lose = both prefer b, tie = anything else."""
     out = {}
     for k in KEYS:
         first = {"A": "a", "B": "b", "tie": "tie"}[v_ab[k]]
@@ -156,9 +123,6 @@ def combine(v_ab, v_ba):
 
 
 def sample_uids(candidates, n, seed=42):
-    """Seeded sample, stable under small changes of the candidate set: uids ranked by
-    sha256(seed:uid) and the first n kept, so samples of different pairs and versions overlap
-    as much as their candidates allow. Returned in ranking order."""
     ranked = sorted(candidates, key=lambda u: hashlib.sha256(f"{seed}:{u}".encode("utf-8")).hexdigest())
     return ranked[:n]
 
@@ -171,11 +135,7 @@ def same_text(a, b):
     return re.sub(r"\s+", " ", a).strip() == re.sub(r"\s+", " ", b).strip()
 
 
-# ================================================================== LLMs
 class FakeJudgeLLM:
-    """Deterministic stand-in for the judge (--dry_run and tests): prefers the longer response
-    on fluency and overall, decides the other dimensions by a hash of the prompt, and answers
-    the first attempt of every fourth prompt with prose, so the retry path runs."""
 
     model = "fake-judge"
 
@@ -197,8 +157,6 @@ class FakeJudgeLLM:
 
 
 def judge_order(llm, prompt, attempts=3, max_tokens=600, json_mode=False):
-    """(verdicts or None, raw answer, attempts used). The client caches by prompt, so a retry
-    appends an attempt note; otherwise it would return the same cached unusable answer."""
     raw = ""
     for k in range(attempts):
         p = prompt if k == 0 else prompt + (f"\n\n(Attempt {k + 1}: reply with one JSON object with exactly the keys "
@@ -211,7 +169,6 @@ def judge_order(llm, prompt, attempts=3, max_tokens=600, json_mode=False):
     return None, raw, attempts
 
 
-# ================================================================== LLM judge
 def judge_item(llm, sample, uid, version, a, b, ra, rb, args):
     item = {"uid": uid, "version": version, "a": a, "b": b, "response_a": ra, "response_b": rb,
             "identical": same_text(ra, rb), "model": llm.model}
@@ -222,7 +179,7 @@ def judge_item(llm, sample, uid, version, a, b, ra, rb, args):
     for name, (x, y) in (("order_ab", (ra, rb)), ("order_ba", (rb, ra))):
         try:
             v, raw, n = judge_order(llm, build_prompt(sample, x, y), args.attempts, args.max_tokens, args.json_mode)
-        except Exception as e:  # API failure after the client's retries: the item is reported as failed
+        except Exception as e:
             v, raw, n = None, f"error: {e!r}"[:500], 0
         orders[name] = {"verdicts": v, "attempts": n, "raw": raw}
     item.update(orders)
@@ -232,9 +189,6 @@ def judge_item(llm, sample, uid, version, a, b, ra, rb, args):
 
 
 def win_tie_lose(finals):
-    """finals: one {dimension: win/tie/lose} per turn (a dimension may be None: not judged).
-    Win/tie/lose % per dimension over the turns judged on it, and the two-sided sign test of
-    wins against losses (ties left out)."""
     out = {"n": len(finals)}
     for k in KEYS:
         labels = [f[k] for f in finals if f.get(k)]
@@ -246,8 +200,6 @@ def win_tie_lose(finals):
 
 
 def summarize(items):
-    """win_tie_lose() over the judged items, plus the judge's position-bias diagnostics: how
-    often both orders agree, and how often a decided verdict picks the first position."""
     done = [it for it in items if it.get("final")]
     out = win_tie_lose([it["final"] for it in done])
     out.update(n_failed=len(items) - len(done), n_identical=sum(it["identical"] for it in done))
@@ -276,7 +228,6 @@ def wtl_cell(s):
 
 
 def write_wtl_table(tables_dir, name, rows_in, caption, extra_cols=()):
-    """rows_in: list of (version, a, b, summary dict, extra values); one block per version."""
     rows = []
     order = {v: i for i, v in enumerate(ev.VERSIONS)}
     for version, a, b, s, extra in sorted(rows_in, key=lambda r: order.get(r[0], len(order))):
@@ -344,7 +295,6 @@ def _real_llm(args):
     return LLM(args.model, thinking=None if args.thinking == "none" else args.thinking)
 
 
-# ================================================================== human evaluation
 HUMAN_INSTRUCTIONS = """Human evaluation of emotional support responses (CodeMixESC)
 
 Each row of sheet.csv shows a conversation between a User who is seeking emotional support and an
@@ -362,8 +312,6 @@ Save the filled sheet as CSV (UTF-8) with your name in the file name, e.g. sheet
 
 
 def export_human(args, samples):
-    """One sheet for all volunteers: the first --human_n turns (in sampling order) of every
-    pair and version, A/B randomised per item, items shuffled, system names only in the key."""
     human_dir = os.path.join(args.out_dir, "human")
     os.makedirs(human_dir, exist_ok=True)
     items = []
@@ -407,7 +355,6 @@ def export_human(args, samples):
 
 
 def majority(labels):
-    """The label most volunteers chose; 'tie' when no label has a strict majority."""
     c = Counter(labels).most_common()
     if not c:
         return None
@@ -417,12 +364,12 @@ def majority(labels):
 def import_human(args):
     with open(args.human_key or os.path.join(args.out_dir, "human", "key.json"), encoding="utf-8") as f:
         key = json.load(f)
-    labels = defaultdict(lambda: defaultdict(dict))  # item -> annotator -> dimension -> win/tie/lose
+    labels = defaultdict(lambda: defaultdict(dict))
     names = Counter()
     for path in args.import_human:
         annotator = os.path.splitext(os.path.basename(path))[0]
         names[annotator] += 1
-        if names[annotator] > 1:  # two sheets with the same file name are still two volunteers
+        if names[annotator] > 1:
             annotator += f"_{names[annotator]}"
         n_filled = 0
         with open(path, encoding="utf-8-sig", newline="") as f:
@@ -438,7 +385,7 @@ def import_human(args):
                     labels[item][annotator][dim] = "tie" if v == "tie" else ("win" if k[v] == k["pair"][0] else "lose")
                     n_filled += 1
         say(f"{annotator}: {n_filled} judgements")
-    llm = {}  # (a, b, version, uid) -> final labels of the LLM judge
+    llm = {}
     for a, b, v in sorted({(*k["pair"], k["version"]) for k in key.values()}):
         path = os.path.join(args.out_dir, "judge", f"{a}_vs_{b}_{v}.jsonl")
         if not os.path.exists(path):
@@ -457,14 +404,14 @@ def import_human(args):
         maj = {it: {d: majority([labels[it][ann][d] for ann in labels[it] if d in labels[it][ann]]) for d in KEYS}
                for it in items}
         s = win_tie_lose([{d: maj[it][d] for d in KEYS} for it in items])
-        # agreement with the LLM judge (majority label vs the judge's final label)
+
         pairs = {d: [(maj[it][d], llm[(a, b, v, key[it]["uid"])][d]) for it in items
                      if maj[it][d] and (a, b, v, key[it]["uid"]) in llm] for d in KEYS}
         s["kappa_llm"] = {d: M.cohen_kappa([x for x, _ in p], [y for _, y in p]) for d, p in pairs.items()}
         pooled = [xy for p in pairs.values() for xy in p]
         s["kappa_llm_pooled"] = M.cohen_kappa([x for x, _ in pooled], [y for _, y in pooled])
         s["n_llm_overlap"] = len(pooled)
-        # agreement between volunteers: mean pairwise Cohen's kappa over the shared judgements
+
         anns = sorted({ann for it in items for ann in labels[it]})
         kappas = []
         for i in range(len(anns)):
@@ -491,9 +438,8 @@ def import_human(args):
     return 0
 
 
-# ================================================================== main
 def parse_args(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Pairwise LLM judge and human-evaluation sheets.")
     ap.add_argument("--pairs", default=DEFAULT_PAIRS, help="comma-separated a:b; labels are from a's side")
     ap.add_argument("--versions", default="light,heavy")
     ap.add_argument("--n", type=int, default=100, help="turns per pair and version")

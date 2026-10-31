@@ -1,23 +1,10 @@
-"""Selects case studies for the report from the run records, by fixed criteria (no cherry-picking
-by hand), and writes them as Markdown and as LaTeX tables.
-
-Categories (per Hinglish version; turns where both systems ran the full multi-agent pipeline
-first, then the shortest contexts):
-  rescue     MultiAgentESC's answer is (nearly) English while the seeker mixes, and CodeMixESC's
-             answer is within the CMI gap the gate allows
-  gate       the Register Gate fired and its rewrite was kept (pre-gate vs final response)
-  strategy   CodeMixESC and MultiAgentESC chose different strategies and CodeMixESC's matches gold
-  failure    CodeMixESC's final answer still misses the seeker's register (error analysis)
-
-    python scripts/case_studies.py [--per_category 2] [--profiler hingbert|lexicon]
-"""
 import argparse
 import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, STRATEGIES, all_samples, json2natural, seeker_utterances  # noqa: E402
+from codemixesc.esconv import ROOT, STRATEGIES, all_samples, json2natural, seeker_utterances
 
 LATEX_ESC = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_",
              "{": r"\{", "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}"}
@@ -35,7 +22,7 @@ def load(runs_dir, system, version):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Select case studies for the report from the run records by fixed criteria.")
     ap.add_argument("--runs_dir", default=os.path.join(ROOT, "results", "runs"))
     ap.add_argument("--out_dir", default=os.path.join(ROOT, "results"))
     ap.add_argument("--per_category", type=int, default=2)
@@ -81,7 +68,7 @@ def main():
                              "pre_gate": c.get("pre_gate_response"), "pivot": (pv[uid]["pred_strategy"], pv[uid]["response"])
                              if uid in pv else None})
         for k in ("rescue", "gate", "strategy", "failure"):
-            cases += sorted([r for r in rows if r["category"] == k],  # full multi-agent turns first, then short contexts
+            cases += sorted([r for r in rows if r["category"] == k],
                             key=lambda r: (not r["full_pipeline"], r["context_len"]))[:args.per_category]
 
     md, tx = ["# Case studies (selected automatically, see scripts/case_studies.py)\n"], []

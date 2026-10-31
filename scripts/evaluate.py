@@ -1,29 +1,3 @@
-"""Evaluates every available run (results/runs/{system}/{version}.jsonl) and writes the report's
-tables and figures. Metric definitions: codemixesc/metrics.py.
-
-Each record is joined with its test sample by uid; reference, dialogue context and gold
-strategy come from the test data, not from the run file. Every run is scored on three sets
-of turns (scopes):
-    all     every turn of the run (1,210 for the single-call baselines)
-    subset  the run's turns among the fixed 200-turn subset sampled_uids(200)
-    common  the turns of the subset that every system of the version answered; all comparison
-            tables use it, so every row of a table is computed on identical turns.
-A run that covers less than --min_coverage of the subset (e.g. still running) is scored but
-left out of the common turns and the tables, so it cannot shrink everybody's turns.
-cmx_nogate is derived from the codemixesc run: its pre-gate responses, without the gate's
-LLM calls and latency.
-
-Outputs under --out_dir (default results/):
-    eval/metrics.json     every number (all scopes), run summaries and settings
-    eval/per_turn.jsonl   per-turn scores of every run, for re-analysis without recomputation
-    tables/{main_en,main_light,main_heavy,register,stability,ablation,efficiency,significance,
-            baselines_all,runs,strategy_dist}.{md,csv,tex}
-    figures/strategy_dist_{system}.png, figures/robustness.png (each with a vector .pdf twin)
-
-Usage:
-    python scripts/evaluate.py                                    # HingBERT-LID + BERTScore
-    python scripts/evaluate.py --profiler lexicon --no_bertscore  # quick look, no model downloads
-"""
 import argparse
 import csv
 import json
@@ -36,17 +10,17 @@ from collections import Counter
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc import metrics as M  # noqa: E402
-from codemixesc.esconv import ROOT, SAMPLE_N, all_samples, sampled_uids, seeker_utterances  # noqa: E402
+from codemixesc import metrics as M
+from codemixesc.esconv import ROOT, SAMPLE_N, all_samples, sampled_uids, seeker_utterances
 
 SYSTEMS = ["zero_shot", "fewshot_cot", "maesc", "pivot", "codemixesc", "cmx_nogate", "cmx_noft", "cmx_noxl"]
 MAIN_SYSTEMS = ["zero_shot", "fewshot_cot", "maesc", "pivot", "codemixesc"]
 SINGLE_CALL = ("zero_shot", "fewshot_cot")
 VERSIONS = ["en", "light", "heavy"]
-REF_SYSTEM = "codemixesc"  # the system the significance tests compare against all others
+REF_SYSTEM = "codemixesc"
 DERIVED = {"cmx_nogate": "codemixesc"}
-# The pivot runs MultiAgentESC on translations of the Hinglish turns, so its English
-# counterpart for strategy stability is MultiAgentESC on the original English turns.
+
+
 EN_COUNTERPART = {"pivot": "maesc"}
 NAMES = {"zero_shot": "Zero-shot", "fewshot_cot": "Few-shot CoT", "maesc": "MultiAgentESC",
          "pivot": "Translate-Pivot", "codemixesc": "CodeMixESC", "cmx_nogate": "w/o Register Gate",
@@ -57,9 +31,7 @@ PROFILER_NAMES = {"hingbert": "HingBERT-LID", "lexicon": "word list (approximate
 SIG_METRICS = [("f1", "F1", 2), ("rouge_l", "ROUGE-L", 2), ("chrf", "chrF", 2), ("bertscore", "BERTScore", 2),
                ("cmi_gap", "CMI gap", 3)]
 
-# Figure palette (validated with the dataviz skill's checker: categorical slots in fixed order,
-# one per system so a system keeps its colour in every figure; versions get an ordinal blue
-# ramp, darker = more code-mixing).
+
 SERIES_COLORS = {"codemixesc": "#2a78d6", "maesc": "#eb6834", "pivot": "#1baf7a", "fewshot_cot": "#eda100",
                  "zero_shot": "#e87ba4", "cmx_noft": "#008300", "cmx_noxl": "#4a3aa7", "cmx_nogate": "#e34948"}
 MARKERS = {"codemixesc": "o", "maesc": "s", "pivot": "^", "fewshot_cot": "D", "zero_shot": "v",
@@ -69,8 +41,6 @@ INK, INK2, GRID, AXIS = "#0b0b0b", "#52514e", "#e1e0d9", "#c3c2b7"
 
 
 def safe_console():
-    """Printing must not crash where the console encoding cannot show ×, ↓ or Devanagari
-    (Windows code pages when output is redirected without -X utf8)."""
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(errors="replace")
@@ -99,9 +69,7 @@ def num(x):
     return float(x) if isinstance(x, (int, float)) and not isinstance(x, bool) else None
 
 
-# ================================================================== loading
 def read_jsonl(path):
-    """Records of a JSONL file; unreadable lines (a run killed mid-write) are counted, not fatal."""
     recs, bad = [], 0
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -121,8 +89,6 @@ def read_json(path):
 
 
 def load_run(path):
-    """{uid: record}. A later line replaces an earlier one with the same uid (a resumed run
-    retries turns), except that a failed record never replaces a successful one."""
     raw, bad = read_jsonl(path)
     recs, dup = {}, 0
     for r in raw:
@@ -139,9 +105,6 @@ def load_run(path):
 
 
 def derive_nogate(recs):
-    """cmx_nogate from codemixesc records: response := pre_gate_response,
-    n_calls -= gate.calls, latency -= gate.latency. Whether the gate's call was a cache hit is
-    not recorded, so n_real_calls is not derivable and set to None."""
     out, fallback = {}, 0
     for uid, r in recs.items():
         g = r.get("gate") or {}
@@ -168,7 +131,6 @@ def derive_nogate(recs):
 
 
 def load_samples(versions, samples_file=None):
-    """{version: {uid: sample}}; a version without test data is skipped with a warning."""
     if samples_file:
         data = read_json(samples_file)
         return {v: {s["uid"]: s for s in data[v]} for v in versions if v in data}
@@ -195,7 +157,7 @@ def make_profiler(kind):
     from codemixesc.profiler import Profiler
     try:
         return Profiler()
-    except Exception as e:  # no network / model not cached
+    except Exception as e:
         sys.exit(f"[eval] HingBERT-LID could not be loaded ({e!r}). Use --profiler lexicon for a quick look "
                  "or --profiler none to skip the register metrics.")
 
@@ -218,9 +180,7 @@ def git_commit():
         return None
 
 
-# ================================================================== per-turn scores
 def score_turns(recs, samples, ref_tokens):
-    """Per-turn scores of one run (register and BERTScore are filled in later, in batches)."""
     turns = {}
     for uid, r in recs.items():
         s = samples[uid]
@@ -251,7 +211,6 @@ def score_turns(recs, samples, ref_tokens):
 
 
 def add_register(turns_by_run, samples, prof):
-    """Register match of every produced response; one batched tagging pass over all texts."""
     texts = set()
     for (s, v), turns in turns_by_run.items():
         for uid, t in turns.items():
@@ -259,7 +218,7 @@ def add_register(turns_by_run, samples, prof):
             texts.add(t["ref"])
             if not t["missing"]:
                 texts.add(t["hyp"])
-    prof.tag_many(sorted(texts))  # profile() and stats() below then hit the profiler's memo
+    prof.tag_many(sorted(texts))
     for (s, v), turns in turns_by_run.items():
         for uid, t in turns.items():
             if not t["missing"]:
@@ -276,10 +235,7 @@ def add_bertscore(turns_by_run, bert):
             t["bertscore"] = scores[(t["hyp"], t["ref"])] if t["hyp"] else 0.0
 
 
-# ================================================================== aggregation
 def aggregate(turns, maesc=None):
-    """Every metric over a list of per-turn dicts; maesc = MultiAgentESC's turns of the same
-    version, for the extra calls over the base system on shared turns."""
     out = {"n": len(turns)}
     if not turns:
         return out
@@ -312,7 +268,7 @@ def aggregate(turns, maesc=None):
                                                                 Counter()).items())},
     )
     gated = [t for t in turns if t["gate_triggered"] is not None]
-    if gated:  # % of turns where the gate fired, and % of those where its rewrite was kept
+    if gated:
         out["gate_triggered"] = M.pct(t["gate_triggered"] for t in gated)
         out["gate_accepted"] = M.pct(t["gate_accepted"] for t in gated if t["gate_triggered"])
     if maesc is not None:
@@ -326,7 +282,6 @@ def aggregate(turns, maesc=None):
 
 
 def call_total(turns, field):
-    """Sum of a per-turn call counter over a run; None for runs written before the field existed."""
     vals = [t[field] for t in turns.values() if t[field] is not None]
     return int(sum(vals)) if vals else None
 
@@ -339,10 +294,7 @@ def scope_sets(turns, subset, common_v, in_tables):
     return sets
 
 
-# ================================================================== tables
 class Col:
-    """A table column. fmt None = text; best 'max'/'min' = bold the best value per block;
-    merge = show a value only where it changes within a block (e.g. the version)."""
 
     def __init__(self, key, md, tex=None, fmt=".2f", best=None, group=None, merge=False):
         self.key, self.md, self.tex, self.fmt = key, md, tex if tex is not None else tex_escape(md), fmt
@@ -351,7 +303,7 @@ class Col:
 
 _TEX_SPECIAL = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_", "{": r"\{",
                 "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}",
-                # OT1-encoded text fonts (IEEEtran's default) print | < > as other glyphs
+
                 "|": "$|$", "<": "$<$", ">": "$>$",
                 "×": r"$\times$", "↓": r"$\downarrow$", "↑": r"$\uparrow$", "→": r"$\rightarrow$", "−": "$-$",
                 "–": "--", "†": r"$^{\dagger}$", "‡": r"$^{\ddagger}$", "δ": r"$\delta$", "Δ": r"$\Delta$",
@@ -363,7 +315,6 @@ _TEX_PHRASE_RE = re.compile("|".join(re.escape(p) for p in sorted(_TEX_PHRASES, 
 
 
 def tex_escape(text):
-    """Plain text (captions, names) as LaTeX that compiles with pdflatex in any font encoding."""
     text, out, pos = str(text), [], 0
     for m in _TEX_PHRASE_RE.finditer(text):
         out += [_TEX_SPECIAL.get(ch, ch) for ch in text[pos:m.start()]] + [_TEX_PHRASES[m.group(0)]]
@@ -382,18 +333,14 @@ def _rounded(value, fmt):
         return None
 
 
-WIDE_TABLE = 70  # estimated characters; wider tables would shrink below ~80% of a column (measured in IEEEtran)
+WIDE_TABLE = 70
 
 
 def visible_len(tex):
-    """Rough printed length of a LaTeX snippet (a command or symbol counts as one character)."""
     return len(re.sub(r"[${}^]", "", re.sub(r"\\[A-Za-z]+", "x", tex)))
 
 
 def write_table(tables_dir, name, cols, rows, caption, note=None):
-    """Writes tables/{name}.md, .csv and .tex. rows are dicts with the column keys, plus
-    '_block' (best values are marked per block; a rule separates blocks) and '_nobold'.
-    A value may be a dict {'md', 'tex', 'csv'} for pre-rendered cells."""
     if not rows:
         say(f"table {name}: no data, not written")
         return
@@ -415,7 +362,7 @@ def write_table(tables_dir, name, cols, rows, caption, note=None):
                 continue
             best = (max if c.best == "max" else min)(v for _, v in vals)
             if all(v == best for _, v in vals):
-                continue  # a tie of every row marks nothing
+                continue
             bold.update((id(brows[i]), c.key) for i, v in vals if v == best)
 
     def cell(r, c, prev, kind):
@@ -436,7 +383,7 @@ def write_table(tables_dir, name, cols, rows, caption, note=None):
         return text
 
     os.makedirs(tables_dir, exist_ok=True)
-    # Markdown
+
     lines = [f"**{caption}**", "", "| " + " | ".join((f"{c.group} {c.md}" if c.group else c.md) for c in cols) + " |",
              "|" + "|".join(":--" if c.fmt is None else "--:" for c in cols) + "|"]
     for _, brows in blocks:
@@ -448,7 +395,7 @@ def write_table(tables_dir, name, cols, rows, caption, note=None):
         lines += ["", note]
     with open(os.path.join(tables_dir, f"{name}.md"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
-    # CSV: raw numbers, a pre-rendered cell's 'csv' dict becomes one column per entry
+
     header, getters = [], []
     for c in cols:
         key = c.key
@@ -468,9 +415,9 @@ def write_table(tables_dir, name, cols, rows, caption, note=None):
         for r in rows:
             w.writerow(["" if g(r) is None else (round(g(r), 6) if isinstance(g(r), float) else g(r))
                         for g in getters])
-    # LaTeX (booktabs; shrinks to the line width only when wider)
+
     spec = "".join("l" if c.fmt is None else "r" for c in cols)
-    # a table that would have to shrink below ~80 % of a column spans both columns (table*)
+
     width = sum(max([visible_len(c.tex)] + [visible_len(cell(r, c, None, "tex")) for r in rows]) + 2 for c in cols)
     env = "table*" if width > WIDE_TABLE else "table"
     tex = ["% Generated by scripts/evaluate.py -- do not edit by hand. Needs \\usepackage{booktabs,graphicx}.",
@@ -537,8 +484,6 @@ TABLE_NAMES = ["main_en", "main_light", "main_heavy", "register", "stability", "
 
 
 def remove_stale(paths):
-    """Outputs of an earlier evaluation that this one does not rewrite would otherwise sit next to
-    a metrics.json they do not match; only files this script generates are removed."""
     for path in paths:
         if os.path.exists(path):
             os.remove(path)
@@ -547,13 +492,12 @@ def remove_stale(paths):
 def write_tables(tables_dir, ctx):
     remove_stale(os.path.join(tables_dir, f"{n}.{ext}") for n in TABLE_NAMES for ext in ("md", "csv", "tex"))
     R, common, versions, in_tables = ctx["results"], ctx["common"], ctx["versions"], ctx["in_tables"]
-    ordered = lambda v, pool: [s for s in pool if s in in_tables.get(v, ())]  # noqa: E731
-    others = [s for s in ctx["systems"] if s not in MAIN_SYSTEMS]  # ablations and custom variants
+    ordered = lambda v, pool: [s for s in pool if s in in_tables.get(v, ())]
+    others = [s for s in ctx["systems"] if s not in MAIN_SYSTEMS]
 
     def res(v, s, scope="common"):
         return (R.get(v, {}).get(s) or {}).get(scope) or {}
 
-    # main tables, one per version
     for v in versions:
         rows = [dict(res(v, s), system=name_of(s)) for s in ordered(v, MAIN_SYSTEMS)]
         write_table(tables_dir, f"main_{v}", [Col("system", "System", fmt=None)] + QUALITY_COLS, rows,
@@ -561,7 +505,6 @@ def write_tables(tables_dir, ctx):
                     f"{ctx['subset_size']}-turn subset).",
                     quality_note(any(r.get("bertscore_f1") is not None for r in rows)))
 
-    # register match
     reg_versions = [v for v in versions if any(res(v, s).get("cmi_gap") is not None for s in in_tables.get(v, ()))]
     reg_cols = [Col("system", "System", fmt=None)]
     for v in reg_versions:
@@ -591,7 +534,6 @@ def write_tables(tables_dir, ctx):
                 f"Mean seeker CMI_s: {seeker}. Gold reference: the dataset's own supporter turns. Profiler: "
                 f"{ctx['profiler']}.")
 
-    # strategy stability (EN vs each Hinglish version, same turns)
     st_versions = [v for v in versions if v != "en" and ctx["stability"].get(v)]
     st_cols = [Col("system", "System", fmt=None)]
     for v in st_versions:
@@ -613,7 +555,6 @@ def write_tables(tables_dir, ctx):
                 "per-turn agreement in %.",
                 "† compared with MultiAgentESC on EN (the pivot runs MultiAgentESC on translations).")
 
-    # ablations, one block per version
     abl = [s for s in [REF_SYSTEM] + others]
     rows = []
     for v in versions:
@@ -633,7 +574,6 @@ def write_tables(tables_dir, ctx):
                 rows, "Ablations of CodeMixESC on the common turns.",
                 "Quality scores ×100; best per version in bold. w/o Register Gate is the same run before the gate.")
 
-    # efficiency, one block per version
     rows = []
     for v in versions:
         for s in ordered(v, MAIN_SYSTEMS + others):
@@ -652,7 +592,6 @@ def write_tables(tables_dir, ctx):
                       "response length.",
                 "Calls count cached calls too; latency is the API time of the original calls.")
 
-    # significance: REF_SYSTEM against every other system of the version
     rows = []
     for v in versions:
         for s, entry in (ctx["significance"].get(v) or {}).items():
@@ -669,7 +608,6 @@ def write_tables(tables_dir, ctx):
                       "lower is better).",
                 "† p < 0.05, ‡ p < 0.01 (two-sided); the Markdown and CSV versions give the 95% CIs.")
 
-    # single-call baselines on all turns vs the subset (is the subset representative?)
     rows = []
     for v in versions:
         for s in SINGLE_CALL:
@@ -684,7 +622,6 @@ def write_tables(tables_dir, ctx):
                  Col("bertscore_f1", "BERTScore"), Col("cmi_gap", "CMI gap", fmt=".3f")],
                 rows, "Single-call baselines on all test turns and on the sampled subset (representativeness check).")
 
-    # runs
     rows = []
     for key, sm in ctx["runs"].items():
         rows.append({"system": sm["system"], "version": VNAMES.get(sm["version"], sm["version"]),
@@ -707,7 +644,6 @@ def write_tables(tables_dir, ctx):
                       "and calls cut at the token limit (totals), duplicate uids, unreadable lines, and records "
                       "whose reference or post differs from the current test data (stale).")
 
-    # strategy distributions (the table view of the strategy figures)
     rows = []
     for v in versions:
         for s in ordered(v, MAIN_SYSTEMS + others):
@@ -722,7 +658,6 @@ def write_tables(tables_dir, ctx):
                 rows, "Predicted-strategy distribution (% of the common turns).")
 
 
-# ================================================================== figures
 def _style(ax, grid_axis="y"):
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
@@ -740,7 +675,6 @@ def _save(fig, path):
 
 
 def plot_strategy_dist(path, title, series):
-    """series: list of (label, version, counts over M.LABELS). Grouped horizontal bars."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -779,7 +713,7 @@ def plot_robustness(path, results, versions, systems, in_tables):
     metrics = [(k, n) for k, n in metrics if any(val(v, s, k) is not None for v in versions for s in systems)]
     if not systems or not metrics:
         return False
-    width = min(7.16, 1.55 * len(metrics) + 0.5)  # at most the text width of an IEEE two-column page
+    width = min(7.16, 1.55 * len(metrics) + 0.5)
     fig, axes = plt.subplots(1, len(metrics), figsize=(width, 2.2), squeeze=False)
     for ax, (key, label) in zip(axes[0], metrics):
         for s in systems:
@@ -809,7 +743,7 @@ def write_figures(fig_dir, ctx):
     versions, turns, common, in_tables = ctx["versions"], ctx["turns"], ctx["common"], ctx["in_tables"]
     for s in ctx["systems"]:
         if s in DERIVED:
-            continue  # same strategies as its source run
+            continue
         vs = [v for v in versions if s in in_tables.get(v, ())]
         en_sys = None
         if "en" in versions and "en" not in vs and EN_COUNTERPART.get(s) in in_tables.get("en", ()):
@@ -824,7 +758,7 @@ def write_figures(fig_dir, ctx):
         for v in vs:
             series.append((VNAMES[v], v, M.strategy_counts([turns[(s, v)][u]["pred"] for u in uids])))
         if not uids or not any(sum(c[:len(M.STRATEGIES)]) for _, _, c in series):
-            continue  # never predicts a strategy (zero-shot)
+            continue
         plot_strategy_dist(os.path.join(fig_dir, f"strategy_dist_{s}.png"),
                            f"{name_of(s)}: predicted strategies ({len(uids)} turns)", series)
     plot_robustness(os.path.join(fig_dir, "robustness.png"), ctx["results"], versions,
@@ -832,9 +766,7 @@ def write_figures(fig_dir, ctx):
                     in_tables)
 
 
-# ================================================================== output helpers
 def clean(obj):
-    """JSON-safe copy: sets -> sorted lists, floats rounded, NaN -> None."""
     if isinstance(obj, dict):
         return {str(k): clean(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
@@ -867,9 +799,8 @@ def write_per_turn(path, turns_by_run):
                 f.write(json.dumps(clean(rec), ensure_ascii=False) + "\n")
 
 
-# ================================================================== main
 def parse_args(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description="Evaluate every available run and write the report tables and figures.")
     ap.add_argument("--runs_dir", default=os.path.join(ROOT, "results", "runs"))
     ap.add_argument("--out_dir", default=os.path.join(ROOT, "results"),
                     help="writes eval/, tables/ and figures/ below it")
@@ -908,7 +839,6 @@ def main(argv=None):
     except FileNotFoundError as e:
         sys.exit(f"[eval] the {args.subset_size}-turn subset needs {e.filename} (scripts/setup_data.py)")
 
-    # ---- runs
     recs, runs = {}, {}
     for s in systems:
         for v in versions:
@@ -937,7 +867,7 @@ def main(argv=None):
                                 if meta else None)
     ablation_runs = [s for s in systems if s not in MAIN_SYSTEMS and s not in DERIVED]
     for s, src in DERIVED.items():
-        for v in versions:  # ablations are run on the Hinglish versions; EN only if an EN ablation exists
+        for v in versions:
             if v == "en" and not any((a, "en") in recs for a in ablation_runs):
                 continue
             if s in systems and (src, v) in recs:
@@ -947,7 +877,6 @@ def main(argv=None):
         sys.exit(f"[eval] no runs found in {args.runs_dir}")
     say(f"{len(recs)} runs: " + ", ".join(f"{s}/{v}" for s, v in recs))
 
-    # ---- per-turn scores
     ref_tokens = {v: {} for v in versions}
     turns = {(s, v): score_turns(r, samples[v], ref_tokens[v]) for (s, v), r in recs.items()}
     prof = make_profiler(args.profiler)
@@ -958,7 +887,6 @@ def main(argv=None):
     if bert is not None:
         add_bertscore(turns, bert)
 
-    # ---- which runs enter the tables, and the common turns of each version
     in_tables, common = {}, {}
     for v in versions:
         present = [s for s in systems if (s, v) in turns]
@@ -972,7 +900,6 @@ def main(argv=None):
         if in_tables[v] and len(common[v]) < len(subset):
             warn(f"{v}: {len(common[v])} of {len(subset)} subset turns are answered by every system in the tables")
 
-    # ---- aggregates per run and scope
     results = {v: {} for v in versions}
     for (s, v), tr in turns.items():
         maesc = turns.get(("maesc", v))
@@ -984,7 +911,6 @@ def main(argv=None):
                 cache[key] = aggregate([tr[u] for u in sorted(uids, key=uid_key)], maesc)
             results[v][s][scope] = cache[key]
 
-    # ---- run summaries
     summary = {}
     for (s, v), info in runs.items():
         tr = turns[(s, v)]
@@ -1006,7 +932,6 @@ def main(argv=None):
             warn(f"{s}/{v}: {sm['stale']} records differ from the current test data (reference/post); "
                  "was the data regenerated after the run?")
 
-    # ---- gold reference register (target of the register metrics)
     reference_register = {}
     if prof is not None:
         for v in versions:
@@ -1014,7 +939,6 @@ def main(argv=None):
                     for u in sorted(common[v], key=uid_key)]
             reference_register[v] = dict(M.register_summary(rows), n=len(rows))
 
-    # ---- strategy stability
     stability = {v: {} for v in versions if v != "en"}
     if "en" in versions:
         for s in systems:
@@ -1026,7 +950,7 @@ def main(argv=None):
                     continue
                 A, B = turns[(en_sys, "en")], turns[(s, v)]
                 if all(t["pred"] == "None" for t in list(A.values()) + list(B.values())):
-                    continue  # never predicts a strategy
+                    continue
                 entry = {}
                 scopes = {"all": set(A) & set(B)}
                 if s in in_tables[v] and en_sys in in_tables["en"]:
@@ -1036,7 +960,6 @@ def main(argv=None):
                                                              {u: B[u]["pred"] for u in uids}), en_system=en_sys)
                 stability[v][s] = entry
 
-    # ---- significance: REF_SYSTEM against every other system of the version, common turns
     significance = {}
     for v in versions:
         if REF_SYSTEM not in in_tables[v]:
@@ -1055,7 +978,6 @@ def main(argv=None):
                                                     args.seed)
             significance[v][s] = entry
 
-    # ---- outputs
     eval_dir = os.path.join(args.out_dir, "eval")
     os.makedirs(eval_dir, exist_ok=True)
     meta = {
@@ -1084,7 +1006,6 @@ def main(argv=None):
     if not args.no_figures:
         write_figures(os.path.join(args.out_dir, "figures"), ctx)
 
-    # ---- console summary
     say("runs (records / subset coverage / missing / failed / None / empty calls / truncated calls / stale):")
     for key, sm in summary.items():
         calls = " ".join(f"{'-' if sm[k] is None else sm[k]:>4}" for k in ("failed_calls", "truncated_calls"))

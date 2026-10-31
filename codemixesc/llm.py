@@ -1,13 +1,3 @@
-"""Thin, cached, rate-limited LLM client.
-
-The default backend is the Gemini API (hosted open-weight Gemma models and Gemini
-Flash-Lite). Models written as "ollama:<name>", "groq:<name>" or "openai:<name>" go to an
-OpenAI-compatible endpoint instead (local Ollama, Groq, or any server set in OPENAI_BASE_URL).
-
-Every call is cached on disk (SQLite), so re-running an experiment or an ablation that
-shares a prefix of the pipeline costs nothing. Every real call is also logged to a JSONL
-file so the number of LLM calls and the latency per turn can be reported.
-"""
 import hashlib
 import json
 import os
@@ -24,24 +14,22 @@ CACHE_PATH = os.path.join(ROOT, "cache", "llm_cache.sqlite")
 LOG_PATH = os.path.join(ROOT, "cache", "llm_calls.jsonl")
 RL_PATH = os.path.join(ROOT, "cache", "ratelimit.sqlite")
 
-# Free-tier limits read from AI Studio (2026-10-04): Gemma 4 = 30 RPM / 16K input TPM /
-# 14.4K RPD; Flash-Lite = 15 RPM / 250K TPM / 500 RPD. We stay slightly below them, and the
-# Flash-Lite caps leave ~100 requests/day for the owner's other app on the same key.
+
 LIMITS = {
     "gemma-4-26b-a4b-it": dict(rpm=28, tpm=15000, rpd=14300),
     "gemma-4-31b-it": dict(rpm=28, tpm=15000, rpd=14300),
-    "gemini-3.5-flash-lite": dict(rpm=14, tpm=240000, rpd=490),  # the other app on the key falls back to 3.1
+    "gemini-3.5-flash-lite": dict(rpm=14, tpm=240000, rpd=490),
     "gemini-3.1-flash-lite": dict(rpm=14, tpm=240000, rpd=400),
 }
 UNLIMITED = dict(rpm=100000, tpm=10 ** 9, rpd=10 ** 9)
 
-# OpenAI-compatible backends: prefix -> (base URL, environment variable holding the key)
+
 BACKENDS = {
     "ollama": (os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"), None),
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
     "openai": (os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"), "OPENAI_API_KEY"),
 }
-# finish reasons after which an empty answer is worth one more try (blocked / no candidate)
+
 _RETRY_EMPTY = {"SAFETY", "OTHER", "NO_CANDIDATE", "RECITATION", "PROHIBITED_CONTENT", "BLOCKLIST",
                 "SPII", "MALFORMED_FUNCTION_CALL", "content_filter", None}
 
@@ -58,7 +46,7 @@ def load_key(name="GEMINI_API_KEY"):
         return key
     path = os.path.join(ROOT, ".env")
     if os.path.exists(path):
-        raw = open(path, "rb").read()  # PowerShell writes UTF-8 with a BOM, or UTF-16
+        raw = open(path, "rb").read()
         text = raw.decode("utf-16") if raw[:2] in (b"\xff\xfe", b"\xfe\xff") else raw.decode("utf-8-sig")
         for line in text.splitlines():
             if line.strip().startswith(name + "="):
@@ -67,7 +55,6 @@ def load_key(name="GEMINI_API_KEY"):
 
 
 def split_model(model):
-    """'ollama:qwen2.5:7b' -> ('ollama', 'qwen2.5:7b'); a bare name -> ('gemini', name)."""
     for prefix in BACKENDS:
         if model.startswith(prefix + ":"):
             return prefix, model[len(prefix) + 1:]
@@ -93,8 +80,6 @@ class _Cache:
         return None if row is None else json.loads(row[0])
 
     def put_if_absent(self, k, v):
-        """First writer wins, across threads and processes; returns the stored value, so callers
-        that raced on the same prompt all continue with the same answer."""
         with self.lock:
             self.db.execute("INSERT OR IGNORE INTO c VALUES (?,?)", (k, json.dumps(v, ensure_ascii=False)))
             self.db.commit()
@@ -103,10 +88,6 @@ class _Cache:
 
 
 class _Limiter:
-    """Sliding-window limiter for requests and input tokens per minute, plus a daily cap.
-
-    State lives in a small SQLite file so that several processes (parallel experiment
-    runners) share one quota instead of each assuming it owns all of it."""
 
     def __init__(self, model, rpm, tpm, rpd):
         self.model, self.rpm, self.tpm, self.rpd = model, rpm, tpm, rpd
@@ -118,8 +99,7 @@ class _Limiter:
         self.lock = threading.Lock()
 
     def acquire(self, est_tokens, wait_daily=True):
-        """Blocks until a request with ~est_tokens input tokens may go out; returns a ticket for settle()."""
-        est_tokens = min(est_tokens, self.tpm)  # a prompt larger than the whole budget still has to go out
+        est_tokens = min(est_tokens, self.tpm)
         while True:
             wait, over = 0.5, False
             with self.lock:
@@ -147,7 +127,7 @@ class _Limiter:
                     raise
             if ticket is not None:
                 return ticket
-            if over:  # outside the lock and the transaction
+            if over:
                 if not wait_daily:
                     raise DailyQuotaExceeded(f"own daily cap ({self.rpd}) reached for {self.model}")
                 secs = _seconds_until_pacific_midnight()
@@ -157,8 +137,6 @@ class _Limiter:
             time.sleep(min(wait, 5))
 
     def settle(self, ticket, tokens):
-        """Replaces a request's estimated input tokens by the count the API reported, so the
-        TPM window is not throttled by the estimate's safety margin."""
         if ticket is not None and tokens:
             with self.lock:
                 self.db.execute("UPDATE win SET tok=? WHERE rowid=?", (int(tokens), ticket))
@@ -171,14 +149,11 @@ class _Limiter:
 _CACHE = None
 _LIMITERS = {}
 _GLOBAL_LOCK = threading.Lock()
-_KEY_LOCKS = [threading.Lock() for _ in range(1024)]  # one in-flight request per prompt (striped by key)
+_KEY_LOCKS = [threading.Lock() for _ in range(1024)]
 _LOG_LOCK = threading.Lock()
 
 
 def _pacific_now(now=None):
-    """US Pacific time without tzdata (absent on many Windows installs): PDT (UTC-7) from the
-    second Sunday of March 10:00 UTC to the first Sunday of November 09:00 UTC, else PST (UTC-8).
-    Gemini daily quotas reset at Pacific midnight."""
     now = now or datetime.now(timezone.utc)
 
     def sunday(month, k):
@@ -226,10 +201,8 @@ class LLM:
         self.cache = _CACHE
         self.limiter = _LIMITERS[model]
 
-    # ------------------------------------------------------------------ helpers
     @staticmethod
     def _merge(messages):
-        """Gemini wants alternating user/model turns; merge consecutive same-role messages."""
         out = []
         for m in messages:
             role = "model" if m["role"] == "assistant" else "user"
@@ -251,8 +224,6 @@ class LLM:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     def _post(self, url, body, headers, label, est):
-        """POST with retries (est = estimated input tokens for the limiter).
-        Returns (JSON, latency, limiter ticket of the successful request)."""
         attempt = 0
         while True:
             ticket = self.limiter.acquire(est, self.wait_on_daily_quota)
@@ -273,8 +244,7 @@ class LLM:
                     attempt = 0
                     continue
                 if e.code in (500, 502, 503, 504):
-                    # the server did not process the prompt: release its input-token reservation, or
-                    # an overloaded endpoint (gemma-4-31b-it often answers 503) halves our TPM budget
+
                     self.limiter.settle(ticket, 1)
                 if e.code in (429, 500, 502, 503, 504) and attempt < 12:
                     time.sleep(_backoff(attempt))
@@ -283,7 +253,7 @@ class LLM:
                     time.sleep(5)
                     continue
                 raise RuntimeError(f"{label} API error {e.code}: {msg[:500]}")
-            except Exception:  # network hiccups, timeouts
+            except Exception:
                 attempt += 1
                 if attempt < 12:
                     time.sleep(_backoff(attempt))
@@ -293,8 +263,7 @@ class LLM:
     def _gemini(self, messages, system, temperature, max_tokens, json_mode):
         contents = self._merge(messages)
         if system:
-            # Gemma models on the Gemini API take no system instruction, so the system
-            # message is prepended to the first user turn (what chat templates do anyway).
+
             contents[0]["parts"][0]["text"] = system + "\n\n" + contents[0]["parts"][0]["text"]
         gen = {"temperature": temperature, "maxOutputTokens": max_tokens}
         if self.thinking:
@@ -318,7 +287,7 @@ class LLM:
 
     def _openai(self, messages, system, temperature, max_tokens, json_mode):
         msgs = [{"role": "system", "content": system}] if system else []
-        for m in messages:  # same merging as for Gemini, so prompts are identical across backends
+        for m in messages:
             if msgs and msgs[-1]["role"] == m["role"]:
                 msgs[-1] = {"role": m["role"], "content": msgs[-1]["content"] + "\n\n" + m["content"]}
             else:
@@ -331,19 +300,17 @@ class LLM:
         resp, latency, ticket = self._post(self.base_url.rstrip("/") + "/chat/completions", body, headers, self.backend, est)
         choice = (resp.get("choices") or [{}])[0]
         text = (choice.get("message") or {}).get("content") or ""
-        text = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()  # reasoning models
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.S).strip()
         usage = resp.get("usage", {})
         self.limiter.settle(ticket, usage.get("prompt_tokens"))
         return text, choice.get("finish_reason"), latency, {"in": usage.get("prompt_tokens"),
                                                             "out": usage.get("completion_tokens"), "think": None}
 
-    # ------------------------------------------------------------------ main API
     def chat(self, messages, system=None, temperature=0.0, max_tokens=400, tag="", json_mode=False):
-        """messages: list of {"role": "user"|"assistant", "content": str}. Returns (text, meta)."""
         k = self._key(system, messages, temperature, max_tokens if not json_mode else ("json", max_tokens))
         hit = self.cache.get(k)
         if hit is None:
-            with _KEY_LOCKS[int(k[:6], 16) % len(_KEY_LOCKS)]:  # concurrent identical prompts: one request
+            with _KEY_LOCKS[int(k[:6], 16) % len(_KEY_LOCKS)]:
                 hit = self.cache.get(k)
                 if hit is None:
                     return self._fresh(k, messages, system, temperature, max_tokens, tag, json_mode)
@@ -358,13 +325,13 @@ class LLM:
             calls += 1
             self._log({"t": time.time(), "model": self.model, "tag": tag, "latency": round(latency, 3),
                        **usage, "finish": finish})
-            if text.strip() or finish not in _RETRY_EMPTY:  # a blocked/empty candidate is often transient
+            if text.strip() or finish not in _RETRY_EMPTY:
                 break
             if attempt < 2:
                 time.sleep(2 * (attempt + 1))
         meta = {"cached": False, "latency": latency, "calls": calls, "in": usage.get("in"), "out": usage.get("out"),
                 "finish": finish}
-        if not text.strip():  # never cache a failure: a later run asks again instead of reusing ""
+        if not text.strip():
             meta["failed"] = True
             return text, meta
         stored = self.cache.put_if_absent(k, {"text": text, "latency": latency, "finish": finish,

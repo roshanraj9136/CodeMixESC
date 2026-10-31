@@ -1,30 +1,3 @@
-"""Build the Hinglish -> English training pairs of the cross-lingual retriever (proposal, Section III).
-
-Sources
-  PHINC   Srivastava & Singh (2020), 13,738 Hinglish tweets with manual English translations
-          (zenodo record 3605597). Read from --phinc (.csv/.tsv/.zip), from data/raw/phinc/, or
-          downloaded there through the Zenodo REST API.
-  ESConv  ~5,000 seeker utterances of the TRAINING conversations (dataset[100:] minus the dev
-          conversations; never the test conversations dataset[:100]) rewritten into Roman-script
-          Hinglish by gemini-3.1-flash-lite - a different generator than the one that built the
-          ESConv-HiEn test set, so the retriever cannot fit one model's Hinglish style. 25
-          utterances per call, Light and Heavy mixing alternating per batch.
-
-Cleaning (proposal): URLs, @mentions, RT markers and HTML entities removed, '#' stripped from
-hashtags (the word stays), whitespace collapsed; then pairs with < 3 words on either side,
-non-Roman script, Hinglish identical to English (not code-mixed) and duplicates (normalised
-Hinglish side) are dropped. stats.json records the count after every step.
-
-Outputs: data/pairs/{train,val}.jsonl with {"hi", "en", "src": "phinc"|"esconv",
-"level": "light"|"heavy"|null, "conv": int|null}, and data/pairs/stats.json.
-Validation: 500 random PHINC pairs + whole ESConv conversations up to ~200 pairs (seed 42).
-
-Resumable: every finished LLM batch is appended to <out_dir>/esconv_rewrites.jsonl (and the LLM
-client caches every call), so an interrupted run continues where it stopped.
---dry_run replaces the LLM by a deterministic fake and writes to scratch/pairs_dry_run.
-
-Usage: python scripts/build_pairs.py --phinc "data/raw/phinc/PHINC.zip"
-"""
 import argparse
 import concurrent.futures as cf
 import csv
@@ -46,8 +19,8 @@ import zipfile
 from functools import lru_cache
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from codemixesc.esconv import ROOT, dev_ids, load_esconv  # noqa: E402
-from codemixesc.retrieval_eval import text_key  # noqa: E402
+from codemixesc.esconv import ROOT, dev_ids, load_esconv
+from codemixesc.retrieval_eval import text_key
 
 GEN_MODEL = "gemini-3.1-flash-lite"
 PHINC_RECORD = "3605597"
@@ -57,21 +30,19 @@ DRY_OUT_DIR = os.path.join(ROOT, "scratch", "pairs_dry_run")
 TABLE_EXT = (".csv", ".tsv", ".txt", ".xlsx")
 USER_AGENT = "CodeMixESC-build-pairs/1.0 (research; python urllib)"
 
-# ============================================================================ text cleaning
+
 URL_RE = re.compile(r"(?:https?://|www\.)\S+", re.I)
-RT_MENTION_RE = re.compile(r"(?<!\w)RT\s*@\w+\s*:?")  # "RT @user:" retweet header
-MENTION_RE = re.compile(r"(?<![\w@])@\w+:?")          # @user (not e-mail addresses)
-RT_RE = re.compile(r"(?<!\w)RT(?!\w)\s*:?")            # a bare retweet marker (uppercase only)
+RT_MENTION_RE = re.compile(r"(?<!\w)RT\s*@\w+\s*:?")
+MENTION_RE = re.compile(r"(?<![\w@])@\w+:?")
+RT_RE = re.compile(r"(?<!\w)RT(?!\w)\s*:?")
 HASHTAG_RE = re.compile(r"#(\w+)")
 SPACE_RE = re.compile(r"\s+")
 WORD_RE = re.compile(r"\w+(?:'\w+)?")
 
 
 def clean_text(text):
-    """Proposal cleaning: HTML entities decoded, URLs, RT markers and @mentions removed, '#'
-    stripped from hashtags (the word stays), whitespace collapsed."""
     t = text or ""
-    for _ in range(3):  # tweets are sometimes escaped twice (&amp;amp;)
+    for _ in range(3):
         u = html.unescape(t)
         if u == t:
             break
@@ -94,16 +65,11 @@ def _is_latin_letter(ch):
 
 
 def is_roman(text):
-    """Roman script only: at least one letter, and every letter is Latin (no Devanagari, Urdu,
-    Gurmukhi, ...). Digits, punctuation, emoji and modifier letters (e.g. U+02BC as an
-    apostrophe) are not checked."""
     letters = [ch for ch in (text or "") if ch.isalpha() and unicodedata.category(ch) != "Lm"]
     return bool(letters) and all(_is_latin_letter(ch) for ch in letters)
 
 
 def clean_pairs(pairs, min_words=3, steps=None, prefix=""):
-    """Cleans both sides and applies the filters in order, recording the count after each step.
-    pairs: dicts with 'hi' and 'en' (other keys are kept)."""
     steps = {} if steps is None else steps
     out = []
     for p in pairs:
@@ -125,7 +91,6 @@ def clean_pairs(pairs, min_words=3, steps=None, prefix=""):
     return uniq, steps
 
 
-# ============================================================================ PHINC
 class PhincUnavailable(Exception):
     pass
 
@@ -135,14 +100,13 @@ def _sha256(raw):
 
 
 def _read_source_bytes(path):
-    """Raw bytes of a table file, or of the largest table inside a .zip; plus the member name."""
     if path.lower().endswith(".zip"):
         with zipfile.ZipFile(path) as z:
             members = [m for m in z.infolist() if not m.is_dir() and m.filename.lower().endswith(TABLE_EXT)
                        and "__macosx" not in m.filename.lower()]
             if not members:
                 raise ValueError(f"{path} contains no .csv/.tsv/.txt/.xlsx file")
-            tables = [m for m in members if not m.filename.lower().endswith(".txt")] or members  # not a README
+            tables = [m for m in members if not m.filename.lower().endswith(".txt")] or members
             m = max(tables, key=lambda x: x.file_size)
             return z.read(m), m.filename
     with open(path, "rb") as f:
@@ -155,7 +119,7 @@ def _decode(raw):
             return raw.decode(enc), enc
         except UnicodeDecodeError:
             continue
-    raise ValueError("undecodable file")  # unreachable: latin-1 decodes any byte string
+    raise ValueError("undecodable file")
 
 
 def _pick_delimiter(text, name):
@@ -167,7 +131,6 @@ def _pick_delimiter(text, name):
 
 
 def read_table(path):
-    """Rows (header first) of a .csv/.tsv/.txt/.xlsx file or zip member, and provenance."""
     raw, member = _read_source_bytes(path)
     meta = {"file": os.path.basename(path), "member": member, "sha256": _sha256(raw)}
     if member.lower().endswith(".xlsx"):
@@ -202,8 +165,6 @@ def _is_index_col(name, values):
 
 
 def pick_columns(header, rows):
-    """(hinglish column, english column, how). By name, case-insensitively (PHINC: 'Sentence',
-    'English_Translation'); otherwise the first two non-index text columns."""
     names = [_norm_col(h) for h in header]
     en = next((names.index(c) for c in EN_COLS if c in names), None)
     if en is None:
@@ -231,7 +192,6 @@ def pick_columns(header, rows):
 
 
 def load_phinc(path):
-    """[{'hi', 'en'}] of all PHINC rows (uncleaned) and the provenance of the file."""
     rows, meta = read_table(path)
     if len(rows) < 2:
         raise ValueError(f"{path}: no data rows")
@@ -258,7 +218,6 @@ def _urlopen(url, timeout):
 
 
 def download_phinc(dest=None, record=PHINC_RECORD, timeout=60):
-    """Downloads every file of the Zenodo record into dest (checksums verified when given)."""
     dest = dest or RAW_DIR
     api = f"https://zenodo.org/api/records/{record}"
     try:
@@ -267,7 +226,7 @@ def download_phinc(dest=None, record=PHINC_RECORD, timeout=60):
     except (urllib.error.URLError, OSError, ValueError) as e:
         raise PhincUnavailable(f"cannot reach the Zenodo API ({api}): {e}") from e
     files = meta.get("files") or []
-    if isinstance(files, dict):  # InvenioRDM native serialisation
+    if isinstance(files, dict):
         files = list((files.get("entries") or {}).values())
     if not files:
         raise PhincUnavailable(f"Zenodo record {record} lists no files")
@@ -278,7 +237,7 @@ def download_phinc(dest=None, record=PHINC_RECORD, timeout=60):
         links = f.get("links") or {}
         url = links.get("content") or links.get("download") or links.get("self") \
             or f"https://zenodo.org/records/{record}/files/{urllib.request.quote(key)}?download=1"
-        if re.search(r"/api/records/[^/]+/files/[^/]+$", url):  # the file's metadata, not its bytes
+        if re.search(r"/api/records/[^/]+/files/[^/]+$", url):
             url += "/content"
         out = os.path.join(dest, os.path.basename(key))
         print(f"[phinc] downloading {key} ...", flush=True)
@@ -298,7 +257,6 @@ def download_phinc(dest=None, record=PHINC_RECORD, timeout=60):
 
 
 def resolve_phinc(args):
-    """Path of the PHINC table: --phinc, else data/raw/phinc/, else a Zenodo download."""
     if args.phinc:
         if not os.path.exists(args.phinc):
             raise PhincUnavailable(f"--phinc {args.phinc} does not exist")
@@ -315,7 +273,6 @@ def resolve_phinc(args):
     return local
 
 
-# ============================================================================ ESConv rewriting
 PAIR_PROMPT = """Rewrite each message below into Roman-script Hinglish, the way young Indians naturally type in chat. The messages were written by people seeking emotional support. Use a {level} Hindi-English mix.
 
 Mixing level: {level_desc}
@@ -345,7 +302,6 @@ PROBLEM_HINTS = {
 
 
 def _load_level_desc():
-    """LEVEL_DESC of scripts/build_hien.py, so pair and test-set rewriting share the definitions."""
     path = os.path.join(ROOT, "scripts", "build_hien.py")
     spec = importlib.util.spec_from_file_location("build_hien", path)
     mod = importlib.util.module_from_spec(spec)
@@ -354,10 +310,8 @@ def _load_level_desc():
 
 
 def esconv_candidates(data, exclude, min_words=4):
-    """Seeker utterances of the training conversations (dataset[100:] minus `exclude`),
-    with >= min_words words, deduplicated; plus the count after each step."""
     steps, items = {}, []
-    for ci in range(100, len(data)):  # dataset[:100] is the test set and is never used for training
+    for ci in range(100, len(data)):
         if ci in exclude:
             continue
         for t in data[ci]["dialog"]:
@@ -390,7 +344,6 @@ def build_prompt(level, level_desc, texts, problems=None, attempt=1):
 
 
 def parse_items(text):
-    """{id: text} from the model's JSON answer ({"items": [...]}, a bare list, or fenced JSON)."""
     t = (text or "").strip()
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
     try:
@@ -417,8 +370,6 @@ def parse_items(text):
 
 
 def validate_rewrite(src, hi, profiler=None, ratio=(0.4, 3.0)):
-    """(ok, problem). Roman script, non-empty, not identical to the English source, a sane
-    length (a merged or truncated item is not a translation) and, with a profiler, some Hindi."""
     hi = clean_text(hi)
     if not hi:
         return False, "empty"
@@ -435,9 +386,6 @@ def validate_rewrite(src, hi, profiler=None, ratio=(0.4, 3.0)):
 
 
 class Progress:
-    """Append-only JSONL of finished LLM batches keyed by a hash of (model, temperature, prompt),
-    so a changed sample, prompt or model never picks up a stale answer. The raw answer is
-    stored, so changes to the validation apply on the next run."""
 
     def __init__(self, path):
         self.path, self.lock, self.done = path, threading.Lock(), {}
@@ -448,7 +396,7 @@ class Progress:
                         rec = json.loads(line)
                         self.done[rec["key"]] = rec["answer"]
                     except (ValueError, KeyError):
-                        continue  # a torn last line of an interrupted run
+                        continue
 
     @staticmethod
     def key(model, temperature, prompt):
@@ -465,7 +413,6 @@ class Progress:
 
 
 class Rewriter:
-    """Runs the batched rewriting with one retry round for the failed items."""
 
     def __init__(self, llm, level_desc, progress, model_name, temperature=0.7, max_tokens=8192,
                  workers=4, max_calls=0, profiler=None):
@@ -474,11 +421,9 @@ class Rewriter:
         self.workers, self.max_calls, self.profiler = workers, max_calls, profiler
         self.lock = threading.Lock()
         self.calls = {"real": 0, "cached": 0, "from_progress": 0, "errors": 0, "skipped_budget": 0}
-        self.in_flight = 0  # calls that may still turn out to be real ones (for --max_calls)
+        self.in_flight = 0
 
     def _ask(self, prompt, tag):
-        """The answer to one prompt, or None when the call budget is used up or the call failed
-        (the batch then stays pending, so a network outage never silently shrinks the data)."""
         key = Progress.key(self.model_name, self.temperature, prompt)
         hit = self.progress.get(key)
         if hit is not None:
@@ -493,7 +438,7 @@ class Rewriter:
         try:
             text, meta = self.llm.chat([{"role": "user", "content": prompt}], temperature=self.temperature,
                                        max_tokens=self.max_tokens, json_mode=True, tag=tag)
-        except Exception as e:  # noqa: BLE001 - the client already retried; leave the batch for a rerun
+        except Exception as e:
             print(f"[pairs] {tag}: LLM error {e.__class__.__name__}: {str(e)[:200]}", flush=True)
             with self.lock:
                 self.in_flight -= 1
@@ -506,7 +451,6 @@ class Rewriter:
         return text
 
     def _batch(self, level, items, attempt, problems=None):
-        """items: [(sample index, source text)] -> ({index: hinglish}, {index: problem}, done?)."""
         prompt = build_prompt(level, self.level_desc[level], [t for _, t in items],
                               [PROBLEM_HINTS[p] for p in problems] if problems else None, attempt)
         answer = self._ask(prompt, tag=f"pairs-{level}-a{attempt}")
@@ -542,7 +486,6 @@ class Rewriter:
         return results, failures, pending
 
     def run(self, sample, batch_size):
-        """sample: [{'conv', 'text'}]. Returns ({index: (hinglish, level)}, report)."""
         levels = {}
         jobs = []
         for b, s in enumerate(range(0, len(sample), batch_size)):
@@ -573,12 +516,7 @@ class Rewriter:
         return {i: (h, levels[i]) for i, h in ok.items()}, report
 
 
-# ============================================================================ dry run stand-ins
 class FakePairLLM:
-    """Deterministic stand-in for LLM in --dry_run: answers the pair prompt in its JSON format with
-    pseudo-Hinglish (codemixesc.testing.fake_hinglish) and fails on some items on purpose
-    (unchanged English, Devanagari, missing ids, a non-JSON answer) so the validation and the
-    retry path are exercised. Never used for real data."""
 
     def __init__(self):
         self.n_calls = 0
@@ -593,7 +531,7 @@ class FakePairLLM:
         level = "heavy" if "Use a heavy" in prompt else "light"
         retry = "(Attempt " in prompt
         items = json.loads(re.search(r"Messages:\n(\[.*\])\n\nReturn JSON", prompt, re.S).group(1))
-        h = lambda t, m: int(hashlib.md5(t.encode("utf-8")).hexdigest(), 16) % m  # noqa: E731
+        h = lambda t, m: int(hashlib.md5(t.encode("utf-8")).hexdigest(), 16) % m
         if not retry and h(items[0]["text"], 23) == 0:
             return "Sorry, I cannot help with that.", {"cached": False}
         out = []
@@ -602,7 +540,7 @@ class FakePairLLM:
             hi = fake_hinglish(t, level, seed=int(retry))
             if text_key(hi) == text_key(t):
                 hi = t + " yaar"
-            if h(t, 97) == 0:  # fails at both attempts
+            if h(t, 97) == 0:
                 hi = t
             elif not retry:
                 if h(t, 11) == 0:
@@ -616,9 +554,6 @@ class FakePairLLM:
 
 
 def write_synthetic_phinc(path, data, n=400, seed=42):
-    """A PHINC-shaped CSV (Sentence, English_Translation) built from case-bank supporter turns,
-    with tweet noise (URLs, mentions, RT, entities, hashtags) and rows that every cleaning step
-    must drop. Only for --dry_run."""
     from codemixesc.testing import fake_hinglish
     rnd = random.Random(seed)
     sup = [t["content"].strip() for c in data[100:] for t in c["dialog"] if t["speaker"] == "supporter"]
@@ -635,10 +570,10 @@ def write_synthetic_phinc(path, data, n=400, seed=42):
         elif noise == 3:
             hi = f"{hi}   &quot;sach&quot;  www.example.com/{i}"
         rows.append((hi, en))
-    rows += [("ok", "ok"), ("haan yaar", "yes friend"),                        # < 3 words
-             ("मैं ठीक हूँ और तुम", "I am fine and you"),                         # not Roman
-             ("I am fine and you", "I am fine and you"),                        # not code-mixed
-             (rows[0][0], rows[0][1]), ("", "empty Hinglish side")]              # duplicate, empty
+    rows += [("ok", "ok"), ("haan yaar", "yes friend"),
+             ("मैं ठीक हूँ और तुम", "I am fine and you"),
+             ("I am fine and you", "I am fine and you"),
+             (rows[0][0], rows[0][1]), ("", "empty Hinglish side")]
     with open(path, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         w.writerow(["Sentence", "English_Translation"])
@@ -646,9 +581,7 @@ def write_synthetic_phinc(path, data, n=400, seed=42):
     return path
 
 
-# ============================================================================ splitting / output
 def _val_size(n, total, name, max_share=0.2):
-    """The requested validation size, capped at 20% of the source (only matters for tiny inputs)."""
     cap = int(max_share * total)
     if n > cap and total:
         print(f"[pairs] warning: {name} has only {total} pairs; validation holdout reduced from {n} to {cap}", flush=True)
@@ -662,8 +595,6 @@ def holdout_random(pairs, n, seed):
 
 
 def holdout_conversations(pairs, n, seed):
-    """Whole conversations go to validation until it holds >= n pairs (utterances of one
-    conversation are related, so splitting inside a conversation would leak)."""
     convs = sorted({p["conv"] for p in pairs})
     random.Random(seed).shuffle(convs)
     val_convs, count = set(), 0
@@ -679,11 +610,10 @@ def holdout_conversations(pairs, n, seed):
 
 
 def _portable(path):
-    """Repo-relative path for the logs; the bare file name outside the repo (no user directories)."""
     path = os.path.abspath(path)
     try:
-        rel = os.path.relpath(path, ROOT)  # case-insensitive on Windows
-    except ValueError:  # another drive
+        rel = os.path.relpath(path, ROOT)
+    except ValueError:
         return os.path.basename(path)
     return os.path.basename(path) if rel.startswith("..") else rel.replace(os.sep, "/")
 
@@ -697,7 +627,7 @@ def write_jsonl(path, rows):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(description="Build the Hinglish to English training pairs for the cross-lingual retriever.")
     ap.add_argument("--phinc", help="PHINC .csv/.tsv/.zip (default: data/raw/phinc/, else Zenodo download)")
     ap.add_argument("--no_download", action="store_true", help="never contact Zenodo")
     ap.add_argument("--no_phinc", action="store_true", help="ESConv pairs only (deviates from the proposal)")
@@ -720,8 +650,6 @@ def main(argv=None):
     out_dir = args.out_dir or (DRY_OUT_DIR if args.dry_run else OUT_DIR)
     os.makedirs(out_dir, exist_ok=True)
 
-    # A PHINC-only run does not need the separately downloaded ESConv corpus.  The dry-run
-    # synthetic PHINC fixture does use ESConv text, as does every run that builds ESConv pairs.
     needs_esconv = args.n_esconv > 0 or (args.dry_run and not args.phinc and not find_local_phinc())
     data = load_esconv() if needs_esconv else []
     dev = set()
@@ -733,7 +661,6 @@ def main(argv=None):
     stats = {"config": dict(vars(args)), "created": time.strftime("%Y-%m-%d %H:%M:%S")}
     stats["config"]["out_dir"] = _portable(out_dir)
 
-    # ---------------------------------------------------------------- PHINC
     phinc = []
     if not args.no_phinc:
         if args.dry_run and not args.phinc and not find_local_phinc():
@@ -753,7 +680,6 @@ def main(argv=None):
         print(f"[pairs] PHINC {meta['member']} ({meta['encoding']}, columns {meta['columns']}): "
               + ", ".join(f"{k}: {v}" for k, v in steps.items()), flush=True)
 
-    # ---------------------------------------------------------------- ESConv
     esconv = []
     if args.n_esconv > 0:
         cands, steps = esconv_candidates(data, dev, args.min_seeker_words)
@@ -788,13 +714,12 @@ def main(argv=None):
                  for i, (h, lvl) in sorted(rewrites.items())]
         esconv, steps = clean_pairs(pairs, args.min_words, steps)
         bad = [p for p in esconv if p["conv"] < 100 or p["conv"] in dev]
-        if bad:  # cannot happen by construction; a hard stop if the sampling code is ever changed
+        if bad:
             raise AssertionError(f"{len(bad)} ESConv pairs come from test or dev conversations")
         stats["esconv"] = {"steps": steps, "rewriting": report, "model": args.model if not args.dry_run else "fake",
                            "levels": {lv: sum(p["level"] == lv for p in esconv) for lv in ("light", "heavy")}}
         print("[pairs] ESConv: " + ", ".join(f"{k}: {v}" for k, v in steps.items()), flush=True)
 
-    # ---------------------------------------------------------------- union, split, write
     seen = {text_key(p["hi"]) for p in phinc}
     n_before = len(esconv)
     esconv = [p for p in esconv if text_key(p["hi"]) not in seen]
