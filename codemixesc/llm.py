@@ -26,8 +26,6 @@ UNLIMITED = dict(rpm=100000, tpm=10 ** 9, rpd=10 ** 9)
 
 BACKENDS = {
     "ollama": (os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434/v1"), None),
-    "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
-    "openai": (os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1"), "OPENAI_API_KEY"),
 }
 
 _RETRY_EMPTY = {"SAFETY", "OTHER", "NO_CANDIDATE", "RECITATION", "PROHIBITED_CONTENT", "BLOCKLIST",
@@ -285,7 +283,7 @@ class LLM:
         return text, finish, latency, {"in": usage.get("promptTokenCount"), "out": usage.get("candidatesTokenCount"),
                                        "think": usage.get("thoughtsTokenCount")}
 
-    def _openai(self, messages, system, temperature, max_tokens, json_mode):
+    def _chat_completions(self, messages, system, temperature, max_tokens, json_mode):
         msgs = [{"role": "system", "content": system}] if system else []
         for m in messages:
             if msgs and msgs[-1]["role"] == m["role"]:
@@ -318,7 +316,7 @@ class LLM:
                              "in": hit.get("in"), "out": hit.get("out"), "finish": hit.get("finish")}
 
     def _fresh(self, k, messages, system, temperature, max_tokens, tag, json_mode):
-        call = self._gemini if self.backend == "gemini" else self._openai
+        call = self._gemini if self.backend == "gemini" else self._chat_completions
         calls = 0
         for attempt in range(3):
             text, finish, latency, usage = call(messages, system, temperature, max_tokens, json_mode)

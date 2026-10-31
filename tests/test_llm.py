@@ -17,7 +17,6 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(L, "_LIMITERS", {})
     monkeypatch.setattr(L.time, "sleep", lambda s: None)
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-    monkeypatch.setenv("GROQ_API_KEY", "groq-key")
     calls = []
 
     def install(responses):
@@ -123,16 +122,16 @@ def test_pacific_time_dst():
     assert L._pacific_now(datetime(2026, 11, 1, 9, 0, tzinfo=timezone.utc)).hour == 1
 
 
-def test_openai_compatible_backend(client):
+def test_local_backend(client):
     calls = client([{"choices": [{"message": {"content": "<think>hmm</think>Response: hey"}, "finish_reason": "stop"}],
                      "usage": {"prompt_tokens": 7, "completion_tokens": 2}}])
-    llm = L.LLM("groq:llama-3.3-70b-versatile")
+    llm = L.LLM("ollama:llama-3.3-70b-versatile")
     text, meta = llm.chat([{"role": "user", "content": "a"}, {"role": "user", "content": "b"}], system="S")
     assert text == "Response: hey" and meta["in"] == 7
     body = calls[0]["body"]
     assert body["model"] == "llama-3.3-70b-versatile" and calls[0]["url"].endswith("/chat/completions")
     assert body["messages"] == [{"role": "system", "content": "S"}, {"role": "user", "content": "a\n\nb"}]
-    assert calls[0]["headers"]["Authorization"] == "Bearer groq-key"
+    assert calls[0]["headers"]["Authorization"] == "Bearer none"
     assert L.split_model("ollama:qwen2.5:7b") == ("ollama", "qwen2.5:7b")
 
 
